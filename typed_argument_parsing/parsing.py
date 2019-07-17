@@ -1,43 +1,43 @@
 from abc import abstractmethod
-from argparse import ArgumentParser, Action
+from argparse import ArgumentParser
+from typing import Optional, Sequence
 
 from typed_argument_parsing.parse_docstrings import extract_descriptions
 
 
-class TypedArgumentParser():
+class TypedArgumentParser(ArgumentParser):
 
     def __init__(self, *args, **kwargs):
-        # Freeze attributes that are arguments before adding more arguments
-        self.attributes = self.__dict__.copy()
-
         # Get descriptions from the TypedNamespace
         self.description, self.variable_description = extract_descriptions(self.__doc__)
 
-        self.arg_parser = ArgumentParser(description=self.description, *args, **kwargs)
+        super(TypedArgumentParser, self).__init__(description=self.description, *args, **kwargs)
+
         self.add_arguments()
 
     def add_argument(self, *args, **kwargs) -> None:
         # Get variable name
-        variable = self.arg_parser._get_optional_kwargs(*args, **kwargs)['dest']
+        variable = self._get_optional_kwargs(*args, **kwargs)['dest']
 
         # Get type from custom namespace annotations if not specified
         if variable in self.__annotations__:
             annotation = self.__annotations__[variable]
             kwargs['type'] = kwargs.get('type', annotation)
-            kwargs['help'] = kwargs.get('help', f"({annotation.__name__}) {self.variable_description[variable]}")
+            kwargs['help'] = kwargs.get('help', f'({annotation.__name__}) {self.variable_description[variable]}')
 
         # Get default from custom namespace if not specified
         if hasattr(self, variable):
             kwargs['default'] = kwargs.get('default', getattr(self, variable))
 
-        self.arg_parser.add_argument(*args, **kwargs)
+        super(TypedArgumentParser, self).add_argument(*args, **kwargs)
 
     @abstractmethod
     def add_arguments(self) -> None:
         pass
 
-    def parse_args(self) -> 'TypedArgumentParser':
-        default_namespace = self.arg_parser.parse_args()
+    def parse_args(self, args: Optional[Sequence[str]] = None,
+                   namespace: Optional['TypedArgumentParser'] = None) -> 'TypedArgumentParser':
+        default_namespace = super(TypedArgumentParser, self).parse_args()
 
         for variable, value in vars(default_namespace).items():
             # Check if variable has been defined for the TypedNamespace
