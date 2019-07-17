@@ -30,9 +30,12 @@ class TypedArgumentParser(ArgumentParser):
         # Get variable name
         variable = self._get_optional_kwargs(*args, **kwargs)['dest']
 
-        # Replace type and default with those from custom namespace if not provided
-        if hasattr(self.namespace_class, variable):
+        # Get type from custom namespace annotations if not specified
+        if variable in self.namespace_class.__annotations__:
             kwargs['type'] = kwargs.get('type', self.namespace_class.__annotations__[variable])
+
+        # Get default from custom namespace if not specified
+        if hasattr(self.namespace_class, variable):
             kwargs['default'] = kwargs.get('default', getattr(self.namespace_class, variable))
 
         return super(TypedArgumentParser, self).add_argument(*args, **kwargs)
