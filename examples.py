@@ -10,16 +10,23 @@ class MyArgumentParser(TypedArgumentParser):
 
         An unusually cool path.
     :embedding_path: Path to embedding file.
+    :embedding_size: Embedding size.
     :hidden_size: Hidden size.
     """
     data_path: str
     embedding_path: str = '/home'
+    embedding_size: int = 1
     hidden_size: int = 2
 
     def add_arguments(self) -> None:
         self.add_argument('-dp', '--data_path', required=True)
         self.add_argument('--embedding_path')
+        self.add_argument('--embedding_size')
         self.add_argument('--hidden_size')
+
+    def validate_args(self) -> None:
+        if self.embedding_size > self.hidden_size:
+            raise ValueError('Embedding size must be greater than hidden size')
 
 
 class MyLazyArgumentParser(TypedArgumentParser):
@@ -36,18 +43,31 @@ class MyLazyArgumentParser(TypedArgumentParser):
 
         An unusually cool path.
     :embedding_path: Path to embedding file.
+    :embedding_size: Embedding size.
     :hidden_size: Hidden size.
     """
     data_path: str
-    embedding_path: int = 2
-    hidden_size: float = 42.0
+    embedding_path: str = '/home'
+    embedding_size: int = 1
+    hidden_size: int = 2
 
 
 if __name__ == '__main__':
+    print('Regular argument parser')
+    parser = MyArgumentParser()
+    args = parser.parse_args()
+
+    print(args.data_path)
+    print(args.embedding_path)
+    print(args.embedding_size)
+    print(args.hidden_size)
+    print()
+
+    print('Lazy argument parser')
     parser = MyLazyArgumentParser()
     args = parser.parse_args()
 
     print(args.data_path)
     print(args.embedding_path)
     print(args.hidden_size)
-
+    print()

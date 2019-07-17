@@ -7,7 +7,14 @@ from typed_argument_parsing.parse_docstrings import extract_descriptions
 
 class TypedArgumentParser(ArgumentParser):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self,
+                 *args,
+                 verbose: bool = False,
+                 save_path: Optional[str] = None,
+                 **kwargs):
+        self.verbose = verbose
+        self.save_path = save_path
+
         # Get descriptions from the doc string
         self.description, self.variable_description = extract_descriptions(self.__doc__)
 
@@ -41,12 +48,13 @@ class TypedArgumentParser(ArgumentParser):
                 self.add_argument(f'--{variable}', required=required)
 
     def add_arguments(self) -> None:
+        """Explicitly add arguments to the parser if not using default settings."""
         pass
 
-    def parse_args(self,
-                   args: Optional[Sequence[str]] = None,
-                   namespace: Optional['TypedArgumentParser'] = None) -> 'TypedArgumentParser':
-        default_namespace = super(TypedArgumentParser, self).parse_args()
+    def _parse_args(self,
+                    args: Optional[Sequence[str]] = None,
+                    namespace: Optional['TypedArgumentParser'] = None) -> None:
+        default_namespace = super(TypedArgumentParser, self).parse_args(args, namespace)
 
         for variable, value in vars(default_namespace).items():
             # Check if variable has been defined
@@ -61,5 +69,15 @@ class TypedArgumentParser(ArgumentParser):
 
             # Set variable
             setattr(self, variable, value)
+
+    def validate_args(self) -> None:
+        """Perform argument validation to ensure valid argument combinations."""
+        pass
+
+    def parse_args(self,
+                   args: Optional[Sequence[str]] = None,
+                   namespace: Optional['TypedArgumentParser'] = None) -> 'TypedArgumentParser':
+        self._parse_args(args, namespace)
+        self.validate_args()
 
         return self
