@@ -14,6 +14,7 @@ class TypedArgumentParser(ArgumentParser):
         super(TypedArgumentParser, self).__init__(description=self.description, *args, **kwargs)
 
         self.add_arguments()
+        self._add_remaining_arguments()
 
     def add_argument(self, *args, **kwargs) -> None:
         # Get variable name
@@ -31,7 +32,14 @@ class TypedArgumentParser(ArgumentParser):
 
         super(TypedArgumentParser, self).add_argument(*args, **kwargs)
 
-    @abstractmethod
+    def _add_remaining_arguments(self) -> None:
+        current_arguments = {action.dest for action in self._actions}
+
+        for variable in self.__annotations__.keys():
+            if variable not in current_arguments:
+                required = not hasattr(self, variable)
+                self.add_argument(f'--{variable}', required=required)
+
     def add_arguments(self) -> None:
         pass
 
