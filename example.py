@@ -8,9 +8,9 @@ class MyNamespace(TypedNamespace):
     My TypedNamespace.
 
     Attributes:
-        data_path: Path to data file.
-        embedding_path: Path to embedding file.
-        hidden_size: Hidden size.
+    :data_path: Path to data file.
+    :embedding_path: Path to embedding file.
+    :hidden_size: Hidden size.
     """
     data_path: str
     embedding_path: str = '/home'
