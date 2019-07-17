@@ -38,8 +38,9 @@ class TypedArgumentParser(ArgumentParser):
 
         # Get type from custom namespace annotations if not specified
         if variable in self.namespace_class.__annotations__:
-            kwargs['type'] = kwargs.get('type', self.namespace_class.__annotations__[variable])
-            kwargs['help'] = kwargs.get('help', self.variable_description[variable])
+            annotation = self.namespace_class.__annotations__[variable]
+            kwargs['type'] = kwargs.get('type', annotation)
+            kwargs['help'] = kwargs.get('help', f"({annotation.__name__}) {self.variable_description[variable]}")
 
         # Get default from custom namespace if not specified
         if hasattr(self.namespace_class, variable):

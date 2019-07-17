@@ -3,8 +3,7 @@ import re
 
 
 def extract_descriptions(doc: Optional[str]) -> (Optional[str], Optional[Dict[str, str]]):
-    """
-    Construct a new 'Foo' object.
+    """Extracts the class and variable descriptions from a class-level doc string.
 
     :param doc: The docstring of a namespace class
     :return: a tuple of the description of the class
