@@ -1,3 +1,3 @@
-from typed_argument_parsing.parsing import TypedArgumentParser, TypedNamespace
+from typed_argument_parsing.parsing import TypedArgumentParser
 
-__all__ = ['TypedArgumentParser', 'TypedNamespace']
+__all__ = ['TypedArgumentParser']
