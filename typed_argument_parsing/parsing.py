@@ -2,6 +2,8 @@ from abc import abstractmethod
 from argparse import ArgumentParser, Action
 from typing import Optional, Sequence, Type
 
+from typed_argument_parsing.parse_docstrings import extract_descriptions
+
 
 class TypedNamespace:
     def __init__(self, **kwargs):
@@ -23,7 +25,11 @@ class TypedNamespace:
 class TypedArgumentParser(ArgumentParser):
     def __init__(self, namespace_class: Type, *args, **kwargs):
         self.namespace_class = namespace_class
-        super(TypedArgumentParser, self).__init__(*args, **kwargs)
+
+        # Get descriptions from the TypedNamespace
+        self.description, self.variable_description = extract_descriptions(self.namespace_class.__doc__)
+
+        super(TypedArgumentParser, self).__init__(description=self.description, *args, **kwargs)
         self.add_arguments()
 
     def add_argument(self, *args, **kwargs) -> Action:
@@ -33,6 +39,7 @@ class TypedArgumentParser(ArgumentParser):
         # Get type from custom namespace annotations if not specified
         if variable in self.namespace_class.__annotations__:
             kwargs['type'] = kwargs.get('type', self.namespace_class.__annotations__[variable])
+            kwargs['help'] = kwargs.get('help', self.variable_description[variable])
 
         # Get default from custom namespace if not specified
         if hasattr(self.namespace_class, variable):

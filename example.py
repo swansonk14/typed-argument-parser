@@ -9,6 +9,9 @@ class MyNamespace(TypedNamespace):
 
     Attributes:
     :data_path: Path to data file.
+        One that is very important!
+
+        An unusually cool path.
     :embedding_path: Path to embedding file.
     :hidden_size: Hidden size.
     """
