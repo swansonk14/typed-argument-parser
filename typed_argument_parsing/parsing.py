@@ -8,7 +8,7 @@ from typed_argument_parsing.parse_docstrings import extract_descriptions
 class TypedArgumentParser(ArgumentParser):
 
     def __init__(self, *args, **kwargs):
-        # Get descriptions from the TypedNamespace
+        # Get descriptions from the doc string
         self.description, self.variable_description = extract_descriptions(self.__doc__)
 
         super(TypedArgumentParser, self).__init__(description=self.description, *args, **kwargs)
@@ -19,13 +19,13 @@ class TypedArgumentParser(ArgumentParser):
         # Get variable name
         variable = self._get_optional_kwargs(*args, **kwargs)['dest']
 
-        # Get type from custom namespace annotations if not specified
+        # Get type and help if not specified
         if variable in self.__annotations__:
             annotation = self.__annotations__[variable]
             kwargs['type'] = kwargs.get('type', annotation)
             kwargs['help'] = kwargs.get('help', f'({annotation.__name__}) {self.variable_description[variable]}')
 
-        # Get default from custom namespace if not specified
+        # Get default if not specified
         if hasattr(self, variable):
             kwargs['default'] = kwargs.get('default', getattr(self, variable))
 
@@ -35,12 +35,13 @@ class TypedArgumentParser(ArgumentParser):
     def add_arguments(self) -> None:
         pass
 
-    def parse_args(self, args: Optional[Sequence[str]] = None,
+    def parse_args(self,
+                   args: Optional[Sequence[str]] = None,
                    namespace: Optional['TypedArgumentParser'] = None) -> 'TypedArgumentParser':
         default_namespace = super(TypedArgumentParser, self).parse_args()
 
         for variable, value in vars(default_namespace).items():
-            # Check if variable has been defined for the TypedNamespace
+            # Check if variable has been defined
             if variable not in self.__annotations__:
                 raise ValueError(f'Variable "{variable}" is not defined in class "{self.__class__.__name__}.')
 
