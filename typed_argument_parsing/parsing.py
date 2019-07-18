@@ -1,5 +1,5 @@
-from abc import abstractmethod
 from argparse import ArgumentParser
+from copy import deepcopy
 from typing import Optional, Sequence
 
 from typed_argument_parsing.parse_docstrings import extract_descriptions
@@ -67,8 +67,8 @@ class TypedArgumentParser(ArgumentParser):
                 raise ValueError(f'Variable "{variable}" of type "{arg_type}" does not match annotation type '
                                  f'"{variable_type}" for class "{self.__class__.__name__}".')
 
-            # Set variable
-            setattr(self, variable, value)
+            # Set variable (and deepcopy)
+            setattr(self, variable, deepcopy(value))
 
     def validate_args(self) -> None:
         """Perform argument validation to ensure valid argument combinations."""
