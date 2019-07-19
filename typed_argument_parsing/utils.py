@@ -1,8 +1,7 @@
 import subprocess
 
 
-NO_CHANGES_STATUS = """On branch master
-nothing to commit, working tree clean"""
+NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
 
 
 def has_git() -> bool:
@@ -45,6 +44,6 @@ def get_git_hash() -> str:
 
 def has_uncommitted_changes() -> bool:
     """Checks whether there are uncommitted changes in the git repo."""
-    status = subprocess.check_output(['git', 'status']).decode('utf-8').strip()
+    status: str = subprocess.check_output(['git', 'status']).decode('utf-8').strip()
 
-    return status != NO_CHANGES_STATUS
+    return not status.endswith(NO_CHANGES_STATUS)
