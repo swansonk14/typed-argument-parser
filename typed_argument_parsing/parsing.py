@@ -74,10 +74,15 @@ class TypedArgumentParser(ArgumentParser):
         """Perform argument validation to ensure valid argument combinations."""
         pass
 
+    def process_args(self) -> None:
+        """Perform additonal argument processing."""
+        pass
+
     def parse_args(self,
                    args: Optional[Sequence[str]] = None,
                    namespace: Optional['TypedArgumentParser'] = None) -> 'TypedArgumentParser':
         self._parse_args(args, namespace)
         self.validate_args()
+        self.process_args()
 
         return self
