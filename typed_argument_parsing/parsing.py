@@ -6,7 +6,7 @@ import time
 from typing import Any, Dict, Optional, Sequence
 
 from typed_argument_parsing.parse_docstrings import extract_descriptions
-from typed_argument_parsing.utils import get_git_hash, get_git_root
+from typed_argument_parsing.utils import get_git_root, get_git_url, has_git, has_uncommitted_changes
 
 
 class TypedArgumentParser(ArgumentParser):
@@ -83,12 +83,24 @@ class TypedArgumentParser(ArgumentParser):
     @staticmethod
     def get_reproducibility_info() -> Dict[str, str]:
         """Gets a dictionary of reproducibility information."""
-        return {
-            'git_root': get_git_root(),
-            'git_url': f'https://github.com/kswanson-asapp/rationale-alignment/tree/{get_git_hash()}',
+        reproducibility = {
             'command_line': f'python {" ".join(sys.argv)}',
             'time': time.strftime('%c')
         }
+
+        if has_git():
+            reproducibility['git_root'] = get_git_root()
+            reproducibility['git_url'] = get_git_url()
+            reproducibility['git_has_uncommitted_changes'] = has_uncommitted_changes()
+
+        return reproducibility
+
+    def get_arg_log(self) -> Dict[str, Any]:
+        """Gets all args plus reproducibility info."""
+        arg_log = self.as_dict()
+        arg_log['reproducibility'] = self.get_reproducibility_info()
+
+        return arg_log
 
     def parse_args(self,
                    args: Optional[Sequence[str]] = None,
@@ -112,8 +124,5 @@ class TypedArgumentParser(ArgumentParser):
 
         :param path: Path to a JSON file.
         """
-        args = self.as_dict()
-        args['reproducibility'] = self.get_reproducibility_info()
-
         with open(path, 'w') as f:
-            json.dump(args, f, indent=4, sort_keys=True)
+            json.dump(self.get_arg_log(), f, indent=4, sort_keys=True)
