@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from copy import deepcopy
+import json
 import sys
 import time
 from typing import Any, Dict, Optional, Sequence
@@ -13,10 +14,8 @@ class TypedArgumentParser(ArgumentParser):
     def __init__(self,
                  *args,
                  verbose: bool = False,
-                 save_path: Optional[str] = None,
                  **kwargs):
         self.verbose = verbose
-        self.save_path = save_path
 
         # Get descriptions from the doc string
         self.description, self.variable_description = extract_descriptions(self.__doc__)
@@ -102,8 +101,19 @@ class TypedArgumentParser(ArgumentParser):
 
     def as_dict(self) -> Dict[str, Any]:
         """ Return only the member variables, which correspond to the  """
-        # Extract class-level variables
-        d = self.__dict__ if isinstance(self.__class__, type) else self.__class__.__dict__
-
         # Build a dictionary of results
-        return {var: val for var, val in d.items() if var[0] != '_' and not callable(val)}
+        class_dict = self.__class__.__dict__.items()
+
+        return {var: val for var, val in class_dict if not var.startswith('_') and not callable(val)}
+
+    def save(self, path: str) -> None:
+        """
+        Saves the arguments in JSON format.
+
+        :param path: Path to a JSON file.
+        """
+        args = self.as_dict()
+        args['reproducibility'] = self.get_reproducibility_info()
+
+        with open(path, 'w') as f:
+            json.dump(args, f, indent=4, sort_keys=True)

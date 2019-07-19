@@ -64,6 +64,9 @@ if __name__ == '__main__':
     print(args.hidden_size)
     print()
 
+    print(args.as_dict())
+    args.save('args.json')
+
     # print('Simple argument parser')
     # parser = MySimpleArgumentParser()
     # args = parser.parse_args()
