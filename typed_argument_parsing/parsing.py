@@ -51,6 +51,18 @@ class TypedArgumentParser(ArgumentParser):
         """Explicitly add arguments to the parser if not using default settings."""
         pass
 
+    def validate_args(self) -> None:
+        """Perform argument validation to ensure valid argument combinations."""
+        pass
+
+    def parse_args(self,
+                   args: Optional[Sequence[str]] = None,
+                   namespace: Optional['TypedArgumentParser'] = None) -> 'TypedArgumentParser':
+        self._parse_args(args, namespace)
+        self.validate_args()
+
+        return self
+
     def _parse_args(self,
                     args: Optional[Sequence[str]] = None,
                     namespace: Optional['TypedArgumentParser'] = None) -> None:
@@ -70,19 +82,10 @@ class TypedArgumentParser(ArgumentParser):
             # Set variable (and deepcopy)
             setattr(self, variable, deepcopy(value))
 
-    def validate_args(self) -> None:
-        """Perform argument validation to ensure valid argument combinations."""
-        pass
+    def as_dict(self):
+        """ Return only the member variables, which correspond to the  """
+        # Extract class-level variables
+        d = self.__dict__ if isinstance(self.__class__, type) else self.__class__.__dict__
 
-    def process_args(self) -> None:
-        """Perform additonal argument processing."""
-        pass
-
-    def parse_args(self,
-                   args: Optional[Sequence[str]] = None,
-                   namespace: Optional['TypedArgumentParser'] = None) -> 'TypedArgumentParser':
-        self._parse_args(args, namespace)
-        self.validate_args()
-        self.process_args()
-
-        return self
+        # Build a dictionary of results
+        return {var: val for var, val in d.items() if var[0] != '_' and not callable(val)}

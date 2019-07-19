@@ -29,8 +29,8 @@ class MyArgumentParser(TypedArgumentParser):
             raise ValueError('Embedding size must be greater than hidden size')
 
 
-class MyLazyArgumentParser(TypedArgumentParser):
-    """My even better super lazy argument parser.
+class MySimpleArgumentParser(TypedArgumentParser):
+    """My even better super simple argument parser.
 
     Every argument you don't explicitly specify in
     add_arguments is automatically added as
@@ -56,6 +56,7 @@ if __name__ == '__main__':
     print('Regular argument parser')
     parser = MyArgumentParser()
     args = parser.parse_args()
+    print(MySimpleArgumentParser.as_dict)
 
     print(args.data_path)
     print(args.embedding_path)
@@ -63,11 +64,11 @@ if __name__ == '__main__':
     print(args.hidden_size)
     print()
 
-    print('Lazy argument parser')
-    parser = MyLazyArgumentParser()
-    args = parser.parse_args()
+    # print('Simple argument parser')
+    # parser = MySimpleArgumentParser()
+    # args = parser.parse_args()
 
-    print(args.data_path)
-    print(args.embedding_path)
-    print(args.hidden_size)
-    print()
+    # print(args.data_path)
+    # print(args.embedding_path)
+    # print(args.hidden_size)
+    # print()
