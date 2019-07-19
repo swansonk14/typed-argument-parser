@@ -1,8 +1,11 @@
 from argparse import ArgumentParser
 from copy import deepcopy
-from typing import Optional, Sequence
+import sys
+import time
+from typing import Any, Dict, Optional, Sequence
 
 from typed_argument_parsing.parse_docstrings import extract_descriptions
+from typed_argument_parsing.utils import get_git_hash, get_git_root
 
 
 class TypedArgumentParser(ArgumentParser):
@@ -51,18 +54,6 @@ class TypedArgumentParser(ArgumentParser):
         """Explicitly add arguments to the parser if not using default settings."""
         pass
 
-    def validate_args(self) -> None:
-        """Perform argument validation to ensure valid argument combinations."""
-        pass
-
-    def parse_args(self,
-                   args: Optional[Sequence[str]] = None,
-                   namespace: Optional['TypedArgumentParser'] = None) -> 'TypedArgumentParser':
-        self._parse_args(args, namespace)
-        self.validate_args()
-
-        return self
-
     def _parse_args(self,
                     args: Optional[Sequence[str]] = None,
                     namespace: Optional['TypedArgumentParser'] = None) -> None:
@@ -82,7 +73,34 @@ class TypedArgumentParser(ArgumentParser):
             # Set variable (and deepcopy)
             setattr(self, variable, deepcopy(value))
 
-    def as_dict(self):
+    def validate_args(self) -> None:
+        """Perform argument validation to ensure valid argument combinations."""
+        pass
+
+    def process_args(self) -> None:
+        """Perform additional argument processing."""
+        pass
+
+    @staticmethod
+    def get_reproducibility_info() -> Dict[str, str]:
+        """Gets a dictionary of reproducibility information."""
+        return {
+            'git_root': get_git_root(),
+            'git_url': f'https://github.com/kswanson-asapp/rationale-alignment/tree/{get_git_hash()}',
+            'command_line': f'python {" ".join(sys.argv)}',
+            'time': time.strftime('%c')
+        }
+
+    def parse_args(self,
+                   args: Optional[Sequence[str]] = None,
+                   namespace: Optional['TypedArgumentParser'] = None) -> 'TypedArgumentParser':
+        self._parse_args(args, namespace)
+        self.validate_args()
+        self.process_args()
+
+        return self
+
+    def as_dict(self) -> Dict[str, Any]:
         """ Return only the member variables, which correspond to the  """
         # Extract class-level variables
         d = self.__dict__ if isinstance(self.__class__, type) else self.__class__.__dict__
