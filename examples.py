@@ -67,6 +67,9 @@ if __name__ == '__main__':
     print(args.as_dict())
     args.save('args.json')
 
+    print('-' * 30)
+    print(args)
+
     # print('Simple argument parser')
     # parser = MySimpleArgumentParser()
     # args = parser.parse_args()

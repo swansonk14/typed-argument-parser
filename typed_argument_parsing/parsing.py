@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from copy import deepcopy
 import json
+from pprint import pformat
 import sys
 import time
 from typing import Any, Dict, Optional, Sequence
@@ -126,3 +127,7 @@ class TypedArgumentParser(ArgumentParser):
         """
         with open(path, 'w') as f:
             json.dump(self.get_arg_log(), f, indent=4, sort_keys=True)
+
+    def __str__(self) -> str:
+        """Pretty prints the arg log."""
+        return pformat(self.as_dict())
