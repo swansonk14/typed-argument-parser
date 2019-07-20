@@ -58,15 +58,12 @@ class Tap(ArgumentParser):
                         f'where "func" maps from str to {var_type}.')
 
                 if var_type == bool:
-                    if 'action' not in kwargs:
-                        kwargs['action'] = f'store_{"true" if kwargs["required"] or not kwargs["default"] else "false"}'
+                    kwargs['action'] = kwargs.get('action', f'store_{"true" if kwargs["required"] or not kwargs["default"] else "false"}')
 
                 if var_type in SUPPORTED_DEFAULT_LIST_TYPES:
                     element_type = var_type.__args__[0]
                     var_type = element_type
-
-                    if 'nargs' not in kwargs:
-                        kwargs['nargs'] = '*'
+                    kwargs['nargs'] = kwargs.get('nargs', '*')
 
             kwargs['type'] = kwargs.get('type', var_type)
             kwargs['help'] = kwargs.get('help', f'({var_type.__name__}) {self.variable_description[variable]}')
