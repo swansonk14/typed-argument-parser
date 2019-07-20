@@ -4,10 +4,14 @@ import json
 from pprint import pformat
 import sys
 import time
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 from tap.parse_docstrings import extract_descriptions
 from tap.utils import get_git_root, get_git_url, has_git, has_uncommitted_changes
+
+
+SUPPORTED_DEFAULT_TYPES = {str, int, float, bool, List[str], List[int], List[float]}
+SUPPORTED_DEFAULT_LIST_TYPES = {List[str], List[int], List[float]}
 
 
 class Tap(ArgumentParser):
@@ -30,25 +34,51 @@ class Tap(ArgumentParser):
         # Get variable name
         variable = self._get_optional_kwargs(*args, **kwargs)['dest']
 
-        # Get type and help if not specified
-        if variable in self.__annotations__:
-            annotation = self.__annotations__[variable]
-            kwargs['type'] = kwargs.get('type', annotation)
-            kwargs['help'] = kwargs.get('help', f'({annotation.__name__}) {self.variable_description[variable]}')
-
         # Get default if not specified
         if hasattr(self, variable):
             kwargs['default'] = kwargs.get('default', getattr(self, variable))
+
+        # Get type and help if not specified
+        if variable in self.__annotations__:
+            var_type = self.__annotations__[variable]
+            kwargs['required'] = not hasattr(self, variable)
+
+            # If type is not explicitly provided, try to provide a default
+            if 'type' not in kwargs:
+                if var_type not in SUPPORTED_DEFAULT_TYPES:
+                    raise ValueError(
+                        f'Variable "{variable}" has type "{var_type}" which is not supported by default.\n'
+                        f'Please explicitly add the argument to the parser by writing:\n\n'
+                        f'def add_arguments(self) -> None:\n'
+                        f'    self.add_argument('
+                        f'        "--{variable}", '
+                        f'        type=func, '
+                        f'        {"required=True" if kwargs["required"] else f"default={getattr(self, variable)}"}'
+                        f'    )\n\n'
+                        f'where "func" maps from str to {var_type}.')
+
+                if var_type == bool:
+                    if 'action' not in kwargs:
+                        kwargs['action'] = f'store_{"true" if kwargs["required"] or not kwargs["default"] else "false"}'
+
+                if var_type in SUPPORTED_DEFAULT_LIST_TYPES:
+                    element_type = var_type.__args__[0]
+                    var_type = element_type
+
+                    if 'nargs' not in kwargs:
+                        kwargs['nargs'] = '*'
+
+            kwargs['type'] = kwargs.get('type', var_type)
+            kwargs['help'] = kwargs.get('help', f'({var_type.__name__}) {self.variable_description[variable]}')
 
         super(Tap, self).add_argument(*args, **kwargs)
 
     def _add_remaining_arguments(self) -> None:
         current_arguments = {action.dest for action in self._actions}
+        remaining_arguments = self.__annotations__.keys() - current_arguments
 
-        for variable in self.__annotations__.keys():
-            if variable not in current_arguments:
-                required = not hasattr(self, variable)
-                self.add_argument(f'--{variable}', required=required)
+        for variable in remaining_arguments:
+            self.add_argument(f'--{variable}')
 
     def add_arguments(self) -> None:
         """Explicitly add arguments to the parser if not using default settings."""
