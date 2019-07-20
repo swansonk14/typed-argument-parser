@@ -64,12 +64,6 @@ class Tap(ArgumentParser):
             if variable not in self.__annotations__:
                 raise ValueError(f'Variable "{variable}" is not defined in class "{self.__class__.__name__}.')
 
-            # Ensure the variable is of the right type
-            variable_type, arg_type = self.__annotations__[variable], type(value)
-            if variable_type != arg_type:
-                raise ValueError(f'Variable "{variable}" of type "{arg_type}" does not match annotation type '
-                                 f'"{variable_type}" for class "{self.__class__.__name__}".')
-
             # Set variable (and deepcopy)
             setattr(self, variable, deepcopy(value))
 
@@ -113,7 +107,7 @@ class Tap(ArgumentParser):
         return self
 
     def as_dict(self) -> Dict[str, Any]:
-        """ Return only the member variables, which correspond to the  """
+        """Return only member variables corresponding to arguments. """
         # Required arguments assigned to the instance
         required_args = {
             var: getattr(self, var)
