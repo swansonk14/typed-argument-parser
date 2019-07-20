@@ -114,10 +114,20 @@ class Tap(ArgumentParser):
 
     def as_dict(self) -> Dict[str, Any]:
         """ Return only the member variables, which correspond to the  """
-        # Build a dictionary of results
-        class_dict = self.__class__.__dict__.items()
+        # Required arguments assigned to the instance
+        required_args = {
+            var: getattr(self, var)
+            for var, val in self.__class__.__dict__.items()
+            if not var.startswith('_') and not callable(val)
+            }
 
-        return {var: val for var, val in class_dict if not var.startswith('_') and not callable(val)}
+        # Arguments that are not required must have types and not be set
+        not_required_args = {
+            var: getattr(self, var)
+            for var, val in self.__annotations__.items()
+            }
+
+        return {**required_args, **not_required_args}
 
     def save(self, path: str) -> None:
         """
