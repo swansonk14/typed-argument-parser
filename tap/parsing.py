@@ -15,12 +15,14 @@ SUPPORTED_DEFAULT_LIST_TYPES = {List[str], List[int], List[float]}
 
 
 class Tap(ArgumentParser):
+    """Tap is a typed argument parser that wraps argparser. """
 
     def __init__(self,
                  *args,
                  verbose: bool = False,
                  **kwargs):
         self.verbose = verbose
+        self._parsed = False
 
         # Get descriptions from the doc string
         self.description, self.variable_description = extract_descriptions(self.__doc__)
@@ -130,11 +132,15 @@ class Tap(ArgumentParser):
         self._parse_args(args, namespace)
         self.validate_args()
         self.process_args()
+        self._parsed = True
 
         return self
 
     def as_dict(self) -> Dict[str, Any]:
         """Return only member variables corresponding to arguments. """
+        if not self._parsed:
+            raise ValueError("You should call `parse_args` before retrieving arguments.")
+
         # Required arguments assigned to the instance
         required_args = {
             var: getattr(self, var)
