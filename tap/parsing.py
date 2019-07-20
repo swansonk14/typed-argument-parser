@@ -38,10 +38,11 @@ class Tap(ArgumentParser):
         if hasattr(self, variable):
             kwargs['default'] = kwargs.get('default', getattr(self, variable))
 
-        # Get type and help if not specified
+        # Get required, type, and help if not specified
         if variable in self.__annotations__:
             var_type = self.__annotations__[variable]
-            kwargs['required'] = not hasattr(self, variable)
+            kwargs['required'] = kwargs.get('required', not hasattr(self, variable))
+            kwargs['help'] = kwargs.get('help', f'({var_type.__name__}) {self.variable_description[variable]}')
 
             # If type is not explicitly provided, try to provide a default
             if 'type' not in kwargs:
@@ -57,16 +58,15 @@ class Tap(ArgumentParser):
                         f'    )\n\n'
                         f'where "func" maps from str to {var_type}.')
 
-                if var_type == bool:
-                    kwargs['action'] = kwargs.get('action', f'store_{"true" if kwargs["required"] or not kwargs["default"] else "false"}')
-
                 if var_type in SUPPORTED_DEFAULT_LIST_TYPES:
                     element_type = var_type.__args__[0]
                     var_type = element_type
                     kwargs['nargs'] = kwargs.get('nargs', '*')
 
-            kwargs['type'] = kwargs.get('type', var_type)
-            kwargs['help'] = kwargs.get('help', f'({var_type.__name__}) {self.variable_description[variable]}')
+                if var_type == bool:
+                    kwargs['action'] = kwargs.get('action', f'store_{"true" if kwargs["required"] or not kwargs["default"] else "false"}')
+                else:
+                    kwargs['type'] = var_type
 
         super(Tap, self).add_argument(*args, **kwargs)
 

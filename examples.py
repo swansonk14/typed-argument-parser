@@ -1,3 +1,5 @@
+from typing import List
+
 from tap import Tap
 
 
@@ -45,23 +47,28 @@ class MySimpleArgumentParser(Tap):
     :embedding_path: Path to embedding file.
     :embedding_size: Embedding size.
     :hidden_size: Hidden size.
+    :small_data: Use less data.
+    :depths: List of depths.
     """
     data_path: str
     embedding_path: str = '/home'
     embedding_size: int = 1
     hidden_size: int = 2
+    small_data: bool = False
+    # depths: List[int]
 
 
 if __name__ == '__main__':
     print('Regular argument parser')
-    parser = MyArgumentParser()
+    parser = MySimpleArgumentParser()
     args = parser.parse_args()
-    print(MySimpleArgumentParser.as_dict)
 
     print(args.data_path)
     print(args.embedding_path)
     print(args.embedding_size)
     print(args.hidden_size)
+    # print(args.small_data)
+    # print(args.depths)
     print()
 
     print(args.as_dict())
