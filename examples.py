@@ -1,7 +1,7 @@
-from tap import TypedArgumentParser
+from tap import Tap
 
 
-class MyArgumentParser(TypedArgumentParser):
+class MyArgumentParser(Tap):
     """My way better argument parser.
 
     Attributes:
@@ -29,7 +29,7 @@ class MyArgumentParser(TypedArgumentParser):
             raise ValueError('Embedding size must be greater than hidden size')
 
 
-class MySimpleArgumentParser(TypedArgumentParser):
+class MySimpleArgumentParser(Tap):
     """My even better super simple argument parser.
 
     Every argument you don't explicitly specify in

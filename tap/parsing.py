@@ -10,7 +10,7 @@ from tap.parse_docstrings import extract_descriptions
 from tap.utils import get_git_root, get_git_url, has_git, has_uncommitted_changes
 
 
-class TypedArgumentParser(ArgumentParser):
+class Tap(ArgumentParser):
 
     def __init__(self,
                  *args,
@@ -21,7 +21,7 @@ class TypedArgumentParser(ArgumentParser):
         # Get descriptions from the doc string
         self.description, self.variable_description = extract_descriptions(self.__doc__)
 
-        super(TypedArgumentParser, self).__init__(description=self.description, *args, **kwargs)
+        super(Tap, self).__init__(description=self.description, *args, **kwargs)
 
         self.add_arguments()
         self._add_remaining_arguments()
@@ -40,7 +40,7 @@ class TypedArgumentParser(ArgumentParser):
         if hasattr(self, variable):
             kwargs['default'] = kwargs.get('default', getattr(self, variable))
 
-        super(TypedArgumentParser, self).add_argument(*args, **kwargs)
+        super(Tap, self).add_argument(*args, **kwargs)
 
     def _add_remaining_arguments(self) -> None:
         current_arguments = {action.dest for action in self._actions}
@@ -56,8 +56,8 @@ class TypedArgumentParser(ArgumentParser):
 
     def _parse_args(self,
                     args: Optional[Sequence[str]] = None,
-                    namespace: Optional['TypedArgumentParser'] = None) -> None:
-        default_namespace = super(TypedArgumentParser, self).parse_args(args, namespace)
+                    namespace: Optional['Tap'] = None) -> None:
+        default_namespace = super(Tap, self).parse_args(args, namespace)
 
         for variable, value in vars(default_namespace).items():
             # Check if variable has been defined
@@ -105,7 +105,7 @@ class TypedArgumentParser(ArgumentParser):
 
     def parse_args(self,
                    args: Optional[Sequence[str]] = None,
-                   namespace: Optional['TypedArgumentParser'] = None) -> 'TypedArgumentParser':
+                   namespace: Optional['Tap'] = None) -> 'Tap':
         self._parse_args(args, namespace)
         self.validate_args()
         self.process_args()

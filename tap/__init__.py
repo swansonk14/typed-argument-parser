@@ -1,3 +1,3 @@
-from tap.parsing import TypedArgumentParser
+from tap.parsing import Tap
 
-__all__ = ['TypedArgumentParser']
+__all__ = ['Tap']

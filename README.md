@@ -1,3 +1,3 @@
-# Typed Argument Parsing
+# Typed Argument Parsing (tap)
 
-A typed version of Python's `ArgumentParser` and `Namespace`.
+A typed version of Python's `ArgumentParser``.
