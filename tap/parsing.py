@@ -7,7 +7,7 @@ import time
 from typing import Any, Dict, List, Optional, Sequence
 
 from tap.parse_docstrings import extract_descriptions
-from tap.utils import get_git_root, get_git_url, has_git, has_uncommitted_changes
+from tap.utils import get_git_root, get_git_url, has_git, has_uncommitted_changes, type_to_str
 
 
 SUPPORTED_DEFAULT_TYPES = {str, int, float, bool, List[str], List[int], List[float]}
@@ -42,7 +42,7 @@ class Tap(ArgumentParser):
         if variable in self.__annotations__:
             var_type = self.__annotations__[variable]
             kwargs['required'] = kwargs.get('required', not hasattr(self, variable))
-            kwargs['help'] = kwargs.get('help', f'({var_type.__name__}) {self.variable_description[variable]}')
+            kwargs['help'] = kwargs.get('help', f'({type_to_str(var_type)}) {self.variable_description[variable]}')
 
             # If type is not explicitly provided, try to provide a default
             if 'type' not in kwargs:

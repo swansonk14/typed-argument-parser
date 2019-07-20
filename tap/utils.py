@@ -1,4 +1,6 @@
 import subprocess
+import typing
+from typing import Union
 
 
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
@@ -47,3 +49,11 @@ def has_uncommitted_changes() -> bool:
     status: str = subprocess.check_output(['git', 'status']).decode('utf-8').strip()
 
     return not status.endswith(NO_CHANGES_STATUS)
+
+
+def type_to_str(type_annotation: Union[type, typing._GenericAlias]) -> str:
+    """Gets a string representation of the provided type."""
+    if isinstance(type_annotation, typing._GenericAlias):
+        return str(type_annotation)[len('typing.'):]
+
+    return type_annotation.__name__

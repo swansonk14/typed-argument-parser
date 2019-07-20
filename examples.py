@@ -55,7 +55,7 @@ class MySimpleArgumentParser(Tap):
     embedding_size: int = 1
     hidden_size: int = 2
     small_data: bool = False
-    # depths: List[int]
+    depths: List[int]
 
 
 if __name__ == '__main__':
@@ -67,8 +67,8 @@ if __name__ == '__main__':
     print(args.embedding_path)
     print(args.embedding_size)
     print(args.hidden_size)
-    # print(args.small_data)
-    # print(args.depths)
+    print(args.small_data)
+    print(args.depths)
     print()
 
     print(args.as_dict())
