@@ -30,10 +30,10 @@ class SimpleArgumentParser(Tap):
 args = SimpleArgumentParser().parse_args()
 
 print(f'My name is {args.name} and I give the {args.language} package'
-       '{args.package} {args.stars}/{args.max_stars} stars!')
+      f'{args.package} {args.stars}/{args.max_stars} stars!')
 ```
 
-You use Tap just like how you use standard argparse.
+You use Tap the same way you use standard argparse.
 ```
 >>> python main.py --name Jesse --stars 5
 My name is Jesse and I give the Python package Tap 5/5 stars!
@@ -59,7 +59,7 @@ parser.add_argument('--max_stars', type=int, default=5,
 args = parser.parser_args()
 
 print(f'My name is {args.name} and I give the {args.language} package'
-       '{args.package} {args.stars}/{args.max_stars} stars!')
+      f'{args.package} {args.stars}/{args.max_stars} stars!')
 ```
 
 ## Why Tap?
