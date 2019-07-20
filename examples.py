@@ -1,4 +1,4 @@
-from typed_argument_parsing import TypedArgumentParser
+from tap import TypedArgumentParser
 
 
 class MyArgumentParser(TypedArgumentParser):

@@ -11,7 +11,7 @@ setup(
     description='Typed Argument Parsing',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/kswanson-asapp/typed-argument-parsing',
+    url='https://github.com/swansonk14/typed-argument-parsing',
     license='MIT',
     packages=find_packages(),
     install_requires=[],

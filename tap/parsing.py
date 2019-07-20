@@ -6,8 +6,8 @@ import sys
 import time
 from typing import Any, Dict, Optional, Sequence
 
-from typed_argument_parsing.parse_docstrings import extract_descriptions
-from typed_argument_parsing.utils import get_git_root, get_git_url, has_git, has_uncommitted_changes
+from tap.parse_docstrings import extract_descriptions
+from tap.utils import get_git_root, get_git_url, has_git, has_uncommitted_changes
 
 
 class TypedArgumentParser(ArgumentParser):
