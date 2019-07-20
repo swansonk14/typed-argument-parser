@@ -29,7 +29,7 @@ class SimpleArgumentParser(Tap):
     
 args = SimpleArgumentParser().parse_args()
 
-print(f'My name is {args.name} and I give the {args.language} package'
+print(f'My name is {args.name} and I give the {args.language} package '
       f'{args.package} {args.stars}/{args.max_stars} stars!')
 ```
 
@@ -56,9 +56,9 @@ parser.add_argument('--stars', type=int, required=True,
                     help='The number of stars to give the package.')
 parser.add_argument('--max_stars', type=int, default=5,
                     help='The maximum number of stars a package can receive.')
-args = parser.parser_args()
+args = parser.parse_args()
 
-print(f'My name is {args.name} and I give the {args.language} package'
+print(f'My name is {args.name} and I give the {args.language} package '
       f'{args.package} {args.stars}/{args.max_stars} stars!')
 ```
 
