@@ -41,7 +41,7 @@ class GitTests(TestCase):
         self.assertTrue(has_uncommitted_changes())
 
 
-class UtilTests(TestCase):
+class OtherUtilTests(TestCase):
     def test_type_to_str(self) -> None:
         self.assertEqual(type_to_str(str), 'str')
         self.assertEqual(type_to_str(int), 'int')
