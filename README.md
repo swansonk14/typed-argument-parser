@@ -140,14 +140,16 @@ args.save('args.json')
 ```
 >>> python main.py --package_name Tap --awards super incredible outstanding --is_cool --printer !!!
 The package Tap has 3 awards!!!
-----------
+--------------------------------------------------
 {'awards': ['super', 'incredible', 'outstanding'],
  'is_cool': True,
  'num_stars': 3.14,
  'package_name': 'Tap',
  'printer': <__main__.Printer object at 0x105048e80>}
-----------
-{'command_line': 'python [[PYTHON_PATH]]', 'time': '[[EXPERIMENT_TIME]]', 'git_root': '[[PATH]]/typed-argument-parsing', 'git_url': 'https://github.com/swansonk14/typed-argument-parsing/tree/[[COMMIT_HASH]]', 'git_has_uncommitted_changes': False}
+--------------------------------------------------
+{'command_line': 'python [[PYTHON_PATH]]',
+ 'time': '[[EXPERIMENT_TIME]]',
+ 'git_root': '[[PATH]]/typed-argument-parsing',
+ 'git_url': 'https://github.com/swansonk14/typed-argument-parsing/tree/[[COMMIT_HASH]]',
+  'git_has_uncommitted_changes': False}
 ```
-```
-
