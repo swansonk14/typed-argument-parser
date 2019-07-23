@@ -77,5 +77,77 @@ Since parsed arguments are now a class, you can:
 - Inherit from your own template classes
 
 ## A more advanced example
+Now we'll present an example that features provided by Tap.
 
-<TODO show all we can do!>
+```python
+"""main.py"""
+from typing import List
+
+from tap import Tap
+
+
+class Printer:
+    def __init__(self, suffix: str = ''):
+        self.suffix = suffix
+    
+    def __call__(self, string: str) -> None:
+        print(f'{string}{self.suffix}')
+
+
+class AdvancedArgumentParser(Tap):
+    """You can do a lot with Tap!
+
+    Arguments:
+    :package_name: The name of a package.
+        Note - we'd prefer cooler packages.
+    :awards: The awards won by this package.
+    :num_stars: The number of stars that this package received.
+    :is_cool: Indicate whether or not the package is cool.
+    :printer: Adds a suffix to the string being printed.
+    """
+    package_name: str
+    awards: List[str] = []
+    num_stars: float = 3.14
+    is_cool: bool = False
+    printer: Printer = Printer()
+    
+    def add_arguments(self) -> None:
+        self.add_argument('-n', '--package_name')
+        self.add_argument('-ns', '--num_stars')
+        self.add_argument('--printer', type=Printer)
+
+    def process_args(self) -> None:
+        # Double check the input is valid
+        cool_cutoff = 10
+        if self.num_stars > cool_cutoff and not self.is_cool:
+            raise ValueError(f'A package with more than {cool_cutoff} stars must be marked cool.')
+        
+        # Automatically modify arguments for consistency
+        if len(self.awards) > 2:
+            self.is_cool = True
+    
+args = AdvancedArgumentParser().parse_args()
+
+args.printer(f'The package {args.package_name} has {len(args.awards)} awards')
+print('-' * 10)
+print(args)
+print('-' * 10)
+print(args.get_reproducibility_info())
+
+args.save('args.json')
+```
+
+```
+>>> python main.py --package_name Tap --awards super incredible outstanding --is_cool --printer !!!
+The package Tap has 3 awards!!!
+----------
+{'awards': ['super', 'incredible', 'outstanding'],
+ 'is_cool': True,
+ 'num_stars': 3.14,
+ 'package_name': 'Tap',
+ 'printer': <__main__.Printer object at 0x105048e80>}
+----------
+{'command_line': 'python [[PYTHON_PATH]]', 'time': '[[EXPERIMENT_TIME]]', 'git_root': '[[PATH]]/typed-argument-parsing', 'git_url': 'https://github.com/swansonk14/typed-argument-parsing/tree/[[COMMIT_HASH]]', 'git_has_uncommitted_changes': False}
+```
+```
+
