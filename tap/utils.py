@@ -1,3 +1,4 @@
+import os
 import subprocess
 from typing import Any, Union
 
@@ -8,7 +9,7 @@ NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
 def has_git() -> bool:
     """Checks if git is installed."""
     try:
-        subprocess.check_output(['git', '--version'])
+        subprocess.run(['git', '--version'])
         return True
     except FileNotFoundError:
         return False
@@ -24,16 +25,20 @@ def get_git_url() -> str:
     # Get either https or ssh url
     url: str = subprocess.check_output(['git', 'remote', 'get-url', 'origin']).decode('utf-8').strip()
 
+    # Checks
+    assert url.startswith('https://github.com') or url.startswith('git@github.com')
+    assert url.endswith('.git')
+
     # Remove .git at end
     url = url[:-len('.git')]
 
     # Fix ssh url
-    if url.startswith('git@'):
+    if url.startswith('git@github.com:'):
         url = url[len('git@github.com:'):]
         url = f'https://github.com/{url}'
 
     # Add tree and hash
-    url = f'{url}/tree/{get_git_hash()}'
+    url = os.path.join(url, 'tree', get_git_hash())
 
     return url
 
