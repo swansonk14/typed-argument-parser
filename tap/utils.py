@@ -57,4 +57,4 @@ def type_to_str(type_annotation: Union[type, Any]) -> str:
         return type_annotation.__name__
 
     # Type annotation type
-    return str(type_annotation)[len('typing.'):]
+    return str(type_annotation).replace('typing.', '')
