@@ -96,12 +96,8 @@ class Tap(ArgumentParser):
             # Set variable (and deepcopy)
             setattr(self, variable, deepcopy(value))
 
-    def validate_args(self) -> None:
-        """Perform argument validation to ensure valid argument combinations."""
-        pass
-
     def process_args(self) -> None:
-        """Perform additional argument processing."""
+        """Perform additional argument processing and validation."""
         pass
 
     @staticmethod
@@ -130,7 +126,6 @@ class Tap(ArgumentParser):
                    args: Optional[Sequence[str]] = None,
                    namespace: Optional['Tap'] = None) -> 'Tap':
         self._parse_args(args, namespace)
-        self.validate_args()
         self.process_args()
         self._parsed = True
 

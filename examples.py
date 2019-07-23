@@ -26,7 +26,7 @@ class MyArgumentParser(Tap):
         self.add_argument('--embedding_size')
         self.add_argument('--hidden_size')
 
-    def validate_args(self) -> None:
+    def process_args(self) -> None:
         if self.embedding_size > self.hidden_size:
             raise ValueError('Embedding size must be greater than hidden size')
 

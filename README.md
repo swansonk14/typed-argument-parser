@@ -72,8 +72,7 @@ As a wrapper of `argparse`, we support all of its functionality, modernize it, a
 
 Since parsed arguments are now a class, you can:
 - Overwrite convenient built-in methods including:
-  - Validating arguments (`validate_args`) to ensure consistency among arguments
-  - Modifying arguments (`modify_args`) to update the parsed arguments if necessary
+  - Processing arguments (`process_args`) to ensure consistency among arguments
 - Add you own methods
 - Inherit from your own template classes
 
