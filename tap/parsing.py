@@ -122,7 +122,7 @@ class Tap(ArgumentParser):
 
         return reproducibility
 
-    def get_arg_log(self) -> Dict[str, Any]:
+    def _log_all(self) -> Dict[str, Any]:
         """Gets all args plus reproducibility info."""
         arg_log = self.as_dict()
         arg_log['reproducibility'] = self.get_reproducibility_info()
@@ -166,7 +166,7 @@ class Tap(ArgumentParser):
         :param path: Path to a JSON file.
         """
         with open(path, 'w') as f:
-            json.dump(self.get_arg_log(), f, indent=4, sort_keys=True)
+            json.dump(self._log_all(), f, indent=4, sort_keys=True)
 
     def __str__(self) -> str:
         """Pretty prints the arg log."""
