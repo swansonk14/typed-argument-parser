@@ -16,7 +16,6 @@ class GitTests(TestCase):
         self.url = 'https://github.com/test_account/test_repo/tree'
         subprocess.run(['git', 'remote', 'add', 'origin', self.url.replace('/tree', '.git')])
         subprocess.run(['touch', 'README.md'])
-        subprocess.run(['echo', '"#Test"', '>', 'README.md'])
         subprocess.run(['git', 'add', 'README.md'])
         subprocess.run(['git', 'commit', '-m', 'Initial commit'])
 
@@ -33,11 +32,13 @@ class GitTests(TestCase):
         self.assertEqual(get_git_url()[:len(self.url)], self.url)
 
         subprocess.run(['git', 'remote', 'set-url', 'origin', 'git@github.com:test_account/test_repo.git'])
-        print(get_git_url())
         self.assertEqual(get_git_url()[:len(self.url)], self.url)
 
     def test_has_uncommitted_changes(self) -> None:
-        pass
+        self.assertFalse(has_uncommitted_changes())
+
+        subprocess.run(['touch', 'main.py'])
+        self.assertTrue(has_uncommitted_changes())
 
 
 class UtilTests(TestCase):
