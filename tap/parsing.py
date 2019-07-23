@@ -36,6 +36,9 @@ class Tap(ArgumentParser):
         # Get variable name
         variable = self._get_optional_kwargs(*args, **kwargs)['dest']
 
+        # Always add --variable option
+        args = (*args, f'--{variable}')
+
         # Get default if not specified
         if hasattr(self, variable):
             kwargs['default'] = kwargs.get('default', getattr(self, variable))
