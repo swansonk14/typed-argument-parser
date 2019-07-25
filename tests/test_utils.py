@@ -13,8 +13,8 @@ class GitTests(TestCase):
         self.temp_dir = TemporaryDirectory()
         os.chdir(self.temp_dir.name)
         subprocess.run(['git', 'init'])
-        self.url = 'https://github.com/test_account/test_repo/tree'
-        subprocess.run(['git', 'remote', 'add', 'origin', self.url.replace('/tree', '.git')])
+        self.url = 'https://github.com/test_account/test_repo'
+        subprocess.run(['git', 'remote', 'add', 'origin', f'{self.url}.git'])
         subprocess.run(['touch', 'README.md'])
         subprocess.run(['git', 'add', 'README.md'])
         subprocess.run(['git', 'commit', '-m', 'Initial commit'])
@@ -25,18 +25,30 @@ class GitTests(TestCase):
     def test_get_git_root(self) -> None:
         self.assertEqual(get_git_root(), f'/private{self.temp_dir.name}')
 
+    def test_get_git_root_subdir(self) -> None:
         os.makedirs(os.path.join(self.temp_dir.name, 'subdir'))
         self.assertEqual(get_git_root(), f'/private{self.temp_dir.name}')
 
-    def test_get_git_url(self) -> None:
-        self.assertEqual(get_git_url()[:len(self.url)], self.url)
+    def test_get_git_url_https(self) -> None:
+        self.assertEqual(get_git_url(commit_hash=False), self.url)
 
+    def test_get_git_url_https_hash(self) -> None:
+        url = f'{self.url}/tree/'
+        self.assertEqual(get_git_url(commit_hash=True)[:len(url)], url)
+
+    def test_get_git_url_ssh(self) -> None:
         subprocess.run(['git', 'remote', 'set-url', 'origin', 'git@github.com:test_account/test_repo.git'])
-        self.assertEqual(get_git_url()[:len(self.url)], self.url)
+        self.assertEqual(get_git_url(commit_hash=False), self.url)
 
-    def test_has_uncommitted_changes(self) -> None:
+    def test_get_git_url_ssh_hash(self) -> None:
+        subprocess.run(['git', 'remote', 'set-url', 'origin', 'git@github.com:test_account/test_repo.git'])
+        url = f'{self.url}/tree/'
+        self.assertEqual(get_git_url(commit_hash=True)[:len(url)], url)
+
+    def test_has_uncommitted_changes_false(self) -> None:
         self.assertFalse(has_uncommitted_changes())
 
+    def test_has_uncommited_changes_true(self) -> None:
         subprocess.run(['touch', 'main.py'])
         self.assertTrue(has_uncommitted_changes())
 
