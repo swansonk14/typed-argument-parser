@@ -9,7 +9,7 @@ class DocstringParsingTests(TestCase):
     def test_simple_docstring(self) -> None:
         simplest_docstring = """How simple is this docstring?
 
-        Attributes:
+        Arguments:
         :pretty_simple: this is quite simple
         :very_simple: quite as simple as it gets
         """
@@ -21,7 +21,7 @@ class DocstringParsingTests(TestCase):
             })
 
     def test_with_extract_tab(self) -> None:
-        extra_tabs = """Extra tab.\n\t \nAttributes:\n:arg: desc"""
+        extra_tabs = """Extra tab.\n\t \nArguments:\n:arg: desc"""
         gen_desc, attr_desc = extract_descriptions(extra_tabs)
         self.assertEqual(gen_desc, "Extra tab.")
         self.assertEqual(attr_desc, {"arg": "desc"})
@@ -30,7 +30,7 @@ class DocstringParsingTests(TestCase):
         long_descriptions = """Longer description with an unnecessary tabs.
 
         More of a description
-        Attributes:
+        Arguments:
         :arg: far
         too
         many enters
@@ -54,7 +54,7 @@ class DocstringParsingTests(TestCase):
     def test_colons_in_description(self) -> None:
         colons_in_description = """So happy :)
 
-        Attributes:
+        Arguments:
         :arg: still so happy :)
         """
         gen_desc, attr_desc = extract_descriptions(colons_in_description)
@@ -62,16 +62,16 @@ class DocstringParsingTests(TestCase):
         self.assertEqual(attr_desc, {"arg": "still so happy :)"})
 
     def test_sneaky_attributes(self) -> None:
-        colons_in_description = """Attributes: So happy :) Attributes:
+        colons_in_description = """Arguments: So happy :) Arguments:
 
-        Attributes:
-        :arg: still so happy :) Attributes:
+        Arguments:
+        :arg: still so happy :) Arguments:
         :another_arg: the arg
         """
         gen_desc, attr_desc = extract_descriptions(colons_in_description)
-        self.assertEqual(gen_desc, "Attributes: So happy :) Attributes:")
+        self.assertEqual(gen_desc, "Arguments: So happy :) Arguments:")
         self.assertEqual(attr_desc, {
-            'arg': 'still so happy :) Attributes:',
+            'arg': 'still so happy :) Arguments:',
             'another_arg': 'the arg'
             })
 

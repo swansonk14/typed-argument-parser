@@ -16,7 +16,7 @@ def extract_descriptions(doc: Optional[str]) -> (Optional[str], Optional[Dict[st
     # Extract the description from the header
     try:
         # Split on the attributes keyword
-        general_description, attributes_block = re.split(r'[\t| ]*\n+[\t| ]*Attributes:', doc, maxsplit=1)
+        general_description, attributes_block = re.split(r'[\t| ]*\n+[\t| ]*Arguments:', doc, maxsplit=1)
     except ValueError:
         raise ValueError("""The documentation should be of the form:
 

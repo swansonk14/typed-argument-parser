@@ -132,7 +132,7 @@ class AdvancedArgumentParserIntegrationTestCase(TestCase):
 
         variable_descriptions = {k: v.strip() for k, v in self.args.variable_description.items()}
         self.assertEqual(variable_descriptions, {
-            'package_name': 'The name of a package.\n Note - we\'d prefer cooler packages.',
+            'package_name': 'The name of a package.\nNote - we\'d prefer cooler packages.',
             'awards': 'The awards won by this package.',
             'num_stars': 'The number of stars that this package received.',
             'is_cool': 'Indicate whether or not the package is cool.',
