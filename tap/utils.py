@@ -92,5 +92,5 @@ def type_to_str(type_annotation: Union[type, Any]) -> str:
     if type(type_annotation) == type:
         return type_annotation.__name__
 
-    # Type annotation type
+    # Typing type
     return str(type_annotation).replace('typing.', '')
