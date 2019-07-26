@@ -65,7 +65,7 @@ class Tap(ArgumentParser):
 
             # Set required and help
             kwargs['required'] = kwargs.get('required', not hasattr(self, variable))
-            kwargs['help'] = kwargs.get('help', f'({type_to_str(var_type)}) {self.variable_description[variable]}')
+            kwargs['help'] = kwargs.get('help', f'({type_to_str(var_type)}) {self.variable_description.get(variable)}')
 
             # If type is not explicitly provided, set it if it's one of our supported default types
             if 'type' not in kwargs:
@@ -104,8 +104,12 @@ class Tap(ArgumentParser):
         current_arguments = {action.dest for action in self._actions}
         remaining_arguments = self.__annotations__.keys() - current_arguments
 
-        for variable in remaining_arguments:
+        for variable in sorted(remaining_arguments):
             self.add_argument(f'--{variable}')
+
+            # Variables without documentation provided have a help value of None
+            if variable not in self.variable_description:
+                self.variable_description[variable] = ''
 
     def add_arguments(self) -> None:
         """Explicitly add arguments to the parser if not using default settings."""

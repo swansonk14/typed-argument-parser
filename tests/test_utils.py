@@ -12,22 +12,22 @@ class GitTests(TestCase):
     def setUp(self) -> None:
         self.temp_dir = TemporaryDirectory()
         os.chdir(self.temp_dir.name)
-        subprocess.run(['git', 'init'])
+        subprocess.check_output(['git', 'init'])
         self.url = 'https://github.com/test_account/test_repo'
-        subprocess.run(['git', 'remote', 'add', 'origin', f'{self.url}.git'])
-        subprocess.run(['touch', 'README.md'])
-        subprocess.run(['git', 'add', 'README.md'])
-        subprocess.run(['git', 'commit', '-m', 'Initial commit'])
+        subprocess.check_output(['git', 'remote', 'add', 'origin', f'{self.url}.git'])
+        subprocess.check_output(['touch', 'README.md'])
+        subprocess.check_output(['git', 'add', 'README.md'])
+        subprocess.check_output(['git', 'commit', '-m', 'Initial commit'])
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
 
     def test_get_git_root(self) -> None:
-        self.assertEqual(get_git_root(), f'/private{self.temp_dir.name}')
+        self.assertTrue(get_git_root() in f'/private{self.temp_dir.name}')
 
     def test_get_git_root_subdir(self) -> None:
         os.makedirs(os.path.join(self.temp_dir.name, 'subdir'))
-        self.assertEqual(get_git_root(), f'/private{self.temp_dir.name}')
+        self.assertTrue(get_git_root() in f'/private{self.temp_dir.name}')
 
     def test_get_git_url_https(self) -> None:
         self.assertEqual(get_git_url(commit_hash=False), self.url)

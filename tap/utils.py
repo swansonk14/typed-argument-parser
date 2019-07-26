@@ -21,7 +21,7 @@ def has_git() -> bool:
     :return: True if git is installed, False otherwise.
     """
     try:
-        subprocess.run(['git', '--version'])
+        subprocess.check_output(['git', '--version'])
         return True
     except FileNotFoundError:
         return False
