@@ -1,13 +1,10 @@
-from typing import List
-import io
-
 import unittest
 from unittest import TestCase
 
 from tap import Tap
 
 
-class NotEnoughDocumentation(TestCase):
+class NotEnoughDocumentationTests(TestCase):
 
     def setUp(self):
 
@@ -35,7 +32,7 @@ class NotEnoughDocumentation(TestCase):
             'arg2': ''})
 
 
-class BadDocumentation(TestCase):
+class BadDocumentationTests(TestCase):
 
     def test_ignore_listing_too_many_arguments(self):
 
@@ -68,6 +65,7 @@ class BadDocumentation(TestCase):
         args = MispelledDocumentation().parse_args()
         self.assertEqual(args.variable_description["arg"], '')
         self.assertRaises(TypeError, args.variable_description["blarg"])
+
 
 if __name__ == '__main__':
     unittest.main()

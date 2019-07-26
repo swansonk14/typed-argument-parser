@@ -8,7 +8,7 @@ from unittest import TestCase
 from tap import Tap
 
 
-class SimpleArgumentParserIntegrationTestCase(TestCase):
+class SimpleArgumentParserIntegrationTests(TestCase):
 
     def setUp(self):
 
@@ -57,7 +57,7 @@ class SimpleArgumentParserIntegrationTestCase(TestCase):
             })
 
 
-class AdvancedArgumentParserIntegrationTestCase(TestCase):
+class AdvancedArgumentParserIntegrationTests(TestCase):
 
     def setUp(self):
 
@@ -108,7 +108,7 @@ class AdvancedArgumentParserIntegrationTestCase(TestCase):
 
     def test_assignments_as_dict(self):
         full_results = self.args.as_dict()
-        keys = set(['package_name', 'awards', 'num_stars', 'is_cool', 'printer'])
+        keys = {'package_name', 'awards', 'num_stars', 'is_cool', 'printer'}
         self.assertEqual(set(full_results.keys()), keys)
 
         values = [['super', 'incredible', 'outstanding'], 3.14, True, 'Tap']
@@ -117,7 +117,7 @@ class AdvancedArgumentParserIntegrationTestCase(TestCase):
 
     def test_individual_properties(self):
         self.assertEqual(self.args.package_name, 'Tap')
-        self.assertEqual(set(self.args.awards), set(['super', 'incredible', 'outstanding']))
+        self.assertEqual(set(self.args.awards), {'super', 'incredible', 'outstanding'})
         self.assertEqual(self.args.num_stars, 3.14)
         self.assertEqual(self.args.is_cool, True)
 
