@@ -74,7 +74,7 @@ class Person:
         self.name = name
 
 
-class IntegrationTap(Tap):
+class IntegrationDefaultTap(Tap):
     """Documentation is boring"""
     arg_untyped = 42
     # arg_str_required: str
@@ -118,7 +118,7 @@ class IntegrationTap(Tap):
 class DefaultClassVariableTests(TestCase):
 
     def test_get_default_args(self) -> None:
-        args = IntegrationTap().parse_args()
+        args = IntegrationDefaultTap().parse_args()
 
         self.assertEqual(args.arg_untyped, 42)
         self.assertEqual(args.arg_str, 'hello there')
@@ -141,7 +141,7 @@ class DefaultClassVariableTests(TestCase):
         arg_list_float = ['2.2', '-3.3', '2e20']
         arg_list_str_empty = []
 
-        args = IntegrationTap().parse_args([
+        args = IntegrationDefaultTap().parse_args([
             '--arg_untyped', arg_untyped,
             '--arg_str', arg_str,
             '--arg_int', arg_int,
@@ -170,6 +170,20 @@ class DefaultClassVariableTests(TestCase):
         self.assertEqual(args.arg_list_int, arg_list_int)
         self.assertEqual(args.arg_list_float, arg_list_float)
         self.assertEqual(args.arg_list_str_empty, arg_list_str_empty)
+
+
+class AddArgumentTests(TestCase):
+    def test_positional(self):
+        class IntegrationComplexTap(IntegrationDefaultTap):
+            def add_arguments(self) -> None:
+                self.add_argument('arg_str')
+
+        arg_str = 'positional'
+        self.args = IntegrationComplexTap().parse_args([arg_str])
+
+        self.assertEqual(self.args.arg_str, arg_str)
+
+
 
 
 

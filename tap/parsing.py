@@ -7,7 +7,7 @@ import time
 from typing import Any, Dict, List, Optional, Sequence, Set
 
 from tap.parse_docstrings import extract_descriptions
-from tap.utils import get_git_root, get_git_url, has_git, has_uncommitted_changes, type_to_str
+from tap.utils import get_dest, get_git_root, get_git_url, has_git, has_uncommitted_changes, is_option_arg, type_to_str
 
 
 SUPPORTED_DEFAULT_TYPES = {str, int, float, bool, List[str], List[int], List[float]}
@@ -52,7 +52,7 @@ class Tap(ArgumentParser):
         :param kwargs: Keyword arguments.
         """
         # Get variable name
-        variable = self._get_optional_kwargs(*name_or_flags, **kwargs)['dest']
+        variable = get_dest(*name_or_flags, **kwargs)
 
         # Get default if not specified
         if hasattr(self, variable):
@@ -63,8 +63,11 @@ class Tap(ArgumentParser):
             # Get type annotation
             var_type = self.__annotations__[variable]
 
-            # Set required and help
-            kwargs['required'] = kwargs.get('required', not hasattr(self, variable))
+            # Set required if option arg
+            if is_option_arg(*name_or_flags):
+                kwargs['required'] = kwargs.get('required', not hasattr(self, variable))
+
+            # Set help
             kwargs['help'] = kwargs.get('help', f'({type_to_str(var_type)}) {self.variable_description.get(variable)}')
 
             # If type is not explicitly provided, set it if it's one of our supported default types

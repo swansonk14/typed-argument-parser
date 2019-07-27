@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 import os
 import subprocess
 from typing import Any, List, Union
@@ -94,3 +95,25 @@ def type_to_str(type_annotation: Union[type, Any]) -> str:
 
     # Typing type
     return str(type_annotation).replace('typing.', '')
+
+
+def get_dest(*name_or_flags, **kwargs) -> str:
+    """Gets the name of the destination of the argument.
+
+    :param name_or_flags: Either a name or a list of option strings, e.g. foo or -f, --foo.
+    :param kwargs: Keyword arguments.
+    :return: The name of the argument (extracted from name_or_flags)
+    """
+    if '-h' in name_or_flags or '--help' in name_or_flags:
+        return 'help'
+
+    return ArgumentParser().add_argument(*name_or_flags, **kwargs).dest
+
+
+def is_option_arg(*name_or_flags) -> bool:
+    """Returns whether the argument is an option arg (as opposed to a positional arg).
+
+    :param name_or_flags: Either a name or a list of option strings, e.g. foo or -f, --foo.
+    :return: True if the argument is an option arg, False otherwise.
+    """
+    return any(name_or_flag.startswith('-') for name_or_flag in name_or_flags)
