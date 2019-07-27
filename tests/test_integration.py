@@ -165,14 +165,14 @@ class SubclassTests(TestCase):
 
         arg_subclass_str_required = 'subclassing is fun'
         arg_subclass_str_set_me = 'all set!'
-        arg_int = '77'  # TODO
+        # arg_int = '77'  # TODO: FIX SUBCLASSING - need to get class variables from all super classes
         self.args = IntegrationSubclassTap().parse_args([
             '--arg_subclass_str_required', arg_subclass_str_required,
             '--arg_subclass_str_set_me', arg_subclass_str_set_me,
             # '--arg_int', arg_int
         ])
 
-        arg_int = int(arg_int)
+        # arg_int = int(arg_int)
 
         self.assertEqual(self.args.arg_str, 'hello there')
         # self.assertEqual(self.args.arg_int, arg_int)
