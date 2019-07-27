@@ -446,8 +446,6 @@ class AddArgumentTests(TestCase):
     
 
 """
-- user providing fancier types (ex. Person) in add_arguments - need to fix subclassing
-
 - crash if default type not supported
 - user specifying process_args
 - test save args
