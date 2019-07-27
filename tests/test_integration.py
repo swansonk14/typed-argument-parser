@@ -173,7 +173,7 @@ class DefaultClassVariableTests(TestCase):
 
 
 class AddArgumentTests(TestCase):
-    def test_positional(self):
+    def test_positional(self) -> None:
         class IntegrationComplexTap(IntegrationDefaultTap):
             def add_arguments(self) -> None:
                 self.add_argument('arg_str')
@@ -183,8 +183,39 @@ class AddArgumentTests(TestCase):
 
         self.assertEqual(self.args.arg_str, arg_str)
 
+    def test_one_dash(self) -> None:
+        class IntegrationComplexTap(IntegrationDefaultTap):
+            def add_arguments(self) -> None:
+                self.add_argument('-arg_str')
 
+        arg_str = 'positional'
+        self.args = IntegrationComplexTap().parse_args(['-arg_str', arg_str])
 
+        self.assertEqual(self.args.arg_str, arg_str)
+
+    def test_two_dashes(self) -> None:
+        class IntegrationComplexTap(IntegrationDefaultTap):
+            def add_arguments(self) -> None:
+                self.add_argument('--arg_str')
+
+        arg_str = 'positional'
+        self.args = IntegrationComplexTap().parse_args(['--arg_str', arg_str])
+
+        self.assertEqual(self.args.arg_str, arg_str)
+
+    def test_one_and_two_dashes(self) -> None:
+        class IntegrationComplexTap(IntegrationDefaultTap):
+            def add_arguments(self) -> None:
+                self.add_argument('-a', '--arg_str')
+
+        arg_str = 'positional'
+        self.args = IntegrationComplexTap().parse_args(['-a', arg_str])
+
+        self.assertEqual(self.args.arg_str, arg_str)
+
+        self.args = IntegrationComplexTap().parse_args(['--arg_str', arg_str])
+
+        self.assertEqual(self.args.arg_str, arg_str)
 
 
 """
