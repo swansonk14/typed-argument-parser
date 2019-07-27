@@ -364,23 +364,53 @@ class AddArgumentTests(TestCase):
         self.assertEqual(type(args.arg_int), str)
         self.assertEqual(args.arg_int, arg_int)
 
+    # TODO
     def test_repeat_help(self) -> None:
         pass
 
+    # TODO
     def test_conflicting_help(self) -> None:
         pass
 
     def test_repeat_nargs(self) -> None:
-        pass
+        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+            def add_arguments(self) -> None:
+                self.add_argument('--arg_list_str', nargs='*')
 
-    def test_conflicting_nargs(self) -> None:
-        pass
+        arg_list_str = ['hi', 'there', 'person', '123']
+        args = IntegrationAddArgumentTap().parse_args(['--arg_list_str', *arg_list_str])
+        self.assertEqual(args.arg_list_str, arg_list_str)
+
+    # TODO: figure out how to check for system exit
+    # def test_conflicting_nargs(self) -> None:
+    #     class IntegrationAddArgumentTap(IntegrationDefaultTap):
+    #         def add_arguments(self) -> None:
+    #             self.add_argument('--arg_list_str', nargs=3)
+    #
+    #     arg_list_str = ['hi', 'there', 'person', '123']
+    #     self.assertRaises(SystemExit, IntegrationAddArgumentTap().parse_args(['--arg_list_str', *arg_list_str]))
 
     def test_repeat_action(self) -> None:
-        pass
+        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+            def add_arguments(self) -> None:
+                self.add_argument('--arg_bool_false', action='store_true', default=False)
+
+        args = IntegrationAddArgumentTap().parse_args()
+        self.assertEqual(args.arg_bool_false, False)
+
+        args = IntegrationAddArgumentTap().parse_args(['--arg_bool_false'])
+        self.assertEqual(args.arg_bool_false, True)
 
     def test_conflicting_action(self) -> None:
-        pass
+        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+            def add_arguments(self) -> None:
+                self.add_argument('--arg_bool_false', action='store_false', default=True)
+
+        args = IntegrationAddArgumentTap().parse_args()
+        self.assertEqual(args.arg_bool_false, True)
+
+        args = IntegrationAddArgumentTap().parse_args(['--arg_bool_false'])
+        self.assertEqual(args.arg_bool_false, False)
 
     
 
