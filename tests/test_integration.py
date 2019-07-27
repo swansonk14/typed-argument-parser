@@ -112,6 +112,12 @@ class Person:
     def __init__(self, name: str):
         self.name = name
 
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Person):
+            return False
+
+        return self.name == other.name
+
 
 class IntegrationDefaultTap(Tap):
     """Documentation is boring"""
@@ -315,6 +321,31 @@ class AddArgumentTests(TestCase):
 
         self.assertEqual(self.args.non_class_arg, arg_str)
 
+    def test_complex_type(self) -> None:
+        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+            arg_person: Person = Person('tap')
+            # arg_person_required: Person  # TODO
+            arg_person_untyped = Person('tap untyped')
+
+            # TODO: assert a crash if any complex types are not explicitly added in add_argument
+            def add_arguments(self) -> None:
+                self.add_argument('--arg_person', type=Person)
+                # self.add_argument('--arg_person_required', type=Person)  # TODO
+                self.add_argument('--arg_person_untyped', type=Person)
+
+        args = IntegrationAddArgumentTap().parse_args()
+        self.assertEqual(args.arg_person, Person('tap'))
+        self.assertEqual(args.arg_person_untyped, Person('tap untyped'))
+
+        arg_person = Person('hi there')
+        arg_person_untyped = Person('heyyyy')
+        args = IntegrationAddArgumentTap().parse_args([
+            '--arg_person', arg_person.name,
+            '--arg_person_untyped', arg_person_untyped.name
+        ])
+        self.assertEqual(args.arg_person, arg_person)
+        self.assertEqual(args.arg_person_untyped, arg_person_untyped)
+
     def test_repeat_default(self) -> None:
         class IntegrationAddArgumentTap(IntegrationDefaultTap):
             def add_arguments(self) -> None:
@@ -415,9 +446,7 @@ class AddArgumentTests(TestCase):
     
 
 """
-- user providing fancier types in add_arguments
-- user contradicting default/type/help/required/nargs/action and user repeating them
-
+- user providing fancier types (ex. Person) in add_arguments - need to fix subclassing
 
 - crash if default type not supported
 - user specifying process_args
