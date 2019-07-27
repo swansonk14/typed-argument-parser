@@ -153,3 +153,5 @@ The package Tap has 3 awards!!!
  'git_url': 'https://github.com/swansonk14/typed-argument-parsing/tree/[[COMMIT_HASH]]',
   'git_has_uncommitted_changes': False}
 ```
+
+TODO: add a thing about subclassing other Taps

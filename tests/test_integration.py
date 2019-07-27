@@ -69,6 +69,45 @@ class BadDocumentationTests(TestCase):
         self.assertRaises(TypeError, args.variable_description["blarg"])
 
 
+class EdgeCaseTests(TestCase):
+    def test_empty(self) -> None:
+        class EmptyTap(Tap):
+            pass
+
+        EmptyTap().parse_args()
+
+    def test_empty_add_argument(self) -> None:
+        class EmptyAddArgument(Tap):
+            def add_arguments(self) -> None:
+                self.add_argument('--hi')
+
+        hi = 'yo'
+        args = EmptyAddArgument().parse_args(['--hi', hi])
+        self.assertEqual(args.hi, hi)
+
+    def test_no_typed_args(self) -> None:
+        class NoTypedTap(Tap):
+            hi = 3
+
+        args = NoTypedTap().parse_args()
+        self.assertEqual(args.hi, 3)
+
+        hi = 'yo'
+        args = NoTypedTap().parse_args(['--hi', hi])
+        self.assertEqual(args.hi, hi)
+
+    def test_only_typed_args(self) -> None:
+        class OnlyTypedTap(Tap):
+            hi: str = 'sup'
+
+        args = OnlyTypedTap().parse_args()
+        self.assertEqual(args.hi, 'sup')
+
+        hi = 'yo'
+        args = OnlyTypedTap().parse_args(['--hi', hi])
+        self.assertEqual(args.hi, hi)
+
+
 class Person:
     def __init__(self, name: str):
         self.name = name
@@ -113,6 +152,33 @@ class IntegrationDefaultTap(Tap):
 #             '--arg_str_required', 'hello',
 #             '--arg_other_type_required', 'tappy'
 #         ]))
+
+
+class SubclassTests(TestCase):
+    def test_subclass(self):
+        class IntegrationSubclassTap(IntegrationDefaultTap):
+            arg_subclass_untyped = 33
+            arg_subclass_str: str = 'hello'
+            arg_subclass_str_required: str
+            arg_subclass_str_set_me: str = 'goodbye'
+            arg_float: float = -2.7
+
+        arg_subclass_str_required = 'subclassing is fun'
+        arg_subclass_str_set_me = 'all set!'
+        arg_int = '77'  # TODO
+        self.args = IntegrationSubclassTap().parse_args([
+            '--arg_subclass_str_required', arg_subclass_str_required,
+            '--arg_subclass_str_set_me', arg_subclass_str_set_me,
+            # '--arg_int', arg_int
+        ])
+
+        arg_int = int(arg_int)
+
+        self.assertEqual(self.args.arg_str, 'hello there')
+        # self.assertEqual(self.args.arg_int, arg_int)
+        self.assertEqual(self.args.arg_float, -2.7)
+        self.assertEqual(self.args.arg_subclass_str_required, arg_subclass_str_required)
+        self.assertEqual(self.args.arg_subclass_str_set_me, arg_subclass_str_set_me)
 
 
 class DefaultClassVariableTests(TestCase):
@@ -249,14 +315,12 @@ class AddArgumentTests(TestCase):
         self.assertEqual(self.args.non_class_arg, arg_str)
 
 
-
 """
-- required/default arguments
-- crash if default type not supported
-- user providing add_arguments that are class variables
-- user providing add_arguments that are not class variables (should function but won't have class variable benefits)
 - user providing fancier types in add_arguments
-- user contradicting default/type etc and user repeating them
+- user contradicting default/type/help/required/nargs/action and user repeating them
+
+
+- crash if default type not supported
 - user specifying process_args
 - test save args
 - test get reproducibility info

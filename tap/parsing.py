@@ -29,6 +29,10 @@ class Tap(ArgumentParser):
         # Get descriptions of the arguments from the doc string
         self.description, self.variable_description = extract_descriptions(self.__doc__)
 
+        # Fix issue if no annotations
+        if not hasattr(self, '__annotations__'):
+            self.__annotations__ = dict()
+
         # Initialize the super class, i.e. ArgumentParser
         super(Tap, self).__init__(description=self.description, *args, **kwargs)
 
@@ -113,6 +117,9 @@ class Tap(ArgumentParser):
             # Variables without documentation provided have a help value of None
             if variable not in self.variable_description:
                 self.variable_description[variable] = ''
+
+        # Add remaining arguments in super class
+        # if isinstance()
 
     def add_arguments(self) -> None:
         """Explicitly add arguments to the parser if not using default settings."""
