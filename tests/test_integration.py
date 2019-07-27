@@ -183,12 +183,31 @@ class AddArgumentTests(TestCase):
 
         self.assertEqual(self.args.arg_str, arg_str)
 
+    def test_positional_ordering(self) -> None:
+        class IntegrationComplexTap(IntegrationDefaultTap):
+            def add_arguments(self) -> None:
+                self.add_argument('arg_str')
+                self.add_argument('arg_int')
+                self.add_argument('arg_float')
+
+        arg_str = 'positional'
+        arg_int = '5'
+        arg_float = '1.1'
+        self.args = IntegrationComplexTap().parse_args([arg_str, arg_int, arg_float])
+
+        arg_int = int(arg_int)
+        arg_float = float(arg_float)
+
+        self.assertEqual(self.args.arg_str, arg_str)
+        self.assertEqual(self.args.arg_int, arg_int)
+        self.assertEqual(self.args.arg_float, arg_float)
+
     def test_one_dash(self) -> None:
         class IntegrationComplexTap(IntegrationDefaultTap):
             def add_arguments(self) -> None:
                 self.add_argument('-arg_str')
 
-        arg_str = 'positional'
+        arg_str = 'one_dash'
         self.args = IntegrationComplexTap().parse_args(['-arg_str', arg_str])
 
         self.assertEqual(self.args.arg_str, arg_str)
@@ -198,7 +217,7 @@ class AddArgumentTests(TestCase):
             def add_arguments(self) -> None:
                 self.add_argument('--arg_str')
 
-        arg_str = 'positional'
+        arg_str = 'two_dashes'
         self.args = IntegrationComplexTap().parse_args(['--arg_str', arg_str])
 
         self.assertEqual(self.args.arg_str, arg_str)
@@ -208,7 +227,7 @@ class AddArgumentTests(TestCase):
             def add_arguments(self) -> None:
                 self.add_argument('-a', '--arg_str')
 
-        arg_str = 'positional'
+        arg_str = 'one_or_two_dashes'
         self.args = IntegrationComplexTap().parse_args(['-a', arg_str])
 
         self.assertEqual(self.args.arg_str, arg_str)
@@ -217,14 +236,22 @@ class AddArgumentTests(TestCase):
 
         self.assertEqual(self.args.arg_str, arg_str)
 
+    def test_not_class_variable(self) -> None:
+        class IntegrationComplexTap(IntegrationDefaultTap):
+            def add_arguments(self) -> None:
+                self.add_argument('--non_class_arg')
+
+        arg_str = 'non_class_arg'
+        self.tap = IntegrationComplexTap()
+        self.assertFalse('non_class_arg' in self.tap._get_argument_names())  # ensure it's actually not a class variable
+        self.args = self.tap.parse_args(['--non_class_arg', arg_str])
+
+        self.assertEqual(self.args.non_class_arg, arg_str)
+
+
 
 """
-- option strings with two dashes
-- option strings with one dash
-- option strings with one dash and two dashes
-- positional arguments
 - required/default arguments
-- default types we support: int, str, float, bool, List[str], List[int], List[bool]
 - crash if default type not supported
 - user providing add_arguments that are class variables
 - user providing add_arguments that are not class variables (should function but won't have class variable benefits)
