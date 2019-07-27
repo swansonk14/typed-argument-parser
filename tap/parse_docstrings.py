@@ -1,8 +1,8 @@
-from typing import Optional, Dict
+from typing import Dict, Optional, Tuple
 import re
 
 
-def extract_descriptions(doc: Optional[str]) -> (Optional[str], Optional[Dict[str, str]]):
+def extract_descriptions(doc: Optional[str]) -> Tuple[str, Dict[str, str]]:
     """Extracts the class and variable descriptions from a class-level doc string.
 
     Attributes:
@@ -11,7 +11,7 @@ def extract_descriptions(doc: Optional[str]) -> (Optional[str], Optional[Dict[st
         and a dictionary mapping each attribute to its description
     """
     if doc is None:
-        return None, None
+        return '', dict()
 
     # Extract the description from the header
     try:
@@ -31,12 +31,12 @@ def extract_descriptions(doc: Optional[str]) -> (Optional[str], Optional[Dict[st
     attributes = [
         s.replace('  ', '').strip()
         for s in re.findall(':(\w*):', attributes_block)
-        ]
+    ]
 
     descriptions = [
         s.replace('  ', '').strip()
         for s in re.split('[\n ]*:\w*: ', attributes_block)[1:]
-        ]
+    ]
 
     attribute_descriptions = dict(zip(attributes, descriptions))
 

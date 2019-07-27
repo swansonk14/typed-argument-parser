@@ -4,7 +4,7 @@ import json
 from pprint import pformat
 import sys
 import time
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Set
 
 from tap.parse_docstrings import extract_descriptions
 from tap.utils import get_git_root, get_git_url, has_git, has_uncommitted_changes, type_to_str
@@ -101,8 +101,8 @@ class Tap(ArgumentParser):
         Uses the name, type annotation, and default provided in the definition
         of the argument. If no default is provided, the argument is required.
         """
-        current_arguments = {action.dest for action in self._actions}
-        remaining_arguments = self.__annotations__.keys() - current_arguments
+        current_arguments_names = {action.dest for action in self._actions}
+        remaining_arguments = self._get_argument_names() - current_arguments_names
 
         for variable in sorted(remaining_arguments):
             self.add_argument(f'--{variable}')
@@ -126,13 +126,8 @@ class Tap(ArgumentParser):
         # Parse args using super class ArgumentParser's parse_args function
         default_namespace = super(Tap, self).parse_args(args, namespace)
 
+        # Set variables (and deepcopy to avoid modifying the class variable)
         for variable, value in vars(default_namespace).items():
-            # TODO: should we remove this to allow un-typed arguments?
-            # Check if variable has been defined
-            if variable not in self.__annotations__:
-                raise ValueError(f'Variable "{variable}" is not defined in class "{self.__class__.__name__}.')
-
-            # Set variable (and deepcopy to avoid modifying the class variable)
             setattr(self, variable, deepcopy(value))
 
     def process_args(self) -> None:
@@ -192,6 +187,23 @@ class Tap(ArgumentParser):
 
         return self
 
+    def _get_argument_names(self) -> Set[str]:
+        """Returns a list of variable names corresponding to the arguments.
+
+        :return: A list of variable names corresponding to the arguments.
+        """
+        # Gets required arguments assigned to the instance
+        required_variables = {var for var, val in self.__class__.__dict__.items()
+                              if not var.startswith('_') and not callable(val)}
+
+        # Arguments that are not required must have types and not be set
+        not_required_args = set(self.__annotations__.keys())
+
+        # Combine arguments
+        variables = required_variables | not_required_args
+
+        return variables
+
     def as_dict(self) -> Dict[str, Any]:
         """Returns the member variables corresponding to the class variable arguments.
 
@@ -200,20 +212,7 @@ class Tap(ArgumentParser):
         if not self._parsed:
             raise ValueError('You should call `parse_args` before retrieving arguments.')
 
-        # Gets required arguments assigned to the instance
-        required_args = {
-            var: getattr(self, var)
-            for var, val in self.__class__.__dict__.items()
-            if not var.startswith('_') and not callable(val)
-        }
-
-        # Arguments that are not required must have types and not be set
-        not_required_args = {
-            var: getattr(self, var)
-            for var, val in self.__annotations__.items()
-        }
-
-        return {**required_args, **not_required_args}
+        return {var: getattr(self, var) for var in self._get_argument_names()}
 
     def save(self, path: str) -> None:
         """Saves the arguments and reproducibility information in JSON format.
