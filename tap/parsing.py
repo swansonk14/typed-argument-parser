@@ -194,7 +194,7 @@ class Tap(ArgumentParser):
         return self
 
     @classmethod
-    def _get_from_self_and_super(cls, key: str, visited: Set[type] = None) -> Dict[str, Any]:
+    def _get_from_self_and_super(cls, key: str) -> Dict[str, Any]:
         """Returns a dictionary mapping variable names to values.
 
         Variables and values are extracted from classes using key starting
@@ -203,22 +203,24 @@ class Tap(ArgumentParser):
         If super class and sub class have the same key, the sub class value is used.
 
         :param key: The key to extract from all classes. Must return a dictionary.
-        :param visited: A set of super classes whose arguments have already
-        been accounted for during recursion.
         :return: A dictionary mapping variable names to values from the class dict.
         """
-        visited = visited or set()
-        visited.add(cls)
+        visited = set()
+        super_classes = [cls]
+        dictionary = dict()
 
-        dictionary = dict(getattr(cls, key, dict()))
+        while len(super_classes) > 0:
+            super_class = super_classes.pop(0)
 
-        for super_class in cls.__bases__:
-            if issubclass(super_class, Tap) and super_class not in visited:
-                super_dictionary = super_class._get_from_self_and_super(key=key, visited=visited)
+            if super_class not in visited and issubclass(super_class, Tap):
+                super_dictionary = dict(getattr(super_class, key, dict()))
 
                 # Update only unseen variables to avoid overriding subclass type annotations
                 for variable in super_dictionary.keys() - dictionary.keys():
                     dictionary[variable] = super_dictionary[variable]
+
+                super_classes += list(super_class.__bases__)
+                visited.add(super_class)
 
         return dictionary
 
