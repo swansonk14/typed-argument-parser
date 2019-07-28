@@ -27,7 +27,7 @@ class Tap(ArgumentParser):
         self._parsed = False
 
         # Get descriptions of the arguments from the doc string
-        self.description, self.variable_description = extract_descriptions(self.__doc__)
+        self.description, self.variable_description, self.error = extract_descriptions(self.__doc__)
 
         # Fix issue if no annotations
         if not hasattr(self, '__annotations__'):
