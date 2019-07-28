@@ -29,9 +29,8 @@ class Tap(ArgumentParser):
         # Get descriptions of the arguments from the doc string
         self.description, self.variable_description, self.parse_error = extract_descriptions(self.__doc__)
 
-        # Fix issue if no annotations
-        if not hasattr(self, '__annotations__'):
-            self.__annotations__ = dict()
+        # Get annotations from self and all super classes up through tap
+        self._annotations = self._get_annotations()
 
         # Initialize the super class, i.e. ArgumentParser
         super(Tap, self).__init__(description=self.description, *args, **kwargs)
@@ -63,9 +62,9 @@ class Tap(ArgumentParser):
             kwargs['default'] = kwargs.get('default', getattr(self, variable))
 
         # Set other kwargs where not provided
-        if variable in self.__annotations__:
+        if variable in self._annotations:
             # Get type annotation
-            var_type = self.__annotations__[variable]
+            var_type = self._annotations[variable]
 
             # Set required if option arg
             if is_option_arg(*name_or_flags):
@@ -108,8 +107,8 @@ class Tap(ArgumentParser):
         Uses the name, type annotation, and default provided in the definition
         of the argument. If no default is provided, the argument is required.
         """
-        current_arguments_names = {action.dest for action in self._actions}
-        remaining_arguments = self._get_argument_names() - current_arguments_names
+        added_arguments = {action.dest for action in self._actions}
+        remaining_arguments = self._get_argument_names() - added_arguments
 
         for variable in sorted(remaining_arguments):
             self.add_argument(f'--{variable}')
@@ -117,9 +116,6 @@ class Tap(ArgumentParser):
             # Variables without documentation provided have a help value of None
             if variable not in self.variable_description:
                 self.variable_description[variable] = ''
-
-        # Add remaining arguments in super class
-        # if isinstance()
 
     def add_arguments(self) -> None:
         """Explicitly add arguments to the parser if not using default settings."""
@@ -197,22 +193,49 @@ class Tap(ArgumentParser):
 
         return self
 
-    def _get_argument_names(self) -> Set[str]:
-        """Returns a list of variable names corresponding to the arguments.
+    @classmethod
+    def _get_from_self_and_super(cls, key: str, visited: Set[type] = None) -> Dict[str, Any]:
+        """Returns a dictionary mapping variable names to values.
 
-        :return: A list of variable names corresponding to the arguments.
+        Variables and values are extracted from classes using key starting
+        with this class and traversing up through the super classes up through Tap.
+
+        If super class and sub class have the same key, the sub class value is used.
+
+        :param key: The key to extract from all classes. Must return a dictionary.
+        :param visited: A set of super classes whose arguments have already
+        been accounted for during recursion.
+        :return: A dictionary mapping variable names to values from the class dict.
         """
-        # Gets required arguments assigned to the instance
-        required_variables = {var for var, val in self.__class__.__dict__.items()
-                              if not var.startswith('_') and not callable(val)}
+        visited = visited or set()
+        visited.add(cls)
 
-        # Arguments that are not required must have types and not be set
-        not_required_args = set(self.__annotations__.keys())
+        dictionary = dict(getattr(cls, key, dict()))
 
-        # Combine arguments
-        variables = required_variables | not_required_args
+        for super_class in cls.__bases__:
+            if issubclass(super_class, Tap) and super_class not in visited:
+                super_dictionary = super_class._get_from_self_and_super(key=key, visited=visited)
 
-        return variables
+                # Update only unseen variables to avoid overriding subclass type annotations
+                for variable in super_dictionary.keys() - dictionary.keys():
+                    dictionary[variable] = super_dictionary[variable]
+
+        return dictionary
+
+    def _get_class_dict(self) -> Dict[str, Any]:
+        """Returns a dictionary mapping class variable names to values from the class dict."""
+        class_dict = self._get_from_self_and_super(key='__dict__')
+        class_dict = {var: val for var, val in class_dict.items() if not var.startswith('_') and not callable(val)}
+
+        return class_dict
+
+    def _get_annotations(self) -> Dict[str, Any]:
+        """Returns a dictionary mapping variable names to their type annotations."""
+        return self._get_from_self_and_super(key='__annotations__')
+
+    def _get_argument_names(self) -> Set[str]:
+        """Returns a list of variable names corresponding to the arguments."""
+        return set(self._get_class_dict().keys()) | set(self._annotations.keys())
 
     def as_dict(self) -> Dict[str, Any]:
         """Returns the member variables corresponding to the class variable arguments.
