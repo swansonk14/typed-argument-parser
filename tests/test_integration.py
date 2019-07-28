@@ -1,72 +1,9 @@
 from typing import List
 import unittest
 from unittest import TestCase
+import sys 
 
 from tap import Tap
-
-
-class NotEnoughDocumentationTests(TestCase):
-
-    def setUp(self):
-
-        class NotEnoughDocumentation(Tap):
-            """This is a simple argument parser.
-
-            Arguments:
-            :arg1: First argument.
-            """
-            arg1: str = 'hi'
-            arg2: str = 'there'
-
-        self.args = NotEnoughDocumentation().parse_args()
-
-    def test_assignments_as_dict(self):
-        self.assertEqual(self.args.as_dict(), {'arg1': 'hi',
-                                               'arg2': 'there'})
-
-    def test_docstring_parsing(self):
-        self.assertEqual(self.args.description, 'This is a simple argument parser.')
-
-        variable_descriptions = {k: v.strip() if v else v for k, v in self.args.variable_description.items()}
-        self.assertEqual(variable_descriptions, {
-            'arg1': 'First argument.',
-            'arg2': ''})
-
-
-class BadDocumentationTests(TestCase):
-
-    def test_ignore_listing_too_many_arguments(self):
-
-        class TooMuchDocumentation(Tap):
-            """This is a simple argument parser.
-
-            Arguments:
-            :arg1: First arg.
-            :arg2: Second arg.
-            :arg3: Third arg.
-            """
-            arg1: str = "hi"
-            arg2: str = "there"
-
-        args = TooMuchDocumentation().parse_args()
-
-        # The third argument in the documentation is ignored
-        # so there should be two arguments plus the help
-        self.assertEqual(len(args._actions), 3)
-
-    def test_ignore_incorrect_arguments(self):
-
-        class MispelledDocumentation(Tap):
-            """This is a simple argument parser.
-
-            Arguments:
-            :blarg: First arg.
-            """
-            arg: str = "hi"
-
-        args = MispelledDocumentation().parse_args()
-        self.assertEqual(args.variable_description["arg"], '')
-        self.assertRaises(TypeError, args.variable_description["blarg"])
 
 
 class EdgeCaseTests(TestCase):
@@ -108,6 +45,44 @@ class EdgeCaseTests(TestCase):
         self.assertEqual(args.hi, hi)
 
 
+class RequiredClassVariableTests(TestCase):
+
+    def setUp(self) -> None:
+        class RequiredArgumentsParser(Tap):
+            arg_str_required: str
+            arg_list_str_required: List[str]
+
+        self.tap = RequiredArgumentsParser()
+
+        # Suppress prints from SystemExit
+        class DevNull:
+            def write(self, msg):
+                pass
+        self.dev_null = DevNull()
+
+    def test_arg_str_required(self):
+        with self.assertRaises(SystemExit):
+            sys.stderr = self.dev_null
+            self.tap.parse_args([
+                '--arg_str_required', 'tappy',
+            ])
+
+    def test_arg_list_str_required(self):
+        with self.assertRaises(SystemExit):
+            sys.stderr = self.dev_null
+            self.tap.parse_args([
+                '--arg_list_str_required', 'hi', 'there',
+            ])
+    
+    def test_both_assigned_okay(self):
+        args = self.tap.parse_args([
+            '--arg_str_required', 'tappy',
+            '--arg_list_str_required', 'hi', 'there',
+        ])
+        self.assertEqual(args.arg_str_required, 'tappy')
+        self.assertEqual(args.arg_list_str_required, ['hi', 'there'])
+
+
 class Person:
     def __init__(self, name: str):
         self.name = name
@@ -122,8 +97,6 @@ class Person:
 class IntegrationDefaultTap(Tap):
     """Documentation is boring"""
     arg_untyped = 42
-    # TODO: do required stuff somewhere somehow
-    # arg_str_required: str
     arg_str: str = 'hello there'
     arg_int: int = -100
     arg_float: float = 77.3
@@ -136,29 +109,9 @@ class IntegrationDefaultTap(Tap):
     arg_list_int: List[int] = [10, -11]
     arg_list_float: List[float] = [3.14, 6.28]
     arg_list_str_empty: List[str] = []
-    # arg_list_str_required: List[str]
     # TODO: move these elsewhere since we don't support them as defaults
     # arg_other_type_required: Person
     # arg_other_type_default: Person = Person('tap')
-
-
-# TODO: how to check for SystemExit without the system exiting???
-# class RequiredClassVariableTests(TestCase):
-#     def setUp(self) -> None:
-#         self.tap = IntegrationTap()
-#
-#     def test_arg_str_required(self):
-#         self.assertRaises(SystemExit, self.tap.parse_args([
-#             '--arg_list_str_required', 'hi', 'there',
-#             '--arg_other_type_required', 'tappy'
-#         ]))
-#
-#
-#     def test_arg_list_str_required(self):
-#         self.assertRaises(SystemExit, self.tap.parse_args([
-#             '--arg_str_required', 'hello',
-#             '--arg_other_type_required', 'tappy'
-#         ]))
 
 
 class SubclassTests(TestCase):
@@ -441,9 +394,8 @@ class AddArgumentTests(TestCase):
         self.assertEqual(args.arg_bool_false, True)
 
         args = IntegrationAddArgumentTap().parse_args(['--arg_bool_false'])
-        self.assertEqual(args.arg_bool_false, False)
+        self.assertEqual(args.arg_bool_false, False)   
 
-    
 
 """
 - crash if default type not supported
