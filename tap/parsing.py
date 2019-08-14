@@ -227,7 +227,8 @@ class Tap(ArgumentParser):
     def _get_class_dict(self) -> Dict[str, Any]:
         """Returns a dictionary mapping class variable names to values from the class dict."""
         class_dict = self._get_from_self_and_super(key='__dict__')
-        class_dict = {var: val for var, val in class_dict.items() if not var.startswith('_') and not callable(val)}
+        class_dict = {var: val for var, val in class_dict.items()
+                      if not var.startswith('_') and not callable(val) and not isinstance(val, staticmethod)}
 
         return class_dict
 
