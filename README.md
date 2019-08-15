@@ -179,7 +179,7 @@ Tap automatically handles all of the following types:
 
 `List` arguments: If an argument `arg` is a `List`, simply specify the values separated by spaces just as you would with regular argparse. For example, `--arg 1 2 3` parses to `arg = [1, 2, 3]`.
 
-More complex types must be specified with the `type` keyword argument in `add_argument`, as in the example below.
+More complex types _must_ be specified with the `type` keyword argument in `add_argument`, as in the example below.
 
 ```python
 def to_number(string: str):
