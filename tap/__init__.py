@@ -1,3 +1,3 @@
-from tap.parsing import Tap
+from tap.tap import Tap
 
 __all__ = ['Tap']

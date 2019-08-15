@@ -4,24 +4,28 @@ with open('README.md') as f:
     long_description = f.read()
 
 setup(
-    name='typed-argument-parsing',
-    version='0.0.1',
+    name='typed-argument-parser',
+    version='1.1',
     author='Jesse Michel and Kyle Swanson',
     author_email='kswanson@asapp.com',
-    description='Typed Argument Parsing',
+    description='Typed Argument Parser',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/swansonk14/typed-argument-parsing',
+    url='https://github.com/swansonk14/typed-argument-parser',
+    download_url='https://github.com/swansonk14/typed-argument-parser/v_1.1.tar.gz',
     license='MIT',
     packages=find_packages(),
     install_requires=[],
     classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
     ],
     keywords=[
-        'argument parsing',
-        'typing'
+        'typing',
+        'argument parser',
+        'python'
     ]
 )
