@@ -7,7 +7,7 @@ Tap provides the following benefits:
 - Code completion
 - Source code navigation (e.g. go to definition and go to implementation)
 
-![Tap](images/tap.png)
+<TODO: gifs for the above>
  
 ## Table of Contents
 
@@ -163,19 +163,16 @@ class MyTap(Tap):
 ### Types
 
 Tap automatically handles all of the following types:
-- `str`
-- `int`
-- `float`
-- `bool`
-- `List[str]`
-- `List[int]`
-- `List[float]`
 
-`str`, `int`, and `float` arguments: These arguments are automatically parsed to their respective types, just like argparse.
+`str`, `int`, `float`, `bool`, `List[str]`, `List[int]`, `List[float]`
 
-`bool` arguments: If an argument `arg` is specified as `arg: bool` or `arg: bool = False`, then adding the `--arg` flag to the command line will set `arg` to `True`. If `arg` is specified as `arg: bool = True`, then adding `--arg` sets `arg` to `False`.
+Each of these arguments is parse as follows:
 
-`List` arguments: If an argument `arg` is a `List`, simply specify the values separated by spaces just as you would with regular argparse. For example, `--arg 1 2 3` parses to `arg = [1, 2, 3]`.
+`str`, `int`, and `float`: Each is automatically parsed to their respective types, just like argparse.
+
+`bool`: If an argument `arg` is specified as `arg: bool` or `arg: bool = False`, then adding the `--arg` flag to the command line will set `arg` to `True`. If `arg` is specified as `arg: bool = True`, then adding `--arg` sets `arg` to `False`.
+
+`List`: If an argument `arg` is a `List`, simply specify the values separated by spaces just as you would with regular argparse. For example, `--arg 1 2 3` parses to `arg = [1, 2, 3]`.
 
 More complex types _must_ be specified with the `type` keyword argument in `add_argument`, as in the example below.
 
@@ -215,7 +212,7 @@ class MyTap(Tap):
 
 In some cases, it may be useful to define a template Tap and then subclass it for different use cases. Since Tap is simply a native Python class, inheritance is built-in.
 
-In the example below, `StarsTap` and `AwardsTap` inherit the arguments (`package` and `is_cool`) and the methods (`process_args`) from `BaseTap`, making it easy to customize a template Tap.
+It's easy customize from a template Tap. In the example below, `StarsTap` and `AwardsTap` inherit the arguments (`package` and `is_cool`) and the methods (`process_args`) from `BaseTap`.
 
 ```python
 class BaseTap(Tap):
