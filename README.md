@@ -54,8 +54,6 @@ print(f'My name is {args.name} and I give the {args.language} package '
       f'{args.package} {args.stars}/{args.max_stars} stars!')
 ```
 
-Note that `name` is automatically made a required argument since no default is provided.
-
 You use Tap the same way you use standard argparse.
 
 ```
@@ -63,7 +61,7 @@ You use Tap the same way you use standard argparse.
 My name is Jesse and I give the Python package Tap 5/5 stars!
 ```
 
-The equivalent `argparse` code is:
+The equivalent argparse code is:
 ```python
 """main.py"""
 
@@ -125,11 +123,11 @@ class MyTap(Tap):
 args = MyTap().parse_args()
 ```
 
-Running `python main.py -h` would result in the following:
+Running `python main.py -h` results in the following:
 
 ```
 >>> python main.py -h
-usage: blah.py [-h] [--arg ARG]
+usage: main.py [-h] [--argument ARGUMENT]
 
 You can document Tap!
 
@@ -178,18 +176,20 @@ More complex types _must_ be specified with the `type` keyword argument in `add_
 
 ```python
 def to_number(string: str):
-    return float(string) if '.' in input else int(string)
+    return float(string) if '.' in string else int(string)
 
 class MyTap(Tap):
     number: Union[int, float]
 
     def add_arguments(self):
-        self.add_argument('--percent', type=to_number)
+        self.add_argument('--number', type=to_number)
 ```
 
 ### Argument processing with `process_args`
 
-With complex argument parsing, it is sometimes necessary to prevent certain combinations of arguments. Futhermore, the value of some arguments may depend on the values of other arguments. To handle cases like these, simply override `process_args` and add the required logic. `process_args` is automatically called when `parse_args` is called.
+With complex argument parsing, arguments often end up having interdependencies. This means that it may be necessary to disallow certain combinations of arguments or to modify some arguments based on other arguments.
+
+To handle such cases, simply override `process_args` and add the required logic. `process_args` is automatically called when `parse_args` is called.
 
 ```python
 class MyTap(Tap):
@@ -210,9 +210,9 @@ class MyTap(Tap):
 
 ### Subclassing
 
-In some cases, it may be useful to define a template Tap and then subclass it for different use cases. Since Tap is simply a native Python class, inheritance is built-in.
+It is sometimes useful to define a template Tap and then subclass it for different use cases. Since Tap is a native Python class, inheritance is built-in, making it easy to customize from a template Tap.
 
-It's easy customize from a template Tap. In the example below, `StarsTap` and `AwardsTap` inherit the arguments (`package` and `is_cool`) and the methods (`process_args`) from `BaseTap`.
+In the example below, `StarsTap` and `AwardsTap` inherit the arguments (`package` and `is_cool`) and the methods (`process_args`) from `BaseTap`.
 
 ```python
 class BaseTap(Tap):
@@ -243,7 +243,7 @@ from tap import Tap
 from typing import List
 
 class MyTap(Tap):
-    package: str = 'Tap'
+    package: str
     is_cool: bool = True
     awards: List[str] = ['amazing', 'wow', 'incredible', 'awesome']
 
@@ -251,7 +251,7 @@ args = MyTap().parse_args()
 print(args)
 ```
 
-Running `python main.py` results in:
+Running `python main.py --package Tap` results in:
 
 ```
 >>> python main.py
@@ -266,26 +266,26 @@ Tap makes reproducibility easy, especially when running code in a git repo.
 
 #### Reproducibility info
 
-Specifically, Tap has a method called `get_reproducibility_info` that returns a dictionary containing information necessary to replicate the settings the run. This dictionary includes:
+Specifically, Tap has a method called `get_reproducibility_info` that returns a dictionary containing all the information necessary to replicate the settings under which the code was run. This dictionary includes:
 - Python command
-    - The command that was used to run the program
+    - The Python command that was used to run the program
     - Ex. `python main.py --package Tap`
 - Time
     - The time when the command was run
     - Ex. `Thu Aug 15 00:09:13 2019`
 - Git root
     - The root of the git repo containing the code
-    - Ex. `/Users/kyleswanson/typed-argument-parsing`
+    - Ex. `/Users/swansonk14/typed-argument-parsing`
 - Git url
     - The url to the git repo, specifically pointing to the current git hash (i.e. the hash of HEAD in the local repo)
-    - Ex. `https://github.com/swansonk14/typed-argument-parsing/tree/9e2e69dd353abe247f4305dfd59143245de9dcaa`
+    - Ex. [https://github.com/swansonk14/typed-argument-parsing/tree/9e2e69dd353abe247f4305dfd59143245de9dcaa](https://github.com/swansonk14/typed-argument-parsing/tree/9e2e69dd353abe247f4305dfd59143245de9dcaa)
 - Uncommited changes
-    - Whether there are any uncommitted changes in the git repo (i.e. whether the code is different from the code at the above url)
+    - Whether there are any uncommitted changes in the git repo (i.e. whether the code is different from the code at the above git hash)
     - Ex. `True` or `False`
     
 #### Saving arguments
 
-Tap has a method called `save` which saves all all arguments, along with the reproducibility info, to a JSON file.
+Tap has a method called `save` which saves all arguments, along with the reproducibility info, to a JSON file.
 
 ```python
 """main.py"""
@@ -293,7 +293,7 @@ Tap has a method called `save` which saves all all arguments, along with the rep
 from tap import Tap
 
 class MyTap(Tap):
-    package: str = 'Tap'
+    package: str
     is_cool: bool = True
     stars: int = 5
 
@@ -301,7 +301,7 @@ args = MyTap().parse_args()
 args.save('args.json')
 ```
 
-After running `python main.py`, the file `args.json` will contain:
+After running `python main.py --package Tap`, the file `args.json` will contain:
 
 ```
 {
@@ -309,8 +309,8 @@ After running `python main.py`, the file `args.json` will contain:
     "package": "Tap",
     "reproducibility": {
         "command_line": "python main.py",
-        "git_has_uncommitted_changes": true,
-        "git_root": "/Users/kyleswanson/typed-argument-parsing",
+        "git_has_uncommitted_changes": false,
+        "git_root": "/Users/swansonk14/typed-argument-parsing",
         "git_url": "https://github.com/swansonk14/typed-argument-parsing/tree/9e2e69dd353abe247f4305dfd59143245de9dcaa",
         "time": "Thu Aug 15 00:18:31 2019"
     },
