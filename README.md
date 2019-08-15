@@ -320,7 +320,7 @@ After running `python main.py --package Tap`, the file `args.json` will contain:
     "is_cool": true,
     "package": "Tap",
     "reproducibility": {
-        "command_line": "python main.py",
+        "command_line": "python main.py --package Tap",
         "git_has_uncommitted_changes": false,
         "git_root": "/Users/swansonk14/typed-argument-parser",
         "git_url": "https://github.com/swansonk14/typed-argument-parser/tree/446cf046631d6bdf7cab6daec93bf7a02ac00998",
