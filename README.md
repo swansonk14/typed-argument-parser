@@ -278,7 +278,7 @@ Specifically, Tap has a method called `get_reproducibility_info` that returns a 
     - Ex. `/Users/swansonk14/typed-argument-parsing`
 - Git url
     - The url to the git repo, specifically pointing to the current git hash (i.e. the hash of HEAD in the local repo)
-    - Ex. [https://github.com/swansonk14/typed-argument-parsing/tree/9e2e69dd353abe247f4305dfd59143245de9dcaa](https://github.com/swansonk14/typed-argument-parsing/tree/9e2e69dd353abe247f4305dfd59143245de9dcaa)
+    - Ex. [https://github.com/swansonk14/typed-argument-parsing/tree/446cf046631d6bdf7cab6daec93bf7a02ac00998](https://github.com/swansonk14/typed-argument-parsing/tree/446cf046631d6bdf7cab6daec93bf7a02ac00998)
 - Uncommited changes
     - Whether there are any uncommitted changes in the git repo (i.e. whether the code is different from the code at the above git hash)
     - Ex. `True` or `False`
@@ -311,7 +311,7 @@ After running `python main.py --package Tap`, the file `args.json` will contain:
         "command_line": "python main.py",
         "git_has_uncommitted_changes": false,
         "git_root": "/Users/swansonk14/typed-argument-parsing",
-        "git_url": "https://github.com/swansonk14/typed-argument-parsing/tree/9e2e69dd353abe247f4305dfd59143245de9dcaa",
+        "git_url": "https://github.com/swansonk14/typed-argument-parsing/tree/446cf046631d6bdf7cab6daec93bf7a02ac00998",
         "time": "Thu Aug 15 00:18:31 2019"
     },
     "stars": 5
