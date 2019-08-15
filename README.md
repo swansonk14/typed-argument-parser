@@ -166,7 +166,7 @@ Tap automatically handles all of the following types:
 
 `str`, `int`, `float`, `bool`, `List[str]`, `List[int]`, `List[float]`
 
-Each of these arguments is parse as follows:
+Each of these arguments is parsed as follows:
 
 `str`, `int`, and `float`: Each is automatically parsed to their respective types, just like argparse.
 
