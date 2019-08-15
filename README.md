@@ -175,108 +175,131 @@ class MyTap(Tap):
 
 #### Argument processing with `process_args`
 
-#### Subclassing
-
-#### Printing
-
-#### Reproducibility
-
-info plus saving
-
-
-
-
-Let's dive into some of the more advanced features of Tap.
- 
-- required vs default
-- built-in types
-- non-built in types
-- custom functionality with add_argument
- 
- Here we highlight that:
-- We support all of the functionality from `argparse`'s `add_argument` function for more further use-cases
-- We support serialization of user-defined types. By default we support `bool, int, float, str, List[int], List[float], List[str]`
-
+With complex argument parsing, it is sometimes necessary to prevent certain combinations of arguments. Futhermore, the value of some arguments may depend on the values of other arguments. To handle cases like these, simply override `process_args` and add the required logic. `process_args` is automatically called when `parse_args` is called.
 
 ```python
-"""main.py"""
-from typing import List
+class MyTap(Tap):
+    package: str
+    is_cool: bool
+    stars: int
 
-from tap import Tap
+    def process_args(self):
+        # Validate arguments
+        if self.is_cool and self.stars < 4:
+            raise ValueError('Cool packages cannot have fewer than 4 stars')
 
+        # Modify arguments
+        if self.package == 'Tap':
+            self.is_cool = True
+            self.stars = 5
+```
 
-class Printer:
-    def __init__(self, suffix: str = ''):
-        self.suffix = suffix
+#### Subclassing
+
+In some cases, it may be useful to define a template Tap and then subclass it for different use cases. Since Tap is simply a native Python class, inheritance is built-in.
+
+In the example below, `StarsTap` and `AwardsTap` inherit the arguments (`package` and `is_cool`) and the methods (`process_args`) from `BaseTap`, making it easy to customize a template Tap.
+
+```python
+class BaseTap(Tap):
+    package: str
+    is_cool: bool
     
-    def __call__(self, string: str) -> None:
-        print(f'{string}{self.suffix}')
-
-
-class AdvancedArgumentParser(Tap):
-    """You can do a lot with Tap!
-
-    Arguments:
-    :package_name: Name of the package.
-    :awards: Awards won by the package.
-    :num_stars: Number of stars.
-    :is_cool: Whether the package is cool.
-    :printer: Prints strings.
-    """
-    package_name: str
-    awards: List[str] = []
-    num_stars: float = 3.14
-    is_cool: bool = False
-    printer: Printer = Printer()
-    
-    def add_arguments(self) -> None:
-        self.add_argument('-n', '--package_name')
-        self.add_argument('-ns', '--num_stars')
-        self.add_argument('--printer', type=Printer)
-
-    def process_args(self) -> None:
-        # Double check the input is valid
-        cool_cutoff = 10
-        if self.num_stars > cool_cutoff and not self.is_cool:
-            raise ValueError(f'A package with more than {cool_cutoff} stars must be marked cool.')
-        
-        # Automatically modify arguments for consistency
-        if len(self.awards) > 2:
+    def process_args(self):
+        if self.package == 'Tap':
             self.is_cool = True
 
 
-class SubAdvancedArgumentParser(AdvancedArgumentParser):
-    """You can even subclass with Tap!
-    
-    :language: Programming language.
-    """
-    language: str = 'Python'
+class StarsTap(BaseTap):
+    stars: int
 
-args = SubAdvancedArgumentParser().parse_args()
 
-args.printer(f'The {args.language} package {args.package_name} has {len(args.awards)} awards')
-print('-' * 10)
+class AwardsTap(BaseTap):
+    awards: List[str]
+```
+
+#### Printing
+
+Tap uses Python's [pretty printer](https://docs.python.org/3/library/pprint.html) to print out arguments in an easy-to-read format.
+
+```python
+"""main.py"""
+
+from tap import Tap
+from typing import List
+
+class MyTap(Tap):
+    package: str = 'Tap'
+    is_cool: bool = True
+    awards: List[str] = ['amazing', 'wow', 'incredible', 'awesome']
+
+args = MyTap().parse_args()
 print(args)
-print('-' * 10)
-print(args.get_reproducibility_info())
+```
 
+Running `python main.py` results in:
+
+```
+>>> python main.py
+{'awards': ['amazing', 'wow', 'incredible', 'awesome'],
+ 'is_cool': True,
+ 'package': 'Tap'}
+```
+
+#### Reproducibility
+
+Tap makes reproducibility easy, especially when running code in a git repo.
+
+##### Reproducibility info
+
+Specifically, Tap has a method called `get_reproducibility_info` that returns a dictionary containing information necessary to replicate the settings under which the code was run. This dictionary includes:
+- Python command
+    - The command that was used to run the program
+    - Ex. `python main.py --package Tap`
+- Time
+    - The time when the command was run
+    - Ex. `Thu Aug 15 00:09:13 2019`
+- Git root
+    - The root of the git repo containing the code
+    - Ex. `/Users/kyleswanson/typed-argument-parsing`
+- Git url
+    - The url to the git repo, specifically pointing to the current git hash (i.e. the hash of HEAD in the local repo)
+    - Ex. `https://github.com/swansonk14/typed-argument-parsing/tree/9e2e69dd353abe247f4305dfd59143245de9dcaa`
+- Uncommited changes
+    - Whether there are any uncommitted changes in the git repo (i.e. whether the code is different from the code at the above url)
+    - Ex. `True` or `False`
+    
+##### Saving arguments
+
+Tap has a method called `save` which saves all all arguments, along with the reproducibility info, to a JSON file.
+
+```python
+"""main.py"""
+
+from tap import Tap
+
+class MyTap(Tap):
+    package: str = 'Tap'
+    is_cool: bool = True
+    stars: int = 5
+
+args = MyTap().parse_args()
 args.save('args.json')
 ```
 
+After running `python main.py`, the file `args.json` will contain:
+
 ```
->>> python main.py --package_name Tap --awards super incredible outstanding --is_cool --printer !!!
-The Python package Tap has 3 awards!!!
---------------------------------------------------
-{'awards': ['super', 'incredible', 'outstanding'],
- 'is_cool': True,
- 'language': 'Python',
- 'num_stars': 3.14,
- 'package_name': 'Tap',
- 'printer': <__main__.Printer object at 0x105048e80>}
---------------------------------------------------
-{'command_line': 'python [[PYTHON_PATH]]',
- 'time': '[[EXPERIMENT_TIME]]',
- 'git_root': '[[PATH]]/typed-argument-parsing',
- 'git_url': 'https://github.com/swansonk14/typed-argument-parsing/tree/[[COMMIT_HASH]]',
-  'git_has_uncommitted_changes': False}
+{
+    "is_cool": true,
+    "package": "Tap",
+    "reproducibility": {
+        "command_line": "python main.py",
+        "git_has_uncommitted_changes": true,
+        "git_root": "/Users/kyleswanson/typed-argument-parsing",
+        "git_url": "https://github.com/swansonk14/typed-argument-parsing/tree/9e2e69dd353abe247f4305dfd59143245de9dcaa",
+        "time": "Thu Aug 15 00:18:31 2019"
+    },
+    "stars": 5
+}
 ```
