@@ -1,10 +1,18 @@
 # Typed Argument Parsing (Tap)
 
 Tap is a typed modernization of Python's [argparse](https://docs.python.org/3/library/argparse.html) library.
+
+## Why Tap?
+ 
+Tap provides the following benefits with the following benefits:
+- Static type checking
+- Code completion
+- Source code navigation (e.g. go to definition and go to implementation)
+
+<TODO: gifs for the above>
  
 ## Table of Contents
 
-* [Why Tap?](#why-tap-)
 * [Tap is Python-native](#tap-is-python-native)
 * [Tap features](#tap-features)
     + [Arguments](#arguments)
@@ -17,15 +25,6 @@ Tap is a typed modernization of Python's [argparse](https://docs.python.org/3/li
     + [Reproducibility](#reproducibility)
       - [Reproducibility info](#reproducibility-info)
       - [Saving arguments](#saving-arguments)
-
-## Why Tap?
- 
-Tap provides the following benefits with the following benefits:
-- Static type checking
-- Code completion
-- Source code navigation (e.g. go to definition and go to implementation)
-
-<TODO: gifs for the above>
 
 ## Tap is Python-native
 To see this, let's look at an example:
