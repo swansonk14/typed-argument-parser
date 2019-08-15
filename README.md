@@ -69,7 +69,7 @@ print(f'My name is {args.name} and I give the {args.language} package '
       f'{args.package} {args.stars}/{args.max_stars} stars!')
 ```
 
-The advantages of being Python-native include:
+The advantages of being Python-native include being able to:
 - Overwrite convenient built-in methods (e.g. `process_args` ensures consistency among arguments)
 - Add custom methods
 - Inherit from your own template classes
