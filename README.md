@@ -8,11 +8,10 @@ Tap provides the following benefits:
 - Source code navigation (e.g. go to definition and go to implementation)
 
 ![Tap](images/tap.png)
-
-Tap can be installed with `pip install typed-argument-parser`
  
 ## Table of Contents
 
+* [Installation](#installation)
 * [Tap is Python-native](#tap-is-python-native)
 * [Tap features](#tap-features)
     + [Arguments](#arguments)
@@ -25,6 +24,11 @@ Tap can be installed with `pip install typed-argument-parser`
     + [Reproducibility](#reproducibility)
       - [Reproducibility info](#reproducibility-info)
       - [Saving arguments](#saving-arguments)
+      
+## Installation
+
+Tap can be installed by running: `pip install typed-argument-parser`
+
 
 ## Tap is Python-native
 To see this, let's look at an example:
