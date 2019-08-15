@@ -27,7 +27,9 @@ Tap provides the following benefits:
       
 ## Installation
 
-Tap can be installed by running: `pip install typed-argument-parser`
+Tap requires Python 3.6+
+
+Tap can be installed with: `pip install typed-argument-parser`
 
 
 ## Tap is Python-native
