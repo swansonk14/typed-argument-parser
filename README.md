@@ -1,13 +1,13 @@
 # Typed Argument Parsing (Tap)
 
-A typed modernization of Python's [argparse](https://docs.python.org/3/library/argparse.html) library with the following benefits.
+Tap is a typed modernization of Python's [argparse](https://docs.python.org/3/library/argparse.html) library with the following benefits:
 - Static type checking
 - Code completion
 - Source code navigation (e.g. go to definition and go to implementation)
 
 <TODO: gifs for the above>
 
-# Tap is Python-native
+## Tap is Python-native
 To see this, let's look at an example:
 
 ```python
@@ -37,7 +37,10 @@ print(f'My name is {args.name} and I give the {args.language} package '
       f'{args.package} {args.stars}/{args.max_stars} stars!')
 ```
 
+Note that `name` is automatically made a required argument since no default is provided.
+
 You use Tap the same way you use standard argparse.
+
 ```
 >>> python main.py --name Jesse --stars 5
 My name is Jesse and I give the Python package Tap 5/5 stars!
@@ -65,19 +68,136 @@ args = parser.parse_args()
 print(f'My name is {args.name} and I give the {args.language} package '
       f'{args.package} {args.stars}/{args.max_stars} stars!')
 ```
-You can make parameters required in Tap by not setting a default -- in our example, we declare `stars: int`, making `stars` a required parameter. Also note that the docstring is compiled to the help strings that are shown with `python main.py -h`. For now, the docstring format in the example is the format that we support. 
 
-Advantages of being Python-native include:
+The advantages of being Python-native include:
 - Overwrite convenient built-in methods (e.g. `process_args` ensures consistency among arguments)
 - Add custom methods
 - Inherit from your own template classes
 
-## A more advanced example
-Let's dive into some of the more advanced features of Tap. Here we highlight that:
+### Tap features
+
+Here we overview the major features of Tap.
+
+#### Tap arguments
+
+Arguments are specified as class variables defined in a subclass of `Tap`. Variables defined as `name: type` are required arguments while variables defined as `name: type = value` are not required and default to the provided value.
+
+```python
+class MyTap(Tap):
+    required_arg: str
+    default_arg: str = 'default value'
+```
+
+#### Help string
+
+Class documentation is automatically parsed into the help string provided when running `python main.py -h`.
+
+```python
+"""main.py"""
+
+from tap import Tap
+
+class MyTap(Tap):
+    """You can document Tap!
+
+    Arguments:
+    :argument: This is an argument.
+    """
+    argument: str = "I'm well documented!"
+
+args = MyTap().parse_args()
+```
+
+Running `python main.py -h` would result in the following:
+
+```
+>>> python main.py -h
+usage: blah.py [-h] [--arg ARG]
+
+You can document Tap!
+
+optional arguments:
+  -h, --help  show this help message and exit
+  --argument ARGUMENT   (str) This is an argument.
+```
+
+Documentation must follow the format seen above in order to appear in the help string, otherwise it is ignored.
+
+#### Flexibility with `add_arguments`
+
+Python's argparse provides a number of advanced argument parsing features with the `add_argument` method. Since Tap is a wrapper around argparse, Tap provides all of the same functionality.
+
+To make use of this functionality, first define arguments as class variables as usual, then override Tap's `add_arguments` and use `self.add_argument` just as you would use argparse's `add_argument`.
+
+```python
+from tap import Tap
+
+class MyTap(Tap):
+    positional_argument: str
+    list_of_three_things: List[str]
+    argument_with_really_long_name: int
+
+    def add_arguments(self):
+        self.add_argument('positional_argument')
+        self.add_argument('--list_of_three_things', nargs=3)
+        self.add_argument('-arg', '--argument_with_really_long_name')
+```
+
+#### Types
+
+Tap automatically handles all of the following types:
+- `str`
+- `int`
+- `float`
+- `bool`
+- `List[str]`
+- `List[int]`
+- `List[float]`
+
+`str`, `int`, and `float` arguments: These arguments are automatically parsed to their respective types, just like argparse.
+
+`bool` arguments: If an argument `arg` is specified as `arg: bool` or `arg: bool = False`, then adding the `--arg` flag to the command line will set `arg` to `True`. If `arg` is specified as `arg: bool = True`, then adding `--arg` sets `arg` to `False`.
+
+`List` arguments: If an argument `arg` is a `List`, simply specify the values separated by spaces just as you would with regular argparse. For example, `--arg 1 2 3` parses to `arg = [1, 2, 3]`.
+
+More complex types must be specified with the `type` keyword argument in `add_argument`, as in the example below.
+
+```python
+def to_number(string: str):
+    return float(string) if '.' in input else int(string)
+
+class MyTap(Tap):
+    number: Union[int, float]
+
+    def add_arguments(self):
+        self.add_argument('--percent', type=to_number)
+```
+
+#### Argument processing with `process_args`
+
+#### Subclassing
+
+#### Printing
+
+#### Reproducibility
+
+info plus saving
+
+
+
+
+Let's dive into some of the more advanced features of Tap.
+ 
+- required vs default
+- built-in types
+- non-built in types
+- custom functionality with add_argument
+ 
+ Here we highlight that:
 - We support all of the functionality from `argparse`'s `add_argument` function for more further use-cases
 - We support serialization of user-defined types. By default we support `bool, int, float, str, List[int], List[float], List[str]`
 
-First, we create a custom `Printer` class that adds a custom suffix onto a given string. 
+
 ```python
 """main.py"""
 from typing import List
@@ -97,12 +217,11 @@ class AdvancedArgumentParser(Tap):
     """You can do a lot with Tap!
 
     Arguments:
-    :package_name: The name of a package.
-        Note - we'd prefer cooler packages.
-    :awards: The awards won by this package.
-    :num_stars: The number of stars that this package received.
-    :is_cool: Indicate whether or not the package is cool.
-    :printer: Adds a suffix to the string being printed.
+    :package_name: Name of the package.
+    :awards: Awards won by the package.
+    :num_stars: Number of stars.
+    :is_cool: Whether the package is cool.
+    :printer: Prints strings.
     """
     package_name: str
     awards: List[str] = []
@@ -124,10 +243,18 @@ class AdvancedArgumentParser(Tap):
         # Automatically modify arguments for consistency
         if len(self.awards) > 2:
             self.is_cool = True
-    
-args = AdvancedArgumentParser().parse_args()
 
-args.printer(f'The package {args.package_name} has {len(args.awards)} awards')
+
+class SubAdvancedArgumentParser(AdvancedArgumentParser):
+    """You can even subclass with Tap!
+    
+    :language: Programming language.
+    """
+    language: str = 'Python'
+
+args = SubAdvancedArgumentParser().parse_args()
+
+args.printer(f'The {args.language} package {args.package_name} has {len(args.awards)} awards')
 print('-' * 10)
 print(args)
 print('-' * 10)
@@ -138,10 +265,11 @@ args.save('args.json')
 
 ```
 >>> python main.py --package_name Tap --awards super incredible outstanding --is_cool --printer !!!
-The package Tap has 3 awards!!!
+The Python package Tap has 3 awards!!!
 --------------------------------------------------
 {'awards': ['super', 'incredible', 'outstanding'],
  'is_cool': True,
+ 'language': 'Python',
  'num_stars': 3.14,
  'package_name': 'Tap',
  'printer': <__main__.Printer object at 0x105048e80>}
@@ -152,5 +280,3 @@ The package Tap has 3 awards!!!
  'git_url': 'https://github.com/swansonk14/typed-argument-parsing/tree/[[COMMIT_HASH]]',
   'git_has_uncommitted_changes': False}
 ```
-
-TODO: add a thing about subclassing other Taps
