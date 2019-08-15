@@ -4,7 +4,6 @@ Tap is a typed modernization of Python's [argparse](https://docs.python.org/3/li
  
 ## Table of Contents
 
-* [Table of Contents](#table-of-contents)
 * [Why Tap?](#why-tap-)
 * [Tap is Python-native](#tap-is-python-native)
 * [Tap features](#tap-features)
