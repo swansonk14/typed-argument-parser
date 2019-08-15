@@ -7,7 +7,7 @@ Tap provides the following benefits:
 - Code completion
 - Source code navigation (e.g. go to definition and go to implementation)
 
-<TODO: gifs for the above>
+![Tap](images/tap.png)
  
 ## Table of Contents
 
