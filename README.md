@@ -1,6 +1,27 @@
 # Typed Argument Parsing (Tap)
 
-Tap is a typed modernization of Python's [argparse](https://docs.python.org/3/library/argparse.html) library with the following benefits:
+Tap is a typed modernization of Python's [argparse](https://docs.python.org/3/library/argparse.html) library.
+ 
+## Table of Contents
+
+* [Table of Contents](#table-of-contents)
+* [Why Tap?](#why-tap-)
+* [Tap is Python-native](#tap-is-python-native)
+* [Tap features](#tap-features)
+    + [Arguments](#arguments)
+    + [Help string](#help-string)
+    + [Flexibility of `add_arguments`](#flexibility-of--add-arguments-)
+    + [Types](#types)
+    + [Argument processing with `process_args`](#argument-processing-with--process-args-)
+    + [Subclassing](#subclassing)
+    + [Printing](#printing)
+    + [Reproducibility](#reproducibility)
+      - [Reproducibility info](#reproducibility-info)
+      - [Saving arguments](#saving-arguments)
+
+## Why Tap?
+ 
+Tap provides the following benefits with the following benefits:
 - Static type checking
 - Code completion
 - Source code navigation (e.g. go to definition and go to implementation)
@@ -74,11 +95,11 @@ The advantages of being Python-native include being able to:
 - Add custom methods
 - Inherit from your own template classes
 
-### Tap features
+## Tap features
 
 Here we overview the major features of Tap.
 
-#### Tap arguments
+### Arguments
 
 Arguments are specified as class variables defined in a subclass of `Tap`. Variables defined as `name: type` are required arguments while variables defined as `name: type = value` are not required and default to the provided value.
 
@@ -88,7 +109,7 @@ class MyTap(Tap):
     default_arg: str = 'default value'
 ```
 
-#### Help string
+### Help string
 
 Class documentation is automatically parsed into the help string provided when running `python main.py -h`.
 
@@ -123,7 +144,7 @@ optional arguments:
 
 Documentation must follow the format seen above in order to appear in the help string, otherwise it is ignored.
 
-#### Flexibility with `add_arguments`
+### Flexibility of `add_arguments`
 
 Python's argparse provides a number of advanced argument parsing features with the `add_argument` method. Since Tap is a wrapper around argparse, Tap provides all of the same functionality.
 
@@ -143,7 +164,7 @@ class MyTap(Tap):
         self.add_argument('-arg', '--argument_with_really_long_name')
 ```
 
-#### Types
+### Types
 
 Tap automatically handles all of the following types:
 - `str`
@@ -173,7 +194,7 @@ class MyTap(Tap):
         self.add_argument('--percent', type=to_number)
 ```
 
-#### Argument processing with `process_args`
+### Argument processing with `process_args`
 
 With complex argument parsing, it is sometimes necessary to prevent certain combinations of arguments. Futhermore, the value of some arguments may depend on the values of other arguments. To handle cases like these, simply override `process_args` and add the required logic. `process_args` is automatically called when `parse_args` is called.
 
@@ -194,7 +215,7 @@ class MyTap(Tap):
             self.stars = 5
 ```
 
-#### Subclassing
+### Subclassing
 
 In some cases, it may be useful to define a template Tap and then subclass it for different use cases. Since Tap is simply a native Python class, inheritance is built-in.
 
@@ -218,7 +239,7 @@ class AwardsTap(BaseTap):
     awards: List[str]
 ```
 
-#### Printing
+### Printing
 
 Tap uses Python's [pretty printer](https://docs.python.org/3/library/pprint.html) to print out arguments in an easy-to-read format.
 
@@ -246,11 +267,11 @@ Running `python main.py` results in:
  'package': 'Tap'}
 ```
 
-#### Reproducibility
+### Reproducibility
 
 Tap makes reproducibility easy, especially when running code in a git repo.
 
-##### Reproducibility info
+#### Reproducibility info
 
 Specifically, Tap has a method called `get_reproducibility_info` that returns a dictionary containing information necessary to replicate the settings under which the code was run. This dictionary includes:
 - Python command
@@ -269,7 +290,7 @@ Specifically, Tap has a method called `get_reproducibility_info` that returns a 
     - Whether there are any uncommitted changes in the git repo (i.e. whether the code is different from the code at the above url)
     - Ex. `True` or `False`
     
-##### Saving arguments
+#### Saving arguments
 
 Tap has a method called `save` which saves all all arguments, along with the reproducibility info, to a JSON file.
 
