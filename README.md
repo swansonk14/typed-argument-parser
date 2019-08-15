@@ -2,9 +2,7 @@
 
 Tap is a typed modernization of Python's [argparse](https://docs.python.org/3/library/argparse.html) library.
 
-## Why Tap?
- 
-Tap provides the following benefits with the following benefits:
+Tap provides the following benefits:
 - Static type checking
 - Code completion
 - Source code navigation (e.g. go to definition and go to implementation)
@@ -95,7 +93,7 @@ The advantages of being Python-native include being able to:
 
 ## Tap features
 
-Here we overview the major features of Tap.
+Now we are going to highlight some of our favorite features and give examples of how they work in practice.
 
 ### Arguments
 
@@ -271,7 +269,7 @@ Tap makes reproducibility easy, especially when running code in a git repo.
 
 #### Reproducibility info
 
-Specifically, Tap has a method called `get_reproducibility_info` that returns a dictionary containing information necessary to replicate the settings under which the code was run. This dictionary includes:
+Specifically, Tap has a method called `get_reproducibility_info` that returns a dictionary containing information necessary to replicate the settings the run. This dictionary includes:
 - Python command
     - The command that was used to run the program
     - Ex. `python main.py --package Tap`
