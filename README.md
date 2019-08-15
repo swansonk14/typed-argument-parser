@@ -1,7 +1,8 @@
 # Typed Argument Parser (Tap)
 
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/typed-argument-parser)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/typed-argument-parser)](https://badge.fury.io/py/typed-argument-parser)
 [![PyPI version](https://badge.fury.io/py/typed-argument-parser.svg)](https://badge.fury.io/py/typed-argument-parser)
+
 
 Tap is a typed modernization of Python's [argparse](https://docs.python.org/3/library/argparse.html) library.
 
