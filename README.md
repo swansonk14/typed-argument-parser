@@ -1,10 +1,14 @@
 # Typed Argument Parsing (Tap)
 
-A typed wrapper around Python's [argparse](https://docs.python.org/3/library/argparse.html) library.
+A typed modernization of Python's [argparse](https://docs.python.org/3/library/argparse.html) library with the following benefits.
+- Static type checking
+- Code completion
+- Source code navigation (e.g. go to definition and go to implementation)
 
+<TODO: gifs for the above>
 
-Here's a simple example of how to use Tap:
-
+# A small example
+Tap is a python-native way to write argument parsers. Let's look at at example:
 
 ```python
 """main.py"""
@@ -15,11 +19,11 @@ class SimpleArgumentParser(Tap):
     """This is a simple argument parser.
     
     Arguments:
-    :name: Your first name only please.
-    :language: The programming language of the package.
-    :package: The name of the package to rate.
-    :stars: The number of stars to give the package.
-    :max_stars: The maximum number of stars a package can receive.
+    :name: Your name.
+    :language: Programming language.
+    :package: Package name.
+    :stars: Number of stars.
+    :max_stars: Maximum stars.
     """
     name: str
     language: str = 'Python'
@@ -47,28 +51,20 @@ from argparse import ArgumentParser
 
 parser = ArgumentParser()
 parser.add_argument('--name', type=str, required=True,
-                    help='Your first name only please.')
+                    help='Your name.')
 parser.add_argument('--language', type=str,
-                    help='The programming language of the package.')
+                    help='Programming language.')
 parser.add_argument('--package', type=str, default='Tap',
-                    help='The name of the Python package to rate.')
+                    help='Package name.')
 parser.add_argument('--stars', type=int, required=True,
-                    help='The number of stars to give the package.')
+                    help='Number of stars.')
 parser.add_argument('--max_stars', type=int, default=5,
-                    help='The maximum number of stars a package can receive.')
+                    help='Maximum stars.')
 args = parser.parse_args()
 
 print(f'My name is {args.name} and I give the {args.language} package '
       f'{args.package} {args.stars}/{args.max_stars} stars!')
 ```
-
-## Why Tap?
-As a wrapper of `argparse`, we support all of its functionality, modernize it, and extend it to support:
-- Static type checking
-- Code completion
-- Source code navigation (e.g. go to definition and go to implementation)
-
-<TODO: gifs for the above>
 
 Since parsed arguments are now a class, you can:
 - Overwrite convenient built-in methods including:
