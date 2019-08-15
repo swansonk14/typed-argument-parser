@@ -7,8 +7,8 @@ A typed modernization of Python's [argparse](https://docs.python.org/3/library/a
 
 <TODO: gifs for the above>
 
-# A small example
-Tap is a python-native way to write argument parsers. Let's look at at example:
+# Tap is Python-native
+To see this, let's look at an example:
 
 ```python
 """main.py"""
@@ -65,16 +65,19 @@ args = parser.parse_args()
 print(f'My name is {args.name} and I give the {args.language} package '
       f'{args.package} {args.stars}/{args.max_stars} stars!')
 ```
+You can make parameters required in Tap by not setting a default -- in our example, we declare `stars: int`, making `stars` a required parameter. Also note that the docstring is compiled to the help strings that are shown with `python main.py -h`. For now, the docstring format in the example is the format that we support. 
 
-Since parsed arguments are now a class, you can:
-- Overwrite convenient built-in methods including:
-  - Processing arguments (`process_args`) to ensure consistency among arguments
-- Add you own methods
+Advantages of being Python-native include:
+- Overwrite convenient built-in methods (e.g. `process_args` ensures consistency among arguments)
+- Add custom methods
 - Inherit from your own template classes
 
 ## A more advanced example
-Now we'll present an example that features provided by Tap.
+Let's dive into some of the more advanced features of Tap. Here we highlight that:
+- We support all of the functionality from `argparse`'s `add_argument` function for more further use-cases
+- We support serialization of user-defined types. By default we support `bool, int, float, str, List[int], List[float], List[str]`
 
+First, we create a custom `Printer` class that adds a custom suffix onto a given string. 
 ```python
 """main.py"""
 from typing import List
