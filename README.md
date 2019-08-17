@@ -36,11 +36,10 @@ Tap requires Python 3.6+
 To install Tap, run the following commands:
 
 ```
-git clone 
+git clone https://github.com/kswanson-asapp/typed-argument-parser.git
+cd typed-argument-parser
+pip install -e .
 ```
-
-Tap can be installed with: `pip install typed-argument-parser`
-
 
 ## Tap is Python-native
 To see this, let's look at an example:
