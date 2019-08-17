@@ -33,6 +33,12 @@ Tap provides the following benefits:
 
 Tap requires Python 3.6+
 
+To install Tap, run the following commands:
+
+```
+git clone 
+```
+
 Tap can be installed with: `pip install typed-argument-parser`
 
 
