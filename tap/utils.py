@@ -1,7 +1,10 @@
 from argparse import ArgumentParser
+import inspect
+from io import StringIO
 import os
 import subprocess
-from typing import Any, List, Union
+import tokenize
+from typing import Any, Dict, List, Union
 
 
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
@@ -117,3 +120,50 @@ def is_option_arg(*name_or_flags) -> bool:
     :return: True if the argument is an option arg, False otherwise.
     """
     return any(name_or_flag.startswith('-') for name_or_flag in name_or_flags)
+
+
+def extract_class_variable_to_comment_mapping(cls: type) -> Dict[str, str]:
+    """Returns a dictionary mapping from class variables their single line comments on the same line."""
+    # Get source code for the class
+    class_source_code = inspect.getsource(cls)
+
+    # Determine indentation
+    first_line = class_source_code.split('\n')[0]
+    indent = len(first_line) - len(first_line.lstrip())
+
+    # Get mapping from line number to tokens
+    line_to_tokens = {}
+    for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize.generate_tokens(StringIO(class_source_code).readline):
+        line_to_tokens.setdefault(start_line, []).append({
+            'token_type': token_type,
+            'token': token,
+            'start_line': start_line,
+            'start_column': start_column,
+            'end_line': end_line,
+            'end_column': end_column,
+            'line': line
+        })
+
+    # Identify lines with class variables and extract comments
+    variable_to_comment = {}
+    for tokens in line_to_tokens.values():
+        for i, token in enumerate(tokens):
+            # Skip past all the whitespace
+            if token['token'].strip() == '':
+                continue
+
+            # Match class variable and extract comment
+            # TODO: support other indenting styles???
+            if (token['token_type'] == tokenize.NAME and
+                    token['start_column'] in [indent + 2, indent + 4] and
+                    len(tokens) > i and
+                    tokens[i + 1]['token'] in ['=', ':']):
+                if tokens[-2]['token_type'] == tokenize.COMMENT:
+                    print('hello')
+                    variable_to_comment[token['token']] = tokens[-2]['token']
+                else:
+                    variable_to_comment[token['token']] = ''
+
+            break
+
+    return variable_to_comment
