@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 import unittest
 from unittest import TestCase
 import sys 
@@ -105,6 +105,9 @@ class IntegrationDefaultTap(Tap):
     # arg_bool_untyped_false = False
     arg_bool_true: bool = True
     arg_bool_false: bool = False
+    arg_optional_str: Optional[str] = None
+    arg_optional_int: Optional[int] = None
+    arg_optional_float: Optional[float] = None
     arg_list_str: List[str] = ['hello', 'how are you']
     arg_list_int: List[int] = [10, -11]
     arg_list_float: List[float] = [3.14, 6.28]
@@ -152,6 +155,9 @@ class DefaultClassVariableTests(TestCase):
         self.assertEqual(args.arg_float, 77.3)
         self.assertEqual(args.arg_bool_true, True)
         self.assertEqual(args.arg_bool_false, False)
+        self.assertTrue(args.arg_optional_str is None)
+        self.assertTrue(args.arg_optional_int is None)
+        self.assertTrue(args.arg_optional_float is None)
         self.assertEqual(args.arg_list_str, ['hello', 'how are you'])
         self.assertEqual(args.arg_list_int, [10, -11])
         self.assertEqual(args.arg_list_float, [3.14, 6.28])
@@ -162,6 +168,9 @@ class DefaultClassVariableTests(TestCase):
         arg_str = 'goodbye'
         arg_int = '2'
         arg_float = '1e-2'
+        arg_optional_str = 'hello'
+        arg_optional_int = '77'
+        arg_optional_float = '7.7'
         arg_list_str = ['hi', 'there', 'how', 'are', 'you']
         arg_list_int = ['1', '2', '3', '10', '-11']
         arg_list_float = ['2.2', '-3.3', '2e20']
@@ -174,6 +183,9 @@ class DefaultClassVariableTests(TestCase):
             '--arg_float', arg_float,
             '--arg_bool_true',
             '--arg_bool_false',
+            '--arg_optional_str', arg_optional_str,
+            '--arg_optional_int', arg_optional_int,
+            '--arg_optional_float', arg_optional_float,
             '--arg_list_str', *arg_list_str,
             '--arg_list_int', *arg_list_int,
             '--arg_list_float', *arg_list_float,
@@ -182,6 +194,8 @@ class DefaultClassVariableTests(TestCase):
 
         arg_int = int(arg_int)
         arg_float = float(arg_float)
+        arg_optional_int = float(arg_optional_int)
+        arg_optional_float = float(arg_optional_float)
         arg_list_int = [int(arg) for arg in arg_list_int]
         arg_list_float = [float(arg) for arg in arg_list_float]
 
@@ -192,6 +206,9 @@ class DefaultClassVariableTests(TestCase):
         # Note: setting the bools as flags results in the opposite of their default
         self.assertEqual(args.arg_bool_true, False)
         self.assertEqual(args.arg_bool_false, True)
+        self.assertEqual(args.arg_optional_str, arg_optional_str)
+        self.assertEqual(args.arg_optional_int, arg_optional_int)
+        self.assertEqual(args.arg_optional_float, arg_optional_float)
         self.assertEqual(args.arg_list_str, arg_list_str)
         self.assertEqual(args.arg_list_int, arg_list_int)
         self.assertEqual(args.arg_list_float, arg_list_float)

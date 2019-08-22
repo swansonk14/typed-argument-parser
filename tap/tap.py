@@ -10,8 +10,12 @@ from tap.parse_docstrings import extract_descriptions
 from tap.utils import get_dest, get_git_root, get_git_url, has_git, has_uncommitted_changes, is_option_arg, type_to_str
 
 
-SUPPORTED_DEFAULT_TYPES = {str, int, float, bool, List[str], List[int], List[float]}
+SUPPORTED_DEFAULT_BASE_TYPES = {str, int, float, bool}
+SUPPORTED_DEFAULT_OPTIONAL_TYPES = {Optional[str], Optional[int], Optional[float]}
 SUPPORTED_DEFAULT_LIST_TYPES = {List[str], List[int], List[float]}
+SUPPORTED_DEFAULT_TYPES = set.union(SUPPORTED_DEFAULT_BASE_TYPES,
+                                    SUPPORTED_DEFAULT_OPTIONAL_TYPES,
+                                    SUPPORTED_DEFAULT_LIST_TYPES)
 
 
 class Tap(ArgumentParser):
@@ -80,17 +84,16 @@ class Tap(ArgumentParser):
                         f'Variable "{variable}" has type "{var_type}" which is not supported by default.\n'
                         f'Please explicitly add the argument to the parser by writing:\n\n'
                         f'def add_arguments(self) -> None:\n'
-                        f'    self.add_argument('
-                        f'        "--{variable}", '
-                        f'        type=func, '
-                        f'        {"required=True" if kwargs["required"] else f"default={getattr(self, variable)}"}'
-                        f'    )\n\n'
+                        f'    self.add_argument("--{variable}", type=func, {"required=True" if kwargs["required"] else f"default={getattr(self, variable)}"})\n\n'
                         f'where "func" maps from str to {var_type}.')
 
-                # If List type, set type of elements in list and nargs
-                if var_type in SUPPORTED_DEFAULT_LIST_TYPES:
-                    element_type = var_type.__args__[0]
-                    var_type = element_type
+                # If Optional type, extract type
+                if var_type in SUPPORTED_DEFAULT_OPTIONAL_TYPES:
+                    var_type = var_type.__args__[0]
+
+                # If List type, extract type of elements in list and set nargs
+                elif var_type in SUPPORTED_DEFAULT_LIST_TYPES:
+                    var_type = var_type.__args__[0]
                     kwargs['nargs'] = kwargs.get('nargs', '*')
 
                 # If bool then set action, otherwise set type
@@ -123,14 +126,18 @@ class Tap(ArgumentParser):
 
     def _parse_args(self,
                     args: Optional[Sequence[str]] = None,
-                    namespace: Optional['Tap'] = None) -> None:
+                    known_only: bool = False) -> None:
         """Parses arguments and sets attributes of self equal to the parsed arguments.
 
         :param args: List of strings to parse. The default is taken from sys.argv.
-        TODO: should we support providing a namespace?
+        :param known_only: Whether to only parse known args rather than trying to parse all args.
+        If True, the remaining arguments can be accessed via self.extra_args.
         """
-        # Parse args using super class ArgumentParser's parse_args function
-        default_namespace = super(Tap, self).parse_args(args, namespace)
+        # Parse args using super class ArgumentParser's parse_args or parse_known_args function
+        if known_only:
+            default_namespace, self.extra_args = super(Tap, self).parse_known_args(args)
+        else:
+            default_namespace = super(Tap, self).parse_args(args)
 
         # Set variables (and deepcopy to avoid modifying the class variable)
         for variable, value in vars(default_namespace).items():
@@ -180,14 +187,15 @@ class Tap(ArgumentParser):
 
     def parse_args(self,
                    args: Optional[Sequence[str]] = None,
-                   namespace: Optional['Tap'] = None) -> 'Tap':
+                   known_only: bool = False) -> 'Tap':
         """Parses arguments, sets attributes of self equal to the parsed arguments, and processes arguments.
 
         :param args: List of strings to parse. The default is taken from `sys.argv`.
-        TODO: should we support providing a namespace?
+        :param known_only: Whether to only parse known args rather than trying to parse all args.
+        If True, the remaining arguments can be accessed via self.extra_args.
         :return: self, which is a Tap instance containing all of the parsed args.
         """
-        self._parse_args(args, namespace)
+        self._parse_args(args, known_only)
         self.process_args()
         self._parsed = True
 
