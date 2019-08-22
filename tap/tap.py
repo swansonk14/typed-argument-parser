@@ -43,6 +43,9 @@ class Tap(ArgumentParser):
         self.add_arguments()
         self._add_remaining_arguments()
 
+        # Set extra arguments to empty list
+        self.extra_args = []
+
     def add_argument(self, *name_or_flags, **kwargs) -> None:
         """Adds an argument to self (i.e. the super class ArgumentParser).
 
@@ -124,25 +127,6 @@ class Tap(ArgumentParser):
         """Explicitly add arguments to the parser if not using default settings."""
         pass
 
-    def _parse_args(self,
-                    args: Optional[Sequence[str]] = None,
-                    known_only: bool = False) -> None:
-        """Parses arguments and sets attributes of self equal to the parsed arguments.
-
-        :param args: List of strings to parse. The default is taken from sys.argv.
-        :param known_only: Whether to only parse known args rather than trying to parse all args.
-        If True, the remaining arguments can be accessed via self.extra_args.
-        """
-        # Parse args using super class ArgumentParser's parse_args or parse_known_args function
-        if known_only:
-            default_namespace, self.extra_args = super(Tap, self).parse_known_args(args)
-        else:
-            default_namespace = super(Tap, self).parse_args(args)
-
-        # Set variables (and deepcopy to avoid modifying the class variable)
-        for variable, value in vars(default_namespace).items():
-            setattr(self, variable, deepcopy(value))
-
     def process_args(self) -> None:
         """Perform additional argument processing and/or validation."""
         pass
@@ -191,12 +175,24 @@ class Tap(ArgumentParser):
         """Parses arguments, sets attributes of self equal to the parsed arguments, and processes arguments.
 
         :param args: List of strings to parse. The default is taken from `sys.argv`.
-        :param known_only: Whether to only parse known args rather than trying to parse all args.
-        If True, the remaining arguments can be accessed via self.extra_args.
+        :param known_only: If true, ignores extra arguments and only parses known arguments.
+        Unparsed arguments are saved to self.extra_args.
         :return: self, which is a Tap instance containing all of the parsed args.
         """
-        self._parse_args(args, known_only)
+        # Parse args using super class ArgumentParser's parse_args or parse_known_args function
+        if known_only:
+            default_namespace, self.extra_args = super(Tap, self).parse_known_args(args)
+        else:
+            default_namespace = super(Tap, self).parse_args(args)
+
+        # Copy parsed arguments to self
+        for variable, value in vars(default_namespace).items():
+            setattr(self, variable, deepcopy(value))
+
+        # Process args
         self.process_args()
+
+        # Indicate that args have been parsed
         self._parsed = True
 
         return self

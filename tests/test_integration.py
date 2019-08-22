@@ -414,6 +414,36 @@ class AddArgumentTests(TestCase):
         self.assertEqual(args.arg_bool_false, False)   
 
 
+class KnownTap(Tap):
+    arg_int: int = 2
+
+
+class ParseKnownArgsTests(TestCase):
+    arg_int = 3
+    arg_float = 3.3
+
+    def test_all_known(self):
+        args = KnownTap().parse_args([
+            '--arg_int', str(self.arg_int)
+        ], known_only=True)
+        self.assertEqual(args.arg_int, self.arg_int)
+        self.assertEqual(args.extra_args, [])
+
+    def test_some_known(self):
+        args = KnownTap().parse_args([
+            '--arg_int', str(self.arg_int),
+            '--arg_float', str(self.arg_float)
+        ], known_only=True)
+        self.assertEqual(args.arg_int, self.arg_int)
+        self.assertEqual(args.extra_args, ['--arg_float', '3.3'])
+
+    def test_none_known(self):
+        args = KnownTap().parse_args([
+            '--arg_float', str(self.arg_float)
+        ], known_only=True)
+        self.assertEqual(args.extra_args, ['--arg_float', '3.3'])
+
+
 """
 - crash if default type not supported
 - user specifying process_args
