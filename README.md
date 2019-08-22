@@ -23,6 +23,7 @@ Tap provides the following benefits:
     + [Flexibility of `add_arguments`](#flexibility-of-add_arguments)
     + [Types](#types)
     + [Argument processing with `process_args`](#argument-processing-with-process_args)
+    + [Processing known args](#processing-known-args)
     + [Subclassing](#subclassing)
     + [Printing](#printing)
     + [Reproducibility](#reproducibility)
@@ -179,13 +180,19 @@ class MyTap(Tap):
 
 Tap automatically handles all of the following types:
 
-`str`, `int`, `float`, `bool`, `List[str]`, `List[int]`, `List[float]`
+```python
+str, int, float, bool
+Optional[str], Optional[int], Optional[float]
+List[str], List[int], List[float]
+```
 
 Each of these arguments is parsed as follows:
 
 `str`, `int`, and `float`: Each is automatically parsed to their respective types, just like argparse.
 
 `bool`: If an argument `arg` is specified as `arg: bool` or `arg: bool = False`, then adding the `--arg` flag to the command line will set `arg` to `True`. If `arg` is specified as `arg: bool = True`, then adding `--arg` sets `arg` to `False`.
+
+`Optional`: These arguments are parsed in exactly the same way as `str`, `int`, and `float`.
 
 `List`: If an argument `arg` is a `List`, simply specify the values separated by spaces just as you would with regular argparse. For example, `--arg 1 2 3` parses to `arg = [1, 2, 3]`.
 
@@ -223,6 +230,18 @@ class MyTap(Tap):
         if self.package == 'Tap':
             self.is_cool = True
             self.stars = 5
+```
+
+### Processing known args
+
+Similar to argparse's `parse_known_args`, Tap is capable of parsing only arguments that it is aware of without raising an error due to additional arguments. This can be done by calling `parse_args` with `known_only=True`. The remaining un-parsed arguments are then available by accessing the `extra_args` field of the Tap object.
+
+```python
+class MyTap(Tap):
+    package: str
+
+args = MyTap().parse_args(['--package', 'Tap', '--other_arg', 'value'], known_only=True)
+print(args.extra_args)  # ['--other_arg', 'value']
 ```
 
 ### Subclassing
