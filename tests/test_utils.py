@@ -1,11 +1,11 @@
 import os
 import subprocess
 from tempfile import TemporaryDirectory
-from typing import Any, Callable, List, Dict, Tuple, Union
+from typing import Any, Callable, List, Dict, Set, Tuple, Union
 import unittest
 from unittest import TestCase
 
-from tap.utils import get_git_root, get_git_url, has_uncommitted_changes, type_to_str
+from tap.utils import get_class_column, get_git_root, get_git_url, has_uncommitted_changes, type_to_str
 
 
 class GitTests(TestCase):
@@ -53,7 +53,7 @@ class GitTests(TestCase):
         self.assertTrue(has_uncommitted_changes())
 
 
-class OtherUtilTests(TestCase):
+class TypeToStrTests(TestCase):
     def test_type_to_str(self) -> None:
         self.assertEqual(type_to_str(str), 'str')
         self.assertEqual(type_to_str(int), 'int')
@@ -66,8 +66,44 @@ class OtherUtilTests(TestCase):
         self.assertEqual(type_to_str(List[str]), 'List[str]')
         self.assertEqual(type_to_str(List[float]), 'List[float]')
         self.assertEqual(type_to_str(List[bool]), 'List[bool]')
+        self.assertEqual(type_to_str(Set[int]), 'Set[int]')
         self.assertEqual(type_to_str(Dict[str, int]), 'Dict[str, int]')
         self.assertEqual(type_to_str(Union[List[int], Dict[float, bool]]), 'Union[List[int], Dict[float, bool]]')
+
+
+class ClassColumnTests(TestCase):
+    def test_column(self):
+        class CLS:
+            arg = 2
+        self.assertEqual(get_class_column(CLS), 12)
+
+    def test_column_comment(self):
+        class CLS:
+            """hello
+            there
+
+
+            hi
+            """
+            arg = 2
+        self.assertEqual(get_class_column(CLS), 12)
+
+    def test_column_space(self):
+        class CLS:
+
+            arg = 2
+        self.assertEqual(get_class_column(CLS), 12)
+
+    def test_column_method(self):
+        class CLS:
+            def func(self):
+                pass
+
+        self.assertEqual(get_class_column(CLS), 12)
+
+
+class ClassVariableTests(TestCase):
+    pass
 
 
 if __name__ == '__main__':

@@ -131,9 +131,9 @@ def tokenize_source(obj: object) -> Generator:
     return token_generator
 
 
-def get_class_variable_column(cls: type) -> int:
+def get_class_column(obj: type) -> int:
     """Determines the column number for class variables in a class."""
-    for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(cls):
+    for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(obj):
         if start_line == 1 or token.strip() == '':
             continue
 
@@ -163,7 +163,7 @@ def get_class_variables(cls: type) -> OrderedDict:
     line_to_tokens = source_line_to_tokens(cls)
 
     # Get class variable column number
-    class_variable_column = get_class_variable_column(cls)
+    class_variable_column = get_class_column(cls)
 
     # Extract class variables
     variable_to_comment = OrderedDict()
