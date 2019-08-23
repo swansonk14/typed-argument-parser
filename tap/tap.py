@@ -236,9 +236,11 @@ class Tap(ArgumentParser):
         """Returns a dictionary mapping variable names to values.
 
         Variables and values are extracted from classes using key starting
-        with this class and traversing up through the super classes up through Tap.
+        with this class and traversing up the super classes up through Tap.
 
         If super class and sub class have the same key, the sub class value is used.
+
+        Super classes are traversed through breadth first search.
 
         :param extract_func: A function that extracts from a class a dictionary mapping variables to values.
         :param dict_type: The type of dictionary to use (e.g. dict, OrderedDict, etc.)

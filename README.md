@@ -51,20 +51,11 @@ To see this, let's look at an example:
 from tap import Tap
 
 class SimpleArgumentParser(Tap):
-    """This is a simple argument parser.
-    
-    Arguments:
-    :name: Your name.
-    :language: Programming language.
-    :package: Package name.
-    :stars: Number of stars.
-    :max_stars: Maximum stars.
-    """
-    name: str
-    language: str = 'Python'
-    package: str = 'Tap'
-    stars: int
-    max_stars: int = 5
+    name: str  # Your name
+    language: str = 'Python'  # Programming language
+    package: str = 'Tap'  # Package name
+    stars: int  # Number of stars
+    max_stars: int = 5  # Maximum stars
     
 args = SimpleArgumentParser().parse_args()
 
@@ -87,15 +78,15 @@ from argparse import ArgumentParser
 
 parser = ArgumentParser()
 parser.add_argument('--name', type=str, required=True,
-                    help='Your name.')
+                    help='Your name')
 parser.add_argument('--language', type=str,
-                    help='Programming language.')
+                    help='Programming language')
 parser.add_argument('--package', type=str, default='Tap',
-                    help='Package name.')
+                    help='Package name')
 parser.add_argument('--stars', type=int, required=True,
-                    help='Number of stars.')
+                    help='Number of stars')
 parser.add_argument('--max_stars', type=int, default=5,
-                    help='Maximum stars.')
+                    help='Maximum stars')
 args = parser.parse_args()
 
 print(f'My name is {args.name} and I give the {args.language} package '
@@ -123,7 +114,7 @@ class MyTap(Tap):
 
 ### Help string
 
-Class documentation is automatically parsed into the help string provided when running `python main.py -h`.
+Single line comments are automatically parsed into the help string provided when running `python main.py -h`. The type and default values of arguments are also provided in the help string.
 
 ```python
 """main.py"""
@@ -131,12 +122,8 @@ Class documentation is automatically parsed into the help string provided when r
 from tap import Tap
 
 class MyTap(Tap):
-    """You can document Tap!
-
-    Arguments:
-    :argument: This is an argument.
-    """
-    argument: str = "I'm well documented!"
+    x: float  # What am I?
+    pi: float = 3.14  # I'm pi!
 
 args = MyTap().parse_args()
 ```
@@ -145,16 +132,13 @@ Running `python main.py -h` results in the following:
 
 ```
 >>> python main.py -h
-usage: main.py [-h] [--argument ARGUMENT]
-
-You can document Tap!
+usage: demo.py --x X [--pi PI] [-h]
 
 optional arguments:
+  --x X       (float, required) What am I?
+  --pi PI     (float, default=3.14) I'm pi!
   -h, --help  show this help message and exit
-  --argument ARGUMENT   (str) This is an argument.
 ```
-
-Documentation must follow the format seen above in order to appear in the help string, otherwise it is ignored.
 
 ### Flexibility of `add_arguments`
 
@@ -184,6 +168,7 @@ Tap automatically handles all of the following types:
 str, int, float, bool
 Optional[str], Optional[int], Optional[float]
 List[str], List[int], List[float]
+Set[str], Set[int], Set[float]
 ```
 
 Each of these arguments is parsed as follows:
@@ -195,6 +180,8 @@ Each of these arguments is parsed as follows:
 `Optional`: These arguments are parsed in exactly the same way as `str`, `int`, and `float`.
 
 `List`: If an argument `arg` is a `List`, simply specify the values separated by spaces just as you would with regular argparse. For example, `--arg 1 2 3` parses to `arg = [1, 2, 3]`.
+
+`Set`: Identical to `List` but parsed into a set rather than a list.
 
 More complex types _must_ be specified with the `type` keyword argument in `add_argument`, as in the example below.
 
