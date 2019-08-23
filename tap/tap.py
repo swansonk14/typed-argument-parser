@@ -74,26 +74,34 @@ class Tap(ArgumentParser):
         if hasattr(self, variable):
             kwargs['default'] = kwargs.get('default', getattr(self, variable))
 
+        # Set required if option arg
+        if is_option_arg(*name_or_flags) and variable != 'help':
+            kwargs['required'] = kwargs.get('required', not hasattr(self, variable))
+
+        # Set help if necessary
+        if 'help' not in kwargs:
+            kwargs['help'] = '('
+
+            # Type
+            if variable in self._annotations:
+                kwargs['help'] += type_to_str(self._annotations[variable]) + ', '
+
+            # Required/default
+            if kwargs.get('required', False):
+                kwargs['help'] += 'required'
+            else:
+                kwargs['help'] += f'default={kwargs.get("default", None)}'
+
+            kwargs['help'] += ')'
+
+            # Description
+            if variable in self.class_variables:
+                kwargs['help'] += ' ' + self.class_variables[variable]['comment']
+
         # Set other kwargs where not provided
         if variable in self._annotations:
             # Get type annotation
             var_type = self._annotations[variable]
-
-            # Set required if option arg
-            if is_option_arg(*name_or_flags):
-                kwargs['required'] = kwargs.get('required', not hasattr(self, variable))
-
-            # Set help if necessary
-            if 'help' not in kwargs:
-                # Add type and default
-                kwargs['help'] = '(' + type_to_str(var_type)
-                if 'default' in kwargs:
-                    kwargs['help'] += f', default={kwargs["default"]}'
-                kwargs['help'] += ')'
-
-                # Add description
-                if variable in self.class_variables:
-                    kwargs['help'] += ' ' + self.class_variables[variable]['comment']
 
             # If type is not explicitly provided, set it if it's one of our supported default types
             if 'type' not in kwargs:
