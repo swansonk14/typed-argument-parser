@@ -5,7 +5,7 @@ import json
 from pprint import pformat
 import sys
 import time
-from typing import Any, Dict, List, Optional, Sequence, Set
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set
 
 from tap.utils import get_class_variables, get_dest, get_git_root, get_git_url, has_git,has_uncommitted_changes,\
     is_option_arg, type_to_str
@@ -38,7 +38,10 @@ class Tap(ArgumentParser):
         self.argument_buffer = OrderedDict()
 
         # Get help strings from the comments
-        self.class_variables = get_class_variables(self.__class__)
+        self.class_variables = self._get_from_self_and_super(
+            extract_func=lambda super_class: get_class_variables(super_class),
+            dict_type=OrderedDict
+        )
 
         # Get annotations from self and all super classes up through tap
         self._annotations = self._get_annotations()
@@ -215,7 +218,9 @@ class Tap(ArgumentParser):
         return self
 
     @classmethod
-    def _get_from_self_and_super(cls, key: str) -> Dict[str, Any]:
+    def _get_from_self_and_super(cls,
+                                 extract_func: Callable[[type], dict],
+                                 dict_type: type = dict) -> Dict[str, Any]:
         """Returns a dictionary mapping variable names to values.
 
         Variables and values are extracted from classes using key starting
@@ -223,20 +228,24 @@ class Tap(ArgumentParser):
 
         If super class and sub class have the same key, the sub class value is used.
 
-        :param key: The key to extract from all classes. Must return a dictionary.
+        :param extract_func: A function that extracts from a class a dictionary mapping variables to values.
+        :param dict_type: The type of dictionary to use (e.g. dict, OrderedDict, etc.)
         :return: A dictionary mapping variable names to values from the class dict.
         """
         visited = set()
         super_classes = [cls]
-        dictionary = dict()
+        dictionary = dict_type()
 
         while len(super_classes) > 0:
             super_class = super_classes.pop(0)
 
             if super_class not in visited and issubclass(super_class, Tap):
-                super_dictionary = dict(getattr(super_class, key, dict()))
+                super_dictionary = extract_func(super_class)
 
-                # Update only unseen variables to avoid overriding subclass type annotations
+                # Update only unseen variables to avoid overriding subclass values
+                for variable, value in super_dictionary.items():
+                    if variable not in dictionary:
+                        dictionary[variable] = value
                 for variable in super_dictionary.keys() - dictionary.keys():
                     dictionary[variable] = super_dictionary[variable]
 
@@ -247,7 +256,9 @@ class Tap(ArgumentParser):
 
     def _get_class_dict(self) -> Dict[str, Any]:
         """Returns a dictionary mapping class variable names to values from the class dict."""
-        class_dict = self._get_from_self_and_super(key='__dict__')
+        class_dict = self._get_from_self_and_super(
+            extract_func=lambda super_class: dict(getattr(super_class, '__dict__', dict()))
+        )
         class_dict = {var: val for var, val in class_dict.items()
                       if not var.startswith('_') and not callable(val) and not isinstance(val, staticmethod)}
 
@@ -255,7 +266,9 @@ class Tap(ArgumentParser):
 
     def _get_annotations(self) -> Dict[str, Any]:
         """Returns a dictionary mapping variable names to their type annotations."""
-        return self._get_from_self_and_super(key='__annotations__')
+        return self._get_from_self_and_super(
+            extract_func=lambda super_class: dict(getattr(super_class, '__annotations__', dict()))
+        )
 
     def _get_argument_names(self) -> Set[str]:
         """Returns a list of variable names corresponding to the arguments."""
