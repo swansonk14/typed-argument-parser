@@ -5,14 +5,14 @@ with open('README.md') as f:
 
 setup(
     name='typed-argument-parser',
-    version='1.1',
+    version='1.2',
     author='Jesse Michel and Kyle Swanson',
     author_email='kswanson@asapp.com',
     description='Typed Argument Parser',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/swansonk14/typed-argument-parser',
-    download_url='https://github.com/swansonk14/typed-argument-parser/v_1.1.tar.gz',
+    download_url='https://github.com/swansonk14/typed-argument-parser/v_1.2.tar.gz',
     license='MIT',
     packages=find_packages(),
     install_requires=[],

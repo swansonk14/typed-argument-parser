@@ -471,6 +471,7 @@ class ParseKnownArgsTests(TestCase):
 - test get reproducibility info
 - test as_dict
 - test str?
+- test comments
 """
 
 
