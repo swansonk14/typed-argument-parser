@@ -1,10 +1,11 @@
 from argparse import ArgumentParser
+from collections import OrderedDict
 import inspect
 from io import StringIO
 import os
 import subprocess
 import tokenize
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Generator, List, Union
 
 
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
@@ -122,18 +123,27 @@ def is_option_arg(*name_or_flags) -> bool:
     return any(name_or_flag.startswith('-') for name_or_flag in name_or_flags)
 
 
-def extract_class_variable_to_comment_mapping(cls: type) -> Dict[str, str]:
-    """Returns a dictionary mapping from class variables their single line comments on the same line."""
-    # Get source code for the class
-    class_source_code = inspect.getsource(cls)
+def tokenize_source(obj: object) -> Generator:
+    """Returns a generator for the tokens of the object's source code."""
+    source = inspect.getsource(obj)
+    token_generator = tokenize.generate_tokens(StringIO(source).readline)
 
-    # Determine indentation
-    first_line = class_source_code.split('\n')[0]
-    indent = len(first_line) - len(first_line.lstrip())
+    return token_generator
 
-    # Get mapping from line number to tokens
+
+def get_class_variable_column(cls: type) -> int:
+    """Determines the column number for class variables in a class."""
+    for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(cls):
+        if start_line == 1 or token.strip() == '':
+            continue
+
+        return start_column
+
+
+def source_line_to_tokens(obj: object) -> Dict[int, List[Dict[str, Union[str, int]]]]:
+    """Gets a dictionary mapping from line number to a dictionary of tokens on that line for an object's source code."""
     line_to_tokens = {}
-    for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize.generate_tokens(StringIO(class_source_code).readline):
+    for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(obj):
         line_to_tokens.setdefault(start_line, []).append({
             'token_type': token_type,
             'token': token,
@@ -144,25 +154,40 @@ def extract_class_variable_to_comment_mapping(cls: type) -> Dict[str, str]:
             'line': line
         })
 
-    # Identify lines with class variables and extract comments
-    variable_to_comment = {}
+    return line_to_tokens
+
+
+def get_class_variables(cls: type) -> OrderedDict:
+    """Returns an OrderedDict mapping class variables to their additional information (currently just comments)."""
+    # Get mapping from line number to tokens
+    line_to_tokens = source_line_to_tokens(cls)
+
+    # Get class variable column number
+    class_variable_column = get_class_variable_column(cls)
+
+    # Extract class variables
+    variable_to_comment = OrderedDict()
     for tokens in line_to_tokens.values():
         for i, token in enumerate(tokens):
-            # Skip past all the whitespace
+
+            # Skip whitespace
             if token['token'].strip() == '':
                 continue
 
-            # Match class variable and extract comment
-            # TODO: support other indenting styles???
+            # Match class variable
             if (token['token_type'] == tokenize.NAME and
-                    token['start_column'] in [indent + 2, indent + 4] and
+                    token['start_column'] == class_variable_column and
                     len(tokens) > i and
                     tokens[i + 1]['token'] in ['=', ':']):
-                if tokens[-2]['token_type'] == tokenize.COMMENT:
-                    print('hello')
-                    variable_to_comment[token['token']] = tokens[-2]['token']
-                else:
-                    variable_to_comment[token['token']] = ''
+
+                class_variable = token['token']
+                variable_to_comment[class_variable] = {'comment': ''}
+
+                # Find the comment (if it exists)
+                for j in range(i + 1, len(tokens)):
+                    if tokens[j]['token_type'] == tokenize.COMMENT:
+                        variable_to_comment[class_variable]['comment'] = tokens[j]['token']
+                        break
 
             break
 

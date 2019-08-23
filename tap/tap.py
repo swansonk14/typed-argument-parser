@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from collections import OrderedDict
 from copy import deepcopy
 import json
 from pprint import pformat
@@ -6,8 +7,8 @@ import sys
 import time
 from typing import Any, Dict, List, Optional, Sequence, Set
 
-from tap.parse_docstrings import extract_descriptions
-from tap.utils import get_dest, get_git_root, get_git_url, has_git, has_uncommitted_changes, is_option_arg, type_to_str
+from tap.utils import get_class_variables, get_dest, get_git_root, get_git_url, has_git,has_uncommitted_changes,\
+    is_option_arg, type_to_str
 
 
 SUPPORTED_DEFAULT_BASE_TYPES = {str, int, float, bool}
@@ -30,23 +31,26 @@ class Tap(ArgumentParser):
         # Whether the arguments have been parsed (i.e. if parse_args has been called)
         self._parsed = False
 
-        # Get descriptions of the arguments from the doc string
-        self.description, self.variable_description, self.parse_error = extract_descriptions(self.__doc__)
+        # Set extra arguments to empty list
+        self.extra_args = []
+
+        # Create argument buffer
+        self.argument_buffer = OrderedDict()
+
+        # Get help strings from the comments
+        self.class_variables = get_class_variables(self.__class__)
 
         # Get annotations from self and all super classes up through tap
         self._annotations = self._get_annotations()
 
         # Initialize the super class, i.e. ArgumentParser
-        super(Tap, self).__init__(description=self.description, *args, **kwargs)
+        super(Tap, self).__init__(*args, **kwargs)
 
         # Add arguments to self
-        self.add_arguments()
-        self._add_remaining_arguments()
+        self.add_arguments()  # Adds user-overridden arguments to the arguments buffer
+        self._add_arguments()  # Adds all arguments in order to self
 
-        # Set extra arguments to empty list
-        self.extra_args = []
-
-    def add_argument(self, *name_or_flags, **kwargs) -> None:
+    def _add_argument(self, *name_or_flags, **kwargs) -> None:
         """Adds an argument to self (i.e. the super class ArgumentParser).
 
         Sets the following attributes of kwargs when not explicitly provided:
@@ -77,8 +81,17 @@ class Tap(ArgumentParser):
             if is_option_arg(*name_or_flags):
                 kwargs['required'] = kwargs.get('required', not hasattr(self, variable))
 
-            # Set help
-            kwargs['help'] = kwargs.get('help', f'({type_to_str(var_type)}) {self.variable_description.get(variable)}')
+            # Set help if necessary
+            if 'help' not in kwargs:
+                # Add type and default
+                kwargs['help'] = '(' + type_to_str(var_type)
+                if 'default' in kwargs:
+                    kwargs['help'] += f', default={kwargs["default"]}'
+                kwargs['help'] += ')'
+
+                # Add description
+                if variable in self.class_variables:
+                    kwargs['help'] += ' ' + self.class_variables[variable]['comment']
 
             # If type is not explicitly provided, set it if it's one of our supported default types
             if 'type' not in kwargs:
@@ -107,24 +120,28 @@ class Tap(ArgumentParser):
 
         super(Tap, self).add_argument(*name_or_flags, **kwargs)
 
-    def _add_remaining_arguments(self) -> None:
-        """Adds any arguments not explicitly added in add_arguments.
+    def add_argument(self, *name_or_flags, **kwargs) -> None:
+        """Adds an argument to the argument buffer, which will later be passed to _add_argument."""
+        variable = get_dest(*name_or_flags, **kwargs)
+        self.argument_buffer[variable] = (name_or_flags, kwargs)
 
-        Uses the name, type annotation, and default provided in the definition
-        of the argument. If no default is provided, the argument is required.
-        """
-        added_arguments = {action.dest for action in self._actions}
-        remaining_arguments = self._get_argument_names() - added_arguments
+    def _add_arguments(self) -> None:
+        """Add arguments to self in the order they are defined as class variables (so the help string is in order)."""
+        # Add class variables (in order)
+        for variable in self.class_variables:
+            if variable in self.argument_buffer:
+                name_or_flags, kwargs = self.argument_buffer[variable]
+                self._add_argument(*name_or_flags, **kwargs)
+            else:
+                self._add_argument(f'--{variable}')
 
-        for variable in sorted(remaining_arguments):
-            self.add_argument(f'--{variable}')
-
-            # Variables without documentation provided have a help value of None
-            if variable not in self.variable_description:
-                self.variable_description[variable] = ''
+        # Add any arguments that were added manually in add_arguments but aren't class variables (in order)
+        for variable, (name_or_flags, kwargs) in self.argument_buffer.items():
+            if variable not in self.class_variables:
+                self._add_argument(*name_or_flags, **kwargs)
 
     def add_arguments(self) -> None:
-        """Explicitly add arguments to the parser if not using default settings."""
+        """Explicitly add arguments to the argument buffer if not using default settings."""
         pass
 
     def process_args(self) -> None:
