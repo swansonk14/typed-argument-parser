@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Set
 import unittest
 from unittest import TestCase
 import sys 
@@ -112,6 +112,9 @@ class IntegrationDefaultTap(Tap):
     arg_list_int: List[int] = [10, -11]
     arg_list_float: List[float] = [3.14, 6.28]
     arg_list_str_empty: List[str] = []
+    arg_set_str: Set[str] = {'hello', 'how are you'}
+    arg_set_int: Set[int] = {10, -11}
+    arg_set_float: Set[float] = {3.14, 6.28}
     # TODO: move these elsewhere since we don't support them as defaults
     # arg_other_type_required: Person
     # arg_other_type_default: Person = Person('tap')
@@ -162,6 +165,9 @@ class DefaultClassVariableTests(TestCase):
         self.assertEqual(args.arg_list_int, [10, -11])
         self.assertEqual(args.arg_list_float, [3.14, 6.28])
         self.assertEqual(args.arg_list_str_empty, [])
+        self.assertEqual(args.arg_set_str, {'hello', 'how are you'})
+        self.assertEqual(args.arg_set_int, {10, -11})
+        self.assertEqual(args.arg_set_float, {3.14, 6.28})
 
     def test_set_default_args(self) -> None:
         arg_untyped = 'yes'
@@ -175,6 +181,10 @@ class DefaultClassVariableTests(TestCase):
         arg_list_int = ['1', '2', '3', '10', '-11']
         arg_list_float = ['2.2', '-3.3', '2e20']
         arg_list_str_empty = []
+        arg_set_str = ['hi', 'hi', 'hi', 'how']
+        arg_set_int = ['1', '2', '2', '2', '3']
+        arg_set_float = ['1.23', '4.4', '1.23']
+
 
         args = IntegrationDefaultTap().parse_args([
             '--arg_untyped', arg_untyped,
@@ -190,6 +200,9 @@ class DefaultClassVariableTests(TestCase):
             '--arg_list_int', *arg_list_int,
             '--arg_list_float', *arg_list_float,
             '--arg_list_str_empty', *arg_list_str_empty,
+            '--arg_set_str', *arg_set_str,
+            '--arg_set_int', *arg_set_int,
+            '--arg_set_float', *arg_set_float
         ])
 
         arg_int = int(arg_int)
@@ -198,6 +211,10 @@ class DefaultClassVariableTests(TestCase):
         arg_optional_float = float(arg_optional_float)
         arg_list_int = [int(arg) for arg in arg_list_int]
         arg_list_float = [float(arg) for arg in arg_list_float]
+        arg_set_str = set(arg_set_str)
+        arg_set_int = {int(arg) for arg in arg_set_int}
+        arg_set_float = {float(arg) for arg in arg_set_float}
+
 
         self.assertEqual(args.arg_untyped, arg_untyped)
         self.assertEqual(args.arg_str, arg_str)
@@ -213,6 +230,9 @@ class DefaultClassVariableTests(TestCase):
         self.assertEqual(args.arg_list_int, arg_list_int)
         self.assertEqual(args.arg_list_float, arg_list_float)
         self.assertEqual(args.arg_list_str_empty, arg_list_str_empty)
+        self.assertEqual(args.arg_set_str, arg_set_str)
+        self.assertEqual(args.arg_set_int, arg_set_int)
+        self.assertEqual(args.arg_set_float, arg_set_float)
 
 
 class AddArgumentTests(TestCase):
