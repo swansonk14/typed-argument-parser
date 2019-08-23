@@ -186,7 +186,8 @@ def get_class_variables(cls: type) -> OrderedDict:
                 # Find the comment (if it exists)
                 for j in range(i + 1, len(tokens)):
                     if tokens[j]['token_type'] == tokenize.COMMENT:
-                        variable_to_comment[class_variable]['comment'] = tokens[j]['token']
+                        # Leave out "#" and whitespace from comment
+                        variable_to_comment[class_variable]['comment'] = tokens[j]['token'][1:].strip()
                         break
 
             break

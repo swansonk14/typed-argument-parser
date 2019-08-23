@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import os
 import subprocess
 from tempfile import TemporaryDirectory
@@ -5,7 +6,8 @@ from typing import Any, Callable, List, Dict, Set, Tuple, Union
 import unittest
 from unittest import TestCase
 
-from tap.utils import get_class_column, get_git_root, get_git_url, has_uncommitted_changes, type_to_str
+from tap.utils import get_class_column, get_class_variables, get_git_root, get_git_url, has_uncommitted_changes,\
+    type_to_str
 
 
 class GitTests(TestCase):
@@ -72,13 +74,13 @@ class TypeToStrTests(TestCase):
 
 
 class ClassColumnTests(TestCase):
-    def test_column(self):
-        class CLS:
+    def test_column_simple(self):
+        class SimpleColumn:
             arg = 2
-        self.assertEqual(get_class_column(CLS), 12)
+        self.assertEqual(get_class_column(SimpleColumn), 12)
 
     def test_column_comment(self):
-        class CLS:
+        class CommentColumn:
             """hello
             there
 
@@ -86,24 +88,90 @@ class ClassColumnTests(TestCase):
             hi
             """
             arg = 2
-        self.assertEqual(get_class_column(CLS), 12)
+        self.assertEqual(get_class_column(CommentColumn), 12)
 
     def test_column_space(self):
-        class CLS:
+        class SpaceColumn:
 
             arg = 2
-        self.assertEqual(get_class_column(CLS), 12)
+        self.assertEqual(get_class_column(SpaceColumn), 12)
 
     def test_column_method(self):
-        class CLS:
+        class FuncColumn:
             def func(self):
                 pass
 
-        self.assertEqual(get_class_column(CLS), 12)
+        self.assertEqual(get_class_column(FuncColumn), 12)
 
 
 class ClassVariableTests(TestCase):
-    pass
+    def test_no_variables(self):
+        class NoVariables:
+            pass
+        self.assertEqual(get_class_variables(NoVariables), OrderedDict())
+
+    def test_one_variable(self):
+        class OneVariable:
+            arg = 2
+        class_variables = OrderedDict()
+        class_variables['arg'] = {'comment': ''}
+        self.assertEqual(get_class_variables(OneVariable), class_variables)
+
+    def test_multiple_variable(self):
+        class MultiVariable:
+            arg_1 = 2
+            arg_2 = 3
+        class_variables = OrderedDict()
+        class_variables['arg_1'] = {'comment': ''}
+        class_variables['arg_2'] = {'comment': ''}
+        self.assertEqual(get_class_variables(MultiVariable), class_variables)
+
+    def test_typed_variables(self):
+        class TypedVariable:
+            arg_1: str
+            arg_2: int = 3
+        class_variables = OrderedDict()
+        class_variables['arg_1'] = {'comment': ''}
+        class_variables['arg_2'] = {'comment': ''}
+        self.assertEqual(get_class_variables(TypedVariable), class_variables)
+
+    def test_separated_variables(self):
+        class SeparatedVariable:
+            """Comment
+
+            """
+            arg_1: str
+
+            # Hello
+            def func(self):
+                pass
+
+            arg_2: int = 3
+            """More comment"""
+        class_variables = OrderedDict()
+        class_variables['arg_1'] = {'comment': ''}
+        class_variables['arg_2'] = {'comment': ''}
+        self.assertEqual(get_class_variables(SeparatedVariable), class_variables)
+
+    def test_commented_variables(self):
+        class CommentedVariable:
+            """Comment
+
+            """
+            arg_1: str  # Arg 1 comment
+
+            # Hello
+            def func(self):
+                pass
+
+            arg_2: int = 3  # Arg 2 comment
+            arg_3   :   Dict[str, int]      #     Poorly   formatted comment
+            """More comment"""
+        class_variables = OrderedDict()
+        class_variables['arg_1'] = {'comment': 'Arg 1 comment'}
+        class_variables['arg_2'] = {'comment': 'Arg 2 comment'}
+        class_variables['arg_3'] = {'comment': 'Poorly   formatted comment'}
+        self.assertEqual(get_class_variables(CommentedVariable), class_variables)
 
 
 if __name__ == '__main__':
