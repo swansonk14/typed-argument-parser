@@ -14,9 +14,11 @@ from tap.utils import get_class_variables, get_dest, get_git_root, get_git_url, 
 SUPPORTED_DEFAULT_BASE_TYPES = {str, int, float, bool}
 SUPPORTED_DEFAULT_OPTIONAL_TYPES = {Optional[str], Optional[int], Optional[float]}
 SUPPORTED_DEFAULT_LIST_TYPES = {List[str], List[int], List[float]}
+SUPPORTED_DEFAULT_SET_TYPES = {Set[str], Set[int], Set[float]}
+SUPPORTED_DEFAULT_COLLECTION_TYPES = SUPPORTED_DEFAULT_LIST_TYPES | SUPPORTED_DEFAULT_SET_TYPES
 SUPPORTED_DEFAULT_TYPES = set.union(SUPPORTED_DEFAULT_BASE_TYPES,
                                     SUPPORTED_DEFAULT_OPTIONAL_TYPES,
-                                    SUPPORTED_DEFAULT_LIST_TYPES)
+                                    SUPPORTED_DEFAULT_COLLECTION_TYPES)
 
 
 class Tap(ArgumentParser):
@@ -111,7 +113,7 @@ class Tap(ArgumentParser):
                     var_type = var_type.__args__[0]
 
                 # If List type, extract type of elements in list and set nargs
-                elif var_type in SUPPORTED_DEFAULT_LIST_TYPES:
+                elif var_type in SUPPORTED_DEFAULT_COLLECTION_TYPES:
                     var_type = var_type.__args__[0]
                     kwargs['nargs'] = kwargs.get('nargs', '*')
 
@@ -207,6 +209,11 @@ class Tap(ArgumentParser):
 
         # Copy parsed arguments to self
         for variable, value in vars(default_namespace).items():
+            # Conversion from list to set
+            if variable in self._annotations and self._annotations[variable] in SUPPORTED_DEFAULT_SET_TYPES:
+                value = set(value)
+
+            # Set variable in self (and deepcopy)
             setattr(self, variable, deepcopy(value))
 
         # Process args
