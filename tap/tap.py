@@ -5,7 +5,7 @@ import json
 from pprint import pformat
 import sys
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union
 
 from tap.utils import get_class_variables, get_dest, get_git_root, get_git_url, has_git,has_uncommitted_changes,\
     is_option_arg, type_to_str
@@ -40,10 +40,7 @@ class Tap(ArgumentParser):
         self.argument_buffer = OrderedDict()
 
         # Get help strings from the comments
-        self.class_variables = self._get_from_self_and_super(
-            extract_func=lambda super_class: get_class_variables(super_class),
-            dict_type=OrderedDict
-        )
+        self.class_variables = self._get_class_variables()
 
         # Get annotations from self and all super classes up through tap
         self._annotations = self._get_annotations()
@@ -227,7 +224,7 @@ class Tap(ArgumentParser):
     @classmethod
     def _get_from_self_and_super(cls,
                                  extract_func: Callable[[type], dict],
-                                 dict_type: type = dict) -> Dict[str, Any]:
+                                 dict_type: type = dict) -> Union[Dict[str, Any], OrderedDict]:
         """Returns a dictionary mapping variable names to values.
 
         Variables and values are extracted from classes using key starting
@@ -275,6 +272,13 @@ class Tap(ArgumentParser):
         """Returns a dictionary mapping variable names to their type annotations."""
         return self._get_from_self_and_super(
             extract_func=lambda super_class: dict(getattr(super_class, '__annotations__', dict()))
+        )
+
+    def _get_class_variables(self) -> OrderedDict:
+        """Returns an OrderedDict mapping class variables names to their additional information."""
+        return self._get_from_self_and_super(
+            extract_func=lambda super_class: get_class_variables(super_class),
+            dict_type=OrderedDict
         )
 
     def _get_argument_names(self) -> Set[str]:
