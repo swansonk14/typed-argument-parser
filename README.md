@@ -11,7 +11,7 @@ Tap provides the following benefits:
 - Code completion
 - Source code navigation (e.g. go to definition and go to implementation)
 
-![Tap](images/tap.png)
+![Tap](https://github.com/swansonk14/typed-argument-parser/blob/master/images/tap.png)
  
 ## Table of Contents
 
