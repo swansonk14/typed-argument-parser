@@ -58,7 +58,7 @@ def get_git_url(commit_hash: bool = True) -> str:
     m = re.search('git@(.+):', url)
     if m is not None:
         domain = m.group(1)
-        path = url[m.span()[1]]
+        path = url[m.span()[1]:]
         url = f'https://{domain}/{path}'
 
     if commit_hash:
