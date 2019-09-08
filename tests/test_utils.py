@@ -47,6 +47,24 @@ class GitTests(TestCase):
         url = f'{self.url}/tree/'
         self.assertEqual(get_git_url(commit_hash=True)[:len(url)], url)
 
+    def test_get_git_url_https_enterprise(self) -> None:
+        subprocess.run(['git', 'remote', 'set-url', 'origin', 'https://github.tap.com:test_account/test_repo.git'])
+        self.assertEqual(get_git_url(commit_hash=False), self.url)
+
+    def test_get_git_url_https_hash_enterprise(self) -> None:
+        subprocess.run(['git', 'remote', 'set-url', 'origin', 'https://github.tap.com:test_account/test_repo.git'])
+        url = f'{self.url}/tree/'
+        self.assertEqual(get_git_url(commit_hash=True)[:len(url)], url)
+
+    def test_get_git_url_ssh_enterprise(self) -> None:
+        subprocess.run(['git', 'remote', 'set-url', 'origin', 'git@github.tap.com:test_account/test_repo.git'])
+        self.assertEqual(get_git_url(commit_hash=False), self.url)
+
+    def test_get_git_url_ssh_hash_enterprise(self) -> None:
+        subprocess.run(['git', 'remote', 'set-url', 'origin', 'git@github.tap.com:test_account/test_repo.git'])
+        url = f'{self.url}/tree/'
+        self.assertEqual(get_git_url(commit_hash=True)[:len(url)], url)
+
     def test_has_uncommitted_changes_false(self) -> None:
         self.assertFalse(has_uncommitted_changes())
 

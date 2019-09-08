@@ -3,6 +3,7 @@ from collections import OrderedDict
 import inspect
 from io import StringIO
 import os
+import re
 import subprocess
 import tokenize
 from typing import Any, Dict, Generator, List, Union
@@ -50,17 +51,15 @@ def get_git_url(commit_hash: bool = True) -> str:
     # Get git url (either https or ssh)
     url = check_output(['git', 'remote', 'get-url', 'origin'])
 
-    # Check to ensure url starts and ends as expected for https and ssh
-    assert url.startswith('https://github.com') or url.startswith('git@github.com')
-    assert url.endswith('.git')
-
     # Remove .git at end
     url = url[:-len('.git')]
 
     # Convert ssh url to https url
-    if url.startswith('git@github.com:'):
-        url = url[len('git@github.com:'):]
-        url = f'https://github.com/{url}'
+    m = re.search('git@(.+):', url)
+    if m is not None:
+        domain = m.group(1)
+        path = url[m.span()[1]]
+        url = f'https://{domain}/{path}'
 
     if commit_hash:
         # Add tree and hash of current commit
