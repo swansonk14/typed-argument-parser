@@ -39,7 +39,7 @@ class Tap(ArgumentParser):
         # Create argument buffer
         self.argument_buffer = OrderedDict()
 
-        # Get help strings from the comments
+        # Get class variables help strings from the comments
         self.class_variables = self._get_class_variables()
 
         # Get annotations from self and all super classes up through tap
@@ -169,7 +169,7 @@ class Tap(ArgumentParser):
         If git is installed, reproducibility information also includes:
         - git_root: The root of the git repo where the command is run.
         - git_url: The url of the current hash of the git repo where the command is run.
-                   Ex. https://github.com/kswanson-asapp/rationale-alignment/tree/<hash>
+                   Ex. https://github.com/swansonk14/rationale-alignment/tree/<hash>
         - git_has_uncommitted_changes: Whether the current git repo has uncommitted changes.
 
         :return: A dictionary of reproducibility information.
@@ -273,8 +273,11 @@ class Tap(ArgumentParser):
         class_dict = self._get_from_self_and_super(
             extract_func=lambda super_class: dict(getattr(super_class, '__dict__', dict()))
         )
-        class_dict = {var: val for var, val in class_dict.items()
-                      if not var.startswith('_') and not callable(val) and not isinstance(val, staticmethod)}
+        class_dict = {
+            var: val
+            for var, val in class_dict.items()
+            if not (var.startswith('_') or callable(val) or isinstance(val, staticmethod))
+        }
 
         return class_dict
 
@@ -286,10 +289,18 @@ class Tap(ArgumentParser):
 
     def _get_class_variables(self) -> OrderedDict:
         """Returns an OrderedDict mapping class variables names to their additional information."""
-        return self._get_from_self_and_super(
-            extract_func=lambda super_class: get_class_variables(super_class),
-            dict_type=OrderedDict
-        )
+        try:
+            class_variables = self._get_from_self_and_super(
+                extract_func=lambda super_class: get_class_variables(super_class),
+                dict_type=OrderedDict
+            )
+        # Exception if inspect.getsource fails to extract the source code
+        except Exception:
+            class_variables = OrderedDict()
+            for variable in self._get_class_dict().keys():
+                class_variables[variable] = {'comment': ''}
+
+        return class_variables
 
     def _get_argument_names(self) -> Set[str]:
         """Returns a list of variable names corresponding to the arguments."""
