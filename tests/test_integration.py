@@ -285,20 +285,6 @@ class AddArgumentTests(TestCase):
 
         self.assertEqual(self.args.arg_str, arg_str)
 
-    def test_one_and_two_dashes(self) -> None:
-        class IntegrationAddArgumentTap(IntegrationDefaultTap):
-            def add_arguments(self) -> None:
-                self.add_argument('-a', '--arg_str')
-
-        arg_str = 'one_or_two_dashes'
-        self.args = IntegrationAddArgumentTap().parse_args(['-a', arg_str])
-
-        self.assertEqual(self.args.arg_str, arg_str)
-
-        self.args = IntegrationAddArgumentTap().parse_args(['--arg_str', arg_str])
-
-        self.assertEqual(self.args.arg_str, arg_str)
-
     def test_not_class_variable(self) -> None:
         class IntegrationAddArgumentTap(IntegrationDefaultTap):
             def add_arguments(self) -> None:

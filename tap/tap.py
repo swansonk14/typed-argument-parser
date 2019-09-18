@@ -1,11 +1,12 @@
 from argparse import ArgumentParser
 from collections import OrderedDict
 from copy import deepcopy
-import json
 from pprint import pformat
+from string import ascii_letters
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union
+import json
 import sys
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union
 
 from tap.utils import get_class_variables, get_dest, get_git_root, get_git_url, has_git,has_uncommitted_changes,\
     is_option_arg, type_to_str
@@ -77,6 +78,36 @@ class Tap(ArgumentParser):
         # Set required if option arg
         if is_option_arg(*name_or_flags) and variable != 'help':
             kwargs['required'] = kwargs.get('required', not hasattr(self, variable))
+
+
+        if len(name_or_flags) == 1 and name_or_flags[0][:2] == "--":
+            # expand attributes such that ("--attribute",) becomes ("--attribute", "-a")
+            cvar_names = {n: None for n in self.class_variables}
+            for long_name in self.class_variables:
+                preferred_shorts = []
+                for char in long_name:
+                    # collect eligible characters from long_name as preferred options
+                    if (
+                        char in ascii_letters
+                        and char not in preferred_shorts
+                        and not any([char == v for v in cvar_names.values() if v])
+                    ):
+                        preferred_shorts += char
+                other_shorts = [
+                    asc
+                    for asc in ascii_letters
+                    if asc not in long_name and asc not in preferred_shorts
+                ]
+                for char in preferred_shorts + other_shorts:
+                    if char == "h":
+                        # avoiding "h" because it overlaps with default behavior of ArgumentParser.add_help
+                        continue
+                    if not any([char == v for v in set(cvar_names.values()) if v]):
+                        short_name = char
+                        break
+                cvar_names[long_name] = short_name
+            if cvar_names and name_or_flags[0][2:] in cvar_names:
+                name_or_flags = (f"{name_or_flags[0]}", f"-{cvar_names[name_or_flags[0][2:]]}")
 
         # Set help if necessary
         if 'help' not in kwargs:
@@ -327,6 +358,8 @@ class Tap(ArgumentParser):
     def __str__(self) -> str:
         """Returns a string representation of self.
 
-        :return: A formatted string representation of the dictionary of all arguments.
+        :return: A formatted string representation of the instance's declaration
         """
-        return pformat(self.as_dict())
+        keys = self._get_class_variables().keys()
+        csv = ", ".join([f"{k}={(vars(self)[k]).__repr__()}" for k in keys])
+        return f"{self.__class__.__name__}({csv})"
