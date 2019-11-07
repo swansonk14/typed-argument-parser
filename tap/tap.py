@@ -24,12 +24,16 @@ SUPPORTED_DEFAULT_TYPES = set.union(SUPPORTED_DEFAULT_BASE_TYPES,
 class Tap(ArgumentParser):
     """Tap is a typed argument parser that wraps Python's built-in ArgumentParser."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, underscores_to_dashes: bool = False, **kwargs):
         """Initializes the Tap instance.
 
         :param args: Arguments passed to the super class ArgumentParser.
+        :param underscores_to_dashes: If True, convert underscores in flags to dashes
         :param kwargs: Keyword arguments passed to the super class ArgumentParser.
         """
+        # Whether we convert underscores in the flag names to dashes
+        self._underscores_to_dashes = underscores_to_dashes
+
         # Whether the arguments have been parsed (i.e. if parse_args has been called)
         self._parsed = False
 
@@ -143,7 +147,8 @@ class Tap(ArgumentParser):
                 name_or_flags, kwargs = self.argument_buffer[variable]
                 self._add_argument(*name_or_flags, **kwargs)
             else:
-                self._add_argument(f'--{variable}')
+                flag_name = variable.replace("_", "-") if self._underscores_to_dashes else variable
+                self._add_argument(f'--{flag_name}')
 
         # Add any arguments that were added manually in add_arguments but aren't class variables (in order)
         for variable, (name_or_flags, kwargs) in self.argument_buffer.items():
