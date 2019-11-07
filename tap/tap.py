@@ -8,7 +8,7 @@ import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union, get_type_hints
 
 from tap.utils import get_class_variables, get_dest, get_git_root, get_git_url, has_git,has_uncommitted_changes,\
-    is_option_arg, type_to_str
+    is_option_arg, type_to_str, boolean_type
 
 
 SUPPORTED_DEFAULT_BASE_TYPES = {str, int, float, bool}
@@ -24,12 +24,16 @@ SUPPORTED_DEFAULT_TYPES = set.union(SUPPORTED_DEFAULT_BASE_TYPES,
 class Tap(ArgumentParser):
     """Tap is a typed argument parser that wraps Python's built-in ArgumentParser."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, explicit_bool: bool = False, **kwargs):
         """Initializes the Tap instance.
 
         :param args: Arguments passed to the super class ArgumentParser.
+        :param explicit_bool: If True, boolean flags have to be explicitly set to True or False
         :param kwargs: Keyword arguments passed to the super class ArgumentParser.
         """
+        # Whether boolean flags have to be explicitly set to True or False
+        self._explicit_bool = explicit_bool
+
         # Whether the arguments have been parsed (i.e. if parse_args has been called)
         self._parsed = False
 
@@ -124,7 +128,11 @@ class Tap(ArgumentParser):
 
                 # If bool then set action, otherwise set type
                 if var_type == bool:
-                    kwargs['action'] = kwargs.get('action', f'store_{"true" if kwargs["required"] or not kwargs["default"] else "false"}')
+                    if self._explicit_bool:
+                        kwargs['type'] = boolean_type
+                        kwargs['choices'] = [True, False]  # this makes the help message more helpful
+                    else:
+                        kwargs['action'] = kwargs.get('action', f'store_{"true" if kwargs["required"] or not kwargs["default"] else "false"}')
                 else:
                     kwargs['type'] = var_type
 

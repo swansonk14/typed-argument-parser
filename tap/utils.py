@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 from collections import OrderedDict
 import inspect
 from io import StringIO
@@ -192,3 +192,12 @@ def get_class_variables(cls: type) -> OrderedDict:
             break
 
     return variable_to_comment
+
+
+def boolean_type(flag_value: str):
+    """Convert a string to a boolean if it corresponds to 'True' or 'False'"""
+    if flag_value == "True":
+        return True
+    if flag_value == "False":
+        return False
+    raise ArgumentTypeError(f'Value has to be either "True" or "False".')
