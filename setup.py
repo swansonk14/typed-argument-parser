@@ -15,6 +15,7 @@ setup(
     download_url='https://github.com/swansonk14/typed-argument-parser/v_1.3.tar.gz',
     license='MIT',
     packages=find_packages(),
+    package_data={"tap": ["py.typed"]},
     install_requires=[],
     classifiers=[
         'Programming Language :: Python :: 3',
@@ -22,6 +23,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
+        "Typing :: Typed",
     ],
     keywords=[
         'typing',
