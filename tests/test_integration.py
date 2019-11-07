@@ -44,6 +44,24 @@ class EdgeCaseTests(TestCase):
         args = OnlyTypedTap().parse_args(['--hi', hi])
         self.assertEqual(args.hi, hi)
 
+    def test_type_as_string(self) -> None:
+        class TypeAsString(Tap):
+            a_number: "int" = 3
+            a_list: "List[float]" = [3.7, 0.3]
+
+        args = TypeAsString().parse_args()
+        self.assertEqual(args.a_number, 3)
+        self.assertEqual(args.a_list, [3.7, 0.3])
+
+        a_number = 42
+        a_list = [3, 4, 0.7]
+
+        args = TypeAsString().parse_args(
+            ['--a_number', str(a_number), '--a_list'] + [str(i) for i in a_list]
+        )
+        self.assertEqual(args.a_number, a_number)
+        self.assertEqual(args.a_list, a_list)
+
 
 class RequiredClassVariableTests(TestCase):
 
