@@ -5,7 +5,7 @@ import json
 from pprint import pformat
 import sys
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union, get_type_hints
 
 from tap.utils import get_class_variables, get_dest, get_git_root, get_git_url, has_git,has_uncommitted_changes,\
     is_option_arg, type_to_str
@@ -284,7 +284,7 @@ class Tap(ArgumentParser):
     def _get_annotations(self) -> Dict[str, Any]:
         """Returns a dictionary mapping variable names to their type annotations."""
         return self._get_from_self_and_super(
-            extract_func=lambda super_class: dict(getattr(super_class, '__annotations__', dict()))
+            extract_func=lambda super_class: dict(get_type_hints(super_class))
         )
 
     def _get_class_variables(self) -> OrderedDict:
