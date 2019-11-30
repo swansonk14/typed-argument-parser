@@ -5,9 +5,10 @@ from tempfile import TemporaryDirectory
 from typing import Any, Callable, List, Dict, Set, Tuple, Union
 import unittest
 from unittest import TestCase
+from typing_extensions import Literal
 
 from tap.utils import get_class_column, get_class_variables, get_git_root, get_git_url, has_uncommitted_changes,\
-    type_to_str
+    type_to_str, get_string_literals
 
 
 class GitTests(TestCase):
@@ -194,6 +195,14 @@ class ClassVariableTests(TestCase):
         class_variables['arg_2'] = {'comment': 'Arg 2 comment'}
         class_variables['arg_3'] = {'comment': 'Poorly   formatted comment'}
         self.assertEqual(get_class_variables(CommentedVariable), class_variables)
+
+
+class GetStringLiteralsTests(TestCase):
+    def test_get_string_literals(self) -> None:
+        shapes = get_string_literals(Literal['square', 'triangle', 'circle'], 'shape')
+        self.assertEqual(shapes, ['square', 'triangle', 'circle'])
+        with self.assertRaises(ValueError):
+            get_string_literals(Literal['one', 2], 'number')
 
 
 if __name__ == '__main__':
