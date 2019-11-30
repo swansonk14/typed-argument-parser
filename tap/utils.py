@@ -7,6 +7,7 @@ import re
 import subprocess
 import tokenize
 from typing import Any, Dict, Generator, List, Union
+from typing_inspect import get_args
 
 
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
@@ -192,3 +193,13 @@ def get_class_variables(cls: type) -> OrderedDict:
             break
 
     return variable_to_comment
+
+
+def get_string_literals(literal_type: type, variable: str) -> List[str]:
+    """Extracts the values from a Literal type and ensures that the values are all strings."""
+    choices = list(get_args(literal_type))
+    if not all(isinstance(choice, str) for choice in choices):
+        raise ValueError(
+            f'The type for variable "{variable}" contains a non-string literal.\n'
+            f'Currently only string literals are supported.')
+    return choices

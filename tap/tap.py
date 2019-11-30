@@ -6,9 +6,10 @@ from pprint import pformat
 import sys
 import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union, get_type_hints
+from typing_inspect import is_literal_type, get_args, get_origin, is_union_type
 
 from tap.utils import get_class_variables, get_dest, get_git_root, get_git_url, has_git,has_uncommitted_changes,\
-    is_option_arg, type_to_str
+    is_option_arg, type_to_str, get_string_literals
 
 
 SUPPORTED_DEFAULT_BASE_TYPES = {str, int, float, bool}
@@ -105,7 +106,22 @@ class Tap(ArgumentParser):
 
             # If type is not explicitly provided, set it if it's one of our supported default types
             if 'type' not in kwargs:
-                if var_type not in SUPPORTED_DEFAULT_TYPES:
+                # First check whether it is a literal type or a boxed literal type
+                if is_literal_type(var_type):
+                    kwargs['choices'] = get_string_literals(var_type, variable)
+                    var_type = str
+                elif get_origin(var_type) in (List, list, Set, set) and is_literal_type(get_args(var_type)[0]):
+                    # unpack the outer type and then the literal
+                    kwargs['choices'] = get_string_literals(get_args(var_type)[0], variable)
+                    var_type = str
+                    kwargs['nargs'] = kwargs.get('nargs', '*')
+                # To identify an Optional type, check if it's a union of a None and something else
+                elif (is_union_type(var_type) and len(get_args(var_type)) == 2
+                      and get_args(var_type)[1] is type(None)
+                      and is_literal_type(get_args(var_type)[0])):
+                    kwargs['choices'] = get_string_literals(get_args(var_type)[0], variable)
+                    var_type = str
+                elif var_type not in SUPPORTED_DEFAULT_TYPES:
                     raise ValueError(
                         f'Variable "{variable}" has type "{var_type}" which is not supported by default.\n'
                         f'Please explicitly add the argument to the parser by writing:\n\n'
@@ -115,11 +131,11 @@ class Tap(ArgumentParser):
 
                 # If Optional type, extract type
                 if var_type in SUPPORTED_DEFAULT_OPTIONAL_TYPES:
-                    var_type = var_type.__args__[0]
+                    var_type = get_args(var_type)[0]
 
                 # If List type, extract type of elements in list and set nargs
                 elif var_type in SUPPORTED_DEFAULT_COLLECTION_TYPES:
-                    var_type = var_type.__args__[0]
+                    var_type = get_args(var_type)[0]
                     kwargs['nargs'] = kwargs.get('nargs', '*')
 
                 # If bool then set action, otherwise set type
@@ -215,7 +231,7 @@ class Tap(ArgumentParser):
         # Copy parsed arguments to self
         for variable, value in vars(default_namespace).items():
             # Conversion from list to set
-            if variable in self._annotations and self._annotations[variable] in SUPPORTED_DEFAULT_SET_TYPES:
+            if variable in self._annotations and get_origin(self._annotations[variable]) in (Set, set):
                 value = set(value)
 
             # Set variable in self (and deepcopy)

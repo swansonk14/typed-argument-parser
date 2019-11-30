@@ -16,7 +16,10 @@ setup(
     license='MIT',
     packages=find_packages(),
     package_data={"tap": ["py.typed"]},
-    install_requires=[],
+    install_requires=[
+        'typing_extensions >= 3.7.4',
+        'typing-inspect >= 0.5',
+    ],
     classifiers=[
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
