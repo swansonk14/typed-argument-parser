@@ -5,7 +5,7 @@ import json
 from pprint import pformat
 import sys
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union, get_type_hints
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, TypeVar, Union, get_type_hints
 
 from tap.utils import get_class_variables, get_dest, get_git_root, get_git_url, has_git,has_uncommitted_changes,\
     is_option_arg, type_to_str, boolean_type
@@ -19,6 +19,8 @@ SUPPORTED_DEFAULT_COLLECTION_TYPES = SUPPORTED_DEFAULT_LIST_TYPES | SUPPORTED_DE
 SUPPORTED_DEFAULT_TYPES = set.union(SUPPORTED_DEFAULT_BASE_TYPES,
                                     SUPPORTED_DEFAULT_OPTIONAL_TYPES,
                                     SUPPORTED_DEFAULT_COLLECTION_TYPES)
+
+TapType = TypeVar('TapType', bound="Tap")
 
 
 class Tap(ArgumentParser):
@@ -204,9 +206,9 @@ class Tap(ArgumentParser):
 
         return arg_log
 
-    def parse_args(self,
+    def parse_args(self: TapType,
                    args: Optional[Sequence[str]] = None,
-                   known_only: bool = False) -> 'Tap':
+                   known_only: bool = False) -> TapType:
         """Parses arguments, sets attributes of self equal to the parsed arguments, and processes arguments.
 
         :param args: List of strings to parse. The default is taken from `sys.argv`.
