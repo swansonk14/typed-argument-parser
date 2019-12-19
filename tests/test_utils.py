@@ -7,8 +7,15 @@ import unittest
 from unittest import TestCase
 from typing_extensions import Literal
 
-from tap.utils import get_class_column, get_class_variables, get_git_root, get_git_url, has_uncommitted_changes,\
-    type_to_str, get_string_literals
+from tap.utils import (
+    get_class_column,
+    get_class_variables,
+    get_git_root,
+    get_git_url,
+    has_uncommitted_changes,
+    type_to_str,
+    get_literals
+)
 
 
 class GitTests(TestCase):
@@ -197,12 +204,33 @@ class ClassVariableTests(TestCase):
         self.assertEqual(get_class_variables(CommentedVariable), class_variables)
 
 
-class GetStringLiteralsTests(TestCase):
-    def test_get_string_literals(self) -> None:
-        shapes = get_string_literals(Literal['square', 'triangle', 'circle'], 'shape')
+class GetLiteralsTests(TestCase):
+    def test_get_literals_string(self) -> None:
+        literal_f, shapes = get_literals(Literal['square', 'triangle', 'circle'], 'shape')
         self.assertEqual(shapes, ['square', 'triangle', 'circle'])
+        self.assertEqual(literal_f('square'), 'square')
+        self.assertEqual(literal_f('triangle'), 'triangle')
+        self.assertEqual(literal_f('circle'), 'circle')
+        with self.assertRaises(KeyError):
+            literal_f('tuba')
+
+    def test_get_literals_primitives(self) -> None:
+        literals = [True, 'one', 2, 3.14]
+        literal_f, prims = get_literals(Literal[True, 'one', 2, 3.14], 'number')
+        self.assertEqual(prims, literals)
+        self.assertEqual([literal_f(str(p)) for p in prims], literals)
+        with self.assertRaises(KeyError):
+            literal_f(3)
+
+    def test_get_literals_primitives(self) -> None:
         with self.assertRaises(ValueError):
-            get_string_literals(Literal['one', 2], 'number')
+            literal_f, prims = get_literals(Literal['two', 2, '2'], 'number')
+
+    def test_get_literals_empty(self) -> None:
+        literal_f, prims = get_literals(Literal, 'hi')
+        self.assertEqual(prims, [])
+        with self.assertRaises(KeyError):
+            literal_f(None)
 
 
 if __name__ == '__main__':

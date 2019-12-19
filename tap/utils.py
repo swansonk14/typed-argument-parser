@@ -6,11 +6,13 @@ import os
 import re
 import subprocess
 import tokenize
-from typing import Any, Dict, Generator, List, Union
+from typing import Any, Callable, Dict, Generator, List, Tuple, Union
+from typing_extensions import Literal
 from typing_inspect import get_args
 
 
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
+PRIMITIVES = (str, int, float, bool)
 
 
 def check_output(command: List[str]) -> str:
@@ -195,11 +197,24 @@ def get_class_variables(cls: type) -> OrderedDict:
     return variable_to_comment
 
 
-def get_string_literals(literal_type: type, variable: str) -> List[str]:
-    """Extracts the values from a Literal type and ensures that the values are all strings."""
-    choices = list(get_args(literal_type))
-    if not all(isinstance(choice, str) for choice in choices):
+def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any], List[str]]:
+    """Extracts the values from a Literal type and ensures that the values are all primitive types."""
+    # import ipdb; ipdb.set_trace()
+    literals = list(get_args(literal))
+
+    if not all(isinstance(literal, PRIMITIVES) for literal in literals):
         raise ValueError(
-            f'The type for variable "{variable}" contains a non-string literal.\n'
-            f'Currently only string literals are supported.')
-    return choices
+            f'The type for variable "{variable}" contains a literal'
+            f'of a non-primitive type e.g. (str, int, float, bool).\n'
+            f'Currently only primitive-typed literals are supported.'
+        )
+
+    str_to_literal = {str(literal): literal for literal in literals}
+
+    if len(literals) != len(str_to_literal):
+        raise ValueError('All literals must have unique string representations')
+
+    def var_type(arg: str) -> Any:
+        return str_to_literal[arg]
+
+    return var_type, literals

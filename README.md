@@ -12,7 +12,7 @@ Tap provides the following benefits:
 - Source code navigation (e.g. go to definition and go to implementation)
 
 ![Tap](https://github.com/swansonk14/typed-argument-parser/blob/master/images/tap.png)
- 
+
 ## Table of Contents
 
 * [Installation](#installation)
@@ -29,7 +29,7 @@ Tap provides the following benefits:
     + [Reproducibility](#reproducibility)
       - [Reproducibility info](#reproducibility-info)
       - [Saving arguments](#saving-arguments)
-      
+
 ## Installation
 
 Tap requires Python 3.6+
@@ -56,7 +56,7 @@ class SimpleArgumentParser(Tap):
     package: str = 'Tap'  # Package name
     stars: int  # Number of stars
     max_stars: int = 5  # Maximum stars
-    
+
 args = SimpleArgumentParser().parse_args()
 
 print(f'My name is {args.name} and I give the {args.language} package '
@@ -169,6 +169,7 @@ str, int, float, bool
 Optional[str], Optional[int], Optional[float]
 List[str], List[int], List[float]
 Set[str], Set[int], Set[float]
+Literal
 ```
 
 Each of these arguments is parsed as follows:
@@ -182,6 +183,8 @@ Each of these arguments is parsed as follows:
 `List`: If an argument `arg` is a `List`, simply specify the values separated by spaces just as you would with regular argparse. For example, `--arg 1 2 3` parses to `arg = [1, 2, 3]`.
 
 `Set`: Identical to `List` but parsed into a set rather than a list.
+
+`Literal`: Literal is analagous to `argparse`'s (choices)[https://docs.python.org/3/library/argparse.html#choices], which specifies the values that an argument can take. For example, if arg can only be one of 'H', 1, False, or 1.0078 then you would specify that `arg: Literal['H', 1, False, 1.0078]`. For instance, `--arg False` assigns arg to False and `--arg True` throws error. The `Literal` type was introduced in Python 3.8 ((PEP 586)[https://www.python.org/dev/peps/pep-0586/]) and can be imported with `from typing_extensions import Literal`.
 
 More complex types _must_ be specified with the `type` keyword argument in `add_argument`, as in the example below.
 
@@ -241,7 +244,7 @@ In the example below, `StarsTap` and `AwardsTap` inherit the arguments (`package
 class BaseTap(Tap):
     package: str
     is_cool: bool
-    
+
     def process_args(self):
         if self.package == 'Tap':
             self.is_cool = True
@@ -305,7 +308,7 @@ Specifically, Tap has a method called `get_reproducibility_info` that returns a 
 - Uncommited changes
     - Whether there are any uncommitted changes in the git repo (i.e. whether the code is different from the code at the above git hash)
     - Ex. `True` or `False`
-    
+
 #### Saving arguments
 
 Tap has a method called `save` which saves all arguments, along with the reproducibility info, to a JSON file.
