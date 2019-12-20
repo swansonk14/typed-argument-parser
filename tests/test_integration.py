@@ -145,7 +145,8 @@ class IntegrationDefaultTap(Tap):
 
 
 class SubclassTests(TestCase):
-    def test_subclass(self):
+
+    def test_subclass(self) -> None:
         class IntegrationSubclassTap(IntegrationDefaultTap):
             arg_subclass_untyped = 33
             arg_subclass_str: str = 'hello'
@@ -481,14 +482,14 @@ class ParseKnownArgsTests(TestCase):
     arg_int = 3
     arg_float = 3.3
 
-    def test_all_known(self):
+    def test_all_known(self) -> None:
         args = KnownTap().parse_args([
             '--arg_int', str(self.arg_int)
         ], known_only=True)
         self.assertEqual(args.arg_int, self.arg_int)
         self.assertEqual(args.extra_args, [])
 
-    def test_some_known(self):
+    def test_some_known(self) -> None:
         args = KnownTap().parse_args([
             '--arg_int', str(self.arg_int),
             '--arg_float', str(self.arg_float)
@@ -496,11 +497,29 @@ class ParseKnownArgsTests(TestCase):
         self.assertEqual(args.arg_int, self.arg_int)
         self.assertEqual(args.extra_args, ['--arg_float', '3.3'])
 
-    def test_none_known(self):
+    def test_none_known(self) -> None:
         args = KnownTap().parse_args([
             '--arg_float', str(self.arg_float)
         ], known_only=True)
         self.assertEqual(args.extra_args, ['--arg_float', '3.3'])
+
+
+class DashedArgumentsTests(TestCase):
+
+    def test_dashed_arguments(self) -> None:
+        class DashedArgumentTap(Tap):
+            arg: int = 10
+            arg_u_ment: int = 10
+            arg_you_mean_: int = 10
+
+        args = DashedArgumentTap(underscores_to_dashes=True).parse_args([
+            '--arg', '11',
+            '--arg-u-ment', '12',
+            '--arg-you-mean-', '13',
+        ])
+        self.assertEqual(args.arg, 11)
+        self.assertEqual(args.arg_u_ment, 12)
+        self.assertEqual(args.arg_you_mean_, 13)
 
 
 """
