@@ -5,7 +5,7 @@ import json
 from pprint import pformat
 import sys
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union, get_type_hints
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, TypeVar, Union, get_type_hints
 from typing_inspect import is_literal_type, get_args, get_origin, is_union_type
 
 from tap.utils import (
@@ -17,8 +17,10 @@ from tap.utils import (
     has_uncommitted_changes,
     is_option_arg,
     type_to_str,
-    get_literals
+    get_literals,
+    boolean_type
 )
+
 
 SUPPORTED_DEFAULT_BASE_TYPES = {str, int, float, bool}
 SUPPORTED_DEFAULT_OPTIONAL_TYPES = {Optional[str], Optional[int], Optional[float]}
@@ -29,17 +31,26 @@ SUPPORTED_DEFAULT_TYPES = set.union(SUPPORTED_DEFAULT_BASE_TYPES,
                                     SUPPORTED_DEFAULT_OPTIONAL_TYPES,
                                     SUPPORTED_DEFAULT_COLLECTION_TYPES)
 
+TapType = TypeVar('TapType', bound="Tap")
+
 
 class Tap(ArgumentParser):
     """Tap is a typed argument parser that wraps Python's built-in ArgumentParser."""
 
-    def __init__(self, *args, underscores_to_dashes: bool = False, **kwargs):
+    def __init__(self,
+                 *args,
+                 underscores_to_dashes: bool = False,
+                 explicit_bool: bool = False,
+                 **kwargs):
         """Initializes the Tap instance.
 
         :param args: Arguments passed to the super class ArgumentParser.
         :param underscores_to_dashes: If True, convert underscores in flags to dashes
         :param kwargs: Keyword arguments passed to the super class ArgumentParser.
         """
+        # Whether boolean flags have to be explicitly set to True or False
+        self._explicit_bool = explicit_bool
+
         # Whether we convert underscores in the flag names to dashes
         self._underscores_to_dashes = underscores_to_dashes
 
@@ -153,7 +164,11 @@ class Tap(ArgumentParser):
 
                 # If bool then set action, otherwise set type
                 if var_type == bool:
-                    kwargs['action'] = kwargs.get('action', f'store_{"true" if kwargs["required"] or not kwargs["default"] else "false"}')
+                    if self._explicit_bool:
+                        kwargs['type'] = boolean_type
+                        kwargs['choices'] = [True, False]  # this makes the help message more helpful
+                    else:
+                        kwargs['action'] = kwargs.get('action', f'store_{"true" if kwargs["required"] or not kwargs["default"] else "false"}')
                 else:
                     kwargs['type'] = var_type
 
@@ -226,9 +241,9 @@ class Tap(ArgumentParser):
 
         return arg_log
 
-    def parse_args(self,
+    def parse_args(self: TapType,
                    args: Optional[Sequence[str]] = None,
-                   known_only: bool = False) -> 'Tap':
+                   known_only: bool = False) -> TapType:
         """Parses arguments, sets attributes of self equal to the parsed arguments, and processes arguments.
 
         :param args: List of strings to parse. The default is taken from `sys.argv`.

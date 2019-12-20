@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 from collections import OrderedDict
 import inspect
 from io import StringIO
@@ -218,3 +218,12 @@ def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any],
         return str_to_literal[arg]
 
     return var_type, literals
+
+
+def boolean_type(flag_value: str):
+    """Convert a string to a boolean if it corresponds to 'True' or 'False'"""
+    if flag_value == "True":
+        return True
+    if flag_value == "False":
+        return False
+    raise ArgumentTypeError(f'Value has to be either "True" or "False".')

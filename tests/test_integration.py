@@ -1,3 +1,4 @@
+from argparse import ArgumentTypeError
 from typing import List, Optional, Set
 import unittest
 from unittest import TestCase
@@ -520,6 +521,50 @@ class DashedArgumentsTests(TestCase):
         self.assertEqual(args.arg, 11)
         self.assertEqual(args.arg_u_ment, 12)
         self.assertEqual(args.arg_you_mean_, 13)
+
+
+class ParseKnownArgsTests(TestCase):
+
+    def setUp(self) -> None:
+        def test_bool_cases(cls):
+            arg = cls(explicit_bool=True).parse_args(['--is_gpu', 'True'])
+            self.assertTrue(arg.is_gpu)
+            arg = cls(explicit_bool=True).parse_args(['--is_gpu', 'False'])
+            self.assertFalse(arg.is_gpu)
+
+        self.test_bool_cases = test_bool_cases
+
+    def test_explicit_bool(self):
+        class ExplicitBoolTap(Tap):
+            is_gpu: bool
+
+        # Suppress prints from SystemExit
+        class DevNull:
+            def write(self, msg):
+                pass
+        self.dev_null = DevNull()
+
+        with self.assertRaises(SystemExit):
+            sys.stderr = self.dev_null
+            ExplicitBoolTap(explicit_bool=True).parse_args(['--is_gpu'])
+
+        with self.assertRaises(SystemExit):
+            sys.stderr = self.dev_null
+            ExplicitBoolTap(explicit_bool=True).parse_args([])
+
+        self.test_bool_cases(ExplicitBoolTap)
+
+    def test_explicit_bool_false(self):
+        class ExplicitBoolFalseTap(Tap):
+            is_gpu: bool = False
+
+        self.test_bool_cases(ExplicitBoolFalseTap)
+
+    def test_explicit_bool_true(self):
+        class ExplicitBoolTrueTap(Tap):
+            is_gpu: bool = True
+
+        self.test_bool_cases(ExplicitBoolTrueTap)
 
 
 """
