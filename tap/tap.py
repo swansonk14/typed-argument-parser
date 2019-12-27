@@ -31,7 +31,7 @@ SUPPORTED_DEFAULT_TYPES = set.union(SUPPORTED_DEFAULT_BASE_TYPES,
                                     SUPPORTED_DEFAULT_OPTIONAL_TYPES,
                                     SUPPORTED_DEFAULT_COLLECTION_TYPES)
 
-TapType = TypeVar('TapType', bound="Tap")
+TapType = TypeVar('TapType', bound='Tap')
 
 
 class Tap(ArgumentParser):
@@ -132,7 +132,7 @@ class Tap(ArgumentParser):
                 # First check whether it is a literal type or a boxed literal type
                 if is_literal_type(var_type):
                     var_type, kwargs['choices'] = get_literals(var_type, variable)
-                elif get_origin(var_type) in (List, Set) and is_literal_type(
+                elif get_origin(var_type) in (List, list, Set, set) and is_literal_type(
                     get_args(var_type)[0]
                 ):
                     var_type, kwargs['choices'] = get_literals(get_args(var_type)[0], variable)
@@ -260,7 +260,7 @@ class Tap(ArgumentParser):
         # Copy parsed arguments to self
         for variable, value in vars(default_namespace).items():
             # Conversion from list to set
-            if variable in self._annotations and get_origin(self._annotations[variable]) is Set:
+            if variable in self._annotations and get_origin(self._annotations[variable]) in (Set, set):
                 value = set(value)
 
             # Set variable in self (and deepcopy)
