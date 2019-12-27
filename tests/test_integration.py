@@ -523,14 +523,17 @@ class DashedArgumentsTests(TestCase):
         self.assertEqual(args.arg_you_mean_, 13)
 
 
-class ParseKnownArgsTests(TestCase):
+class ParseExplicitBoolArgsTests(TestCase):
 
     def setUp(self) -> None:
         def test_bool_cases(cls):
-            arg = cls(explicit_bool=True).parse_args(['--is_gpu', 'True'])
-            self.assertTrue(arg.is_gpu)
-            arg = cls(explicit_bool=True).parse_args(['--is_gpu', 'False'])
-            self.assertFalse(arg.is_gpu)
+            for true in ['True', 'true', 'T', 't', '1']:
+                arg = cls(explicit_bool=True).parse_args(['--is_gpu', true])
+                self.assertTrue(arg.is_gpu)
+
+            for false in ['False', 'false', 'F', 'f', '0']:
+                arg = cls(explicit_bool=True).parse_args(['--is_gpu', false])
+                self.assertFalse(arg.is_gpu)
 
         self.test_bool_cases = test_bool_cases
 

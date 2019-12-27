@@ -220,10 +220,10 @@ def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any],
     return var_type, literals
 
 
-def boolean_type(flag_value: str):
-    """Convert a string to a boolean if it corresponds to 'True' or 'False'"""
-    if flag_value == "True":
+def boolean_type(flag_value: str) -> bool:
+    """Convert a string to a boolean if it is a prefix of 'True' or 'False' (case insensitive) or is '1' or '0'."""
+    if 'true'.startswith(flag_value.lower()) or flag_value == '1':
         return True
-    if flag_value == "False":
+    if 'false'.startswith(flag_value.lower()) or flag_value == '0':
         return False
-    raise ArgumentTypeError(f'Value has to be either "True" or "False".')
+    raise ArgumentTypeError(f'Value has to be a prefix of "True" or "False" (case insensitive) or "1" or "0".')
