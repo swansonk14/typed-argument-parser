@@ -178,13 +178,15 @@ Each of these arguments is parsed as follows:
 
 `bool`: If an argument `arg` is specified as `arg: bool` or `arg: bool = False`, then adding the `--arg` flag to the command line will set `arg` to `True`. If `arg` is specified as `arg: bool = True`, then adding `--arg` sets `arg` to `False`.
 
+Note that if the `Tap` instance is created with `explicit_bool=True`, then booleans should be specified on the command line as `--arg True` or `--arg False` rather than `--arg`.
+
 `Optional`: These arguments are parsed in exactly the same way as `str`, `int`, and `float`.
 
 `List`: If an argument `arg` is a `List`, simply specify the values separated by spaces just as you would with regular argparse. For example, `--arg 1 2 3` parses to `arg = [1, 2, 3]`.
 
 `Set`: Identical to `List` but parsed into a set rather than a list.
 
-`Literal`: Literal is analagous to `argparse`'s (choices)[https://docs.python.org/3/library/argparse.html#choices], which specifies the values that an argument can take. For example, if arg can only be one of 'H', 1, False, or 1.0078 then you would specify that `arg: Literal['H', 1, False, 1.0078]`. For instance, `--arg False` assigns arg to False and `--arg True` throws error. The `Literal` type was introduced in Python 3.8 ((PEP 586)[https://www.python.org/dev/peps/pep-0586/]) and can be imported with `from typing_extensions import Literal`.
+`Literal`: Literal is analagous to `argparse`'s [choices](https://docs.python.org/3/library/argparse.html#choices), which specifies the values that an argument can take. For example, if arg can only be one of 'H', 1, False, or 1.0078 then you would specify that `arg: Literal['H', 1, False, 1.0078]`. For instance, `--arg False` assigns arg to False and `--arg True` throws error. The `Literal` type was introduced in Python 3.8 ([PEP 586](https://www.python.org/dev/peps/pep-0586/)) and can be imported with `from typing_extensions import Literal`.
 
 More complex types _must_ be specified with the `type` keyword argument in `add_argument`, as in the example below.
 
