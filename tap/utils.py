@@ -199,7 +199,6 @@ def get_class_variables(cls: type) -> OrderedDict:
 
 def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any], List[str]]:
     """Extracts the values from a Literal type and ensures that the values are all primitive types."""
-    # import ipdb; ipdb.set_trace()
     literals = list(get_args(literal))
 
     if not all(isinstance(literal, PRIMITIVES) for literal in literals):
