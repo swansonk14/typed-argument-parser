@@ -20,8 +20,7 @@ setup(
         'typing_extensions >= 3.7.4',
         'typing-inspect >= 0.5',
     ],
-    test_suite='nose.collector',
-    tests_require=['nose'],
+    tests_require=['pytest'],
     classifiers=[
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
