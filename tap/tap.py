@@ -36,6 +36,7 @@ TapType = TypeVar('TapType', bound='Tap')
 
 class Tap(ArgumentParser):
     """Tap is a typed argument parser that wraps Python's built-in ArgumentParser."""
+    _sub_parsers = []
 
     def __init__(self,
                  *args,
@@ -75,6 +76,12 @@ class Tap(ArgumentParser):
         # Add arguments to self
         self.add_arguments()  # Adds user-overridden arguments to the arguments buffer
         self._add_arguments()  # Adds all arguments in order to self
+
+        # Add subparsers
+        subparsers = super(Tap, self).add_subparsers()
+
+        for sub_parser in self._sub_parsers:
+            subparsers._name_parser_map[sub_parser.__name__] = sub_parser()
 
     def _add_argument(self, *name_or_flags, **kwargs) -> None:
         """Adds an argument to self (i.e. the super class ArgumentParser).
