@@ -14,7 +14,8 @@ from tap.utils import (
     get_git_url,
     has_uncommitted_changes,
     type_to_str,
-    get_literals
+    get_literals,
+    TupleTypeEnforcer
 )
 
 
@@ -231,6 +232,79 @@ class GetLiteralsTests(TestCase):
         self.assertEqual(prims, [])
         with self.assertRaises(KeyError):
             literal_f(None)
+
+
+class TupleTypeEnforcerTests(TestCase):
+    def test_tuple_type_enforcer_zero_types(self):
+        enforcer = TupleTypeEnforcer(types=[])
+        with self.assertRaises(IndexError):
+            enforcer('hi')
+
+    def test_tuple_type_enforcer_one_type_str(self):
+        enforcer = TupleTypeEnforcer(types=[str])
+        self.assertEqual(enforcer('hi'), 'hi')
+
+    def test_tuple_type_enforcer_one_type_int(self):
+        enforcer = TupleTypeEnforcer(types=[int])
+        self.assertEqual(enforcer('123'), 123)
+
+    def test_tuple_type_enforcer_one_type_float(self):
+        enforcer = TupleTypeEnforcer(types=[float])
+        self.assertEqual(enforcer('3.14159'), 3.14159)
+
+    def test_tuple_type_enforcer_one_type_bool(self):
+        enforcer = TupleTypeEnforcer(types=[bool])
+        self.assertEqual(enforcer('True'), True)
+
+        enforcer = TupleTypeEnforcer(types=[bool])
+        self.assertEqual(enforcer('true'), True)
+
+        enforcer = TupleTypeEnforcer(types=[bool])
+        self.assertEqual(enforcer('False'), False)
+
+        enforcer = TupleTypeEnforcer(types=[bool])
+        self.assertEqual(enforcer('false'), False)
+
+        enforcer = TupleTypeEnforcer(types=[bool])
+        self.assertEqual(enforcer('tRu'), True)
+
+        enforcer = TupleTypeEnforcer(types=[bool])
+        self.assertEqual(enforcer('faL'), False)
+
+        enforcer = TupleTypeEnforcer(types=[bool])
+        self.assertEqual(enforcer('1'), True)
+
+        enforcer = TupleTypeEnforcer(types=[bool])
+        self.assertEqual(enforcer('0'), False)
+
+    def test_tuple_type_enforcer_multi_types_same(self):
+        enforcer = TupleTypeEnforcer(types=[str, str])
+        args = ['hi', 'bye']
+        output = [enforcer(arg) for arg in args]
+        self.assertEqual(output, args)
+
+        enforcer = TupleTypeEnforcer(types=[int, int, int])
+        args = [123, 456, -789]
+        output = [enforcer(str(arg)) for arg in args]
+        self.assertEqual(output, args)
+
+        enforcer = TupleTypeEnforcer(types=[float, float, float, float])
+        args = [1.23, 4.56, -7.89, 3.14159]
+        output = [enforcer(str(arg)) for arg in args]
+        self.assertEqual(output, args)
+
+        enforcer = TupleTypeEnforcer(types=[bool, bool, bool, bool, bool])
+        args = ['True', 'False', '1', '0', 'tru']
+        true_output = [True, False, True, False, True]
+        output = [enforcer(str(arg)) for arg in args]
+        self.assertEqual(output, true_output)
+
+    def test_tuple_type_enforcer_multi_types_different(self):
+        enforcer = TupleTypeEnforcer(types=[str, int, float, bool])
+        args = ['hello', 77, 0.2, 'tru']
+        true_output = ['hello', 77, 0.2, True]
+        output = [enforcer(str(arg)) for arg in args]
+        self.assertEqual(output, true_output)
 
 
 if __name__ == '__main__':

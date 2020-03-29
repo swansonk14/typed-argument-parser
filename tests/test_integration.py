@@ -1,5 +1,5 @@
-from argparse import ArgumentTypeError
-from typing import List, Optional, Set
+from argparse import ArgumentTypeError, ArgumentError
+from typing import List, Optional, Set, Tuple
 import unittest
 from unittest import TestCase
 import sys
@@ -569,6 +569,115 @@ class ParseExplicitBoolArgsTests(TestCase):
 
         self.test_bool_cases(ExplicitBoolTrueTap)
 
+
+class TupleTests(TestCase):
+    def setUp(self) -> None:
+        class DevNull:
+            def write(self, msg):
+                pass
+        self.dev_null = DevNull()
+
+    def test_tuple_empty(self):
+        tup_arg = ('three', 'four', 'ten')
+        tup_default_arg = (1, 2, '5')
+
+        class TupleEmptyTap(Tap):
+            tup: Tuple
+            # tup_2: Tuple[()]  # TODO: arggg fix me
+            tup_default: Tuple = tup_default_arg
+
+        args = TupleEmptyTap().parse_args([
+            '--tup', *tup_arg,
+            # '--tup_2',
+        ])
+
+        self.assertEqual(args.tup, tup_arg)
+        # self.assertEqual(args.tup_2, tuple())
+        self.assertEqual(args.tup_default, tup_default_arg)
+
+    def test_tuple_one(self):
+        class TupleOneTap(Tap):
+            tup_str: Tuple[str]
+            tup_int: Tuple[int]
+            tup_float: Tuple[float]
+            tup_bool: Tuple[bool]
+
+        arg_str = 'hello'
+        arg_int = 445
+        arg_float = 7.9
+        arg_bool = 'tru'
+
+        args = TupleOneTap().parse_args([
+            '--tup_str', arg_str,
+            '--tup_int', str(arg_int),
+            '--tup_float', str(arg_float),
+            '--tup_bool', arg_bool
+        ])
+
+        self.assertEqual(args.tup_str, (arg_str,))
+        self.assertEqual(args.tup_int, (arg_int,))
+        self.assertEqual(args.tup_float, (arg_float,))
+        self.assertEqual(args.tup_bool, (True,))
+
+    def test_tuple_multi(self):
+        class TupleMultiTap(Tap):
+            tup: Tuple[str, int, float, bool, int, int, bool, bool, bool]
+
+        input_args = ('hi there', -1, -1.0, 'fAlS', 100, 1000, 'false', '0', '1')
+        true_args = ('hi there', -1, -1.0, False, 100, 1000, False, False, True)
+
+        args = TupleMultiTap().parse_args([
+            '--tup', *[str(arg) for arg in input_args]
+        ])
+
+        self.assertEqual(args.tup, true_args)
+
+    def test_tuple_class(self):
+        class Dummy:
+            def __init__(self, x):
+                self.x = x
+
+            def __eq__(self, other: 'Dummy'):
+                return isinstance(other, type(self)) and self.x == other.x
+
+            def __str__(self):
+                return f'Dummy({self.x})'
+
+        class TupleClassTap(Tap):
+            tup: Tuple[int, str, Dummy, Dummy]
+
+        input_args = ('1', '2', '3', '4')
+        true_args = (1, '2', Dummy('3'), Dummy('4'))
+
+        args = TupleClassTap().parse_args([
+            '--tup', *input_args
+        ])
+
+        self.assertEqual(args.tup, true_args)
+
+    def test_tuple_wrong_type_fails(self):
+        class TupleTapTypeFails(Tap):
+            tup: Tuple[int]
+
+        with self.assertRaises(SystemExit):
+            sys.stderr = self.dev_null
+            TupleTapTypeFails().parse_args(['--tup', 'tomato'])
+
+    def test_tuple_wrong_num_args_fails(self):
+        class TupleTapArgsFails(Tap):
+            tup: Tuple[int]
+
+        with self.assertRaises(SystemExit):
+            sys.stderr = self.dev_null
+            TupleTapArgsFails().parse_args(['--tup', '1', '1'])
+
+    def test_tuple_wrong_order_fails(self):
+        class TupleTapOrderFails(Tap):
+            tup: Tuple[int, str]
+
+        with self.assertRaises(SystemExit):
+            sys.stderr = self.dev_null
+            TupleTapOrderFails().parse_args(['--tup', 'seven', '1'])
 
 """
 - crash if default type not supported

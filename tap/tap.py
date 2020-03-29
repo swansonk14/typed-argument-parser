@@ -5,7 +5,7 @@ import json
 from pprint import pformat
 import sys
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, TypeVar, Union, get_type_hints
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
 from typing_inspect import is_literal_type, get_args, get_origin, is_union_type
 
 from tap.utils import (
@@ -18,7 +18,8 @@ from tap.utils import (
     is_option_arg,
     type_to_str,
     get_literals,
-    boolean_type
+    boolean_type,
+    TupleTypeEnforcer
 )
 
 
@@ -26,7 +27,7 @@ SUPPORTED_DEFAULT_BASE_TYPES = {str, int, float, bool}
 SUPPORTED_DEFAULT_OPTIONAL_TYPES = {Optional[str], Optional[int], Optional[float]}
 SUPPORTED_DEFAULT_LIST_TYPES = {List[str], List[int], List[float]}
 SUPPORTED_DEFAULT_SET_TYPES = {Set[str], Set[int], Set[float]}
-SUPPORTED_DEFAULT_COLLECTION_TYPES = SUPPORTED_DEFAULT_LIST_TYPES | SUPPORTED_DEFAULT_SET_TYPES
+SUPPORTED_DEFAULT_COLLECTION_TYPES = SUPPORTED_DEFAULT_LIST_TYPES | SUPPORTED_DEFAULT_SET_TYPES | {Tuple}
 SUPPORTED_DEFAULT_TYPES = set.union(SUPPORTED_DEFAULT_BASE_TYPES,
                                     SUPPORTED_DEFAULT_OPTIONAL_TYPES,
                                     SUPPORTED_DEFAULT_COLLECTION_TYPES)
@@ -137,6 +138,11 @@ class Tap(ArgumentParser):
                 ):
                     var_type, kwargs['choices'] = get_literals(get_args(var_type)[0], variable)
                     kwargs['nargs'] = kwargs.get('nargs', '*')
+                # Handle Tuple type (with type args) by extracting types of Tuple elements and enforcing them
+                elif get_origin(var_type) in (Tuple, tuple) and len(get_args(var_type)) > 0:
+                    types = get_args(var_type)
+                    kwargs['nargs'] = len(types)
+                    var_type = TupleTypeEnforcer(types=types)
                 # To identify an Optional type, check if it's a union of a None and something else
                 elif (
                     is_union_type(var_type)
@@ -159,7 +165,8 @@ class Tap(ArgumentParser):
 
                 # If List type, extract type of elements in list and set nargs
                 elif var_type in SUPPORTED_DEFAULT_COLLECTION_TYPES:
-                    var_type = get_args(var_type)[0]
+                    arg_types = get_args(var_type)
+                    var_type = arg_types[0] if len(arg_types) > 0 else str
                     kwargs['nargs'] = kwargs.get('nargs', '*')
 
                 # If bool then set action, otherwise set type
@@ -259,9 +266,14 @@ class Tap(ArgumentParser):
 
         # Copy parsed arguments to self
         for variable, value in vars(default_namespace).items():
-            # Conversion from list to set
-            if variable in self._annotations and get_origin(self._annotations[variable]) in (Set, set):
-                value = set(value)
+            # Conversion from list to set or tuple
+            if variable in self._annotations:
+                var_type = get_origin(self._annotations[variable])
+
+                if var_type in (Set, set):
+                    value = set(value)
+                elif var_type in (Tuple, tuple):
+                    value = tuple(value)
 
             # Set variable in self (and deepcopy)
             setattr(self, variable, deepcopy(value))

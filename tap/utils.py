@@ -226,3 +226,16 @@ def boolean_type(flag_value: str) -> bool:
     if 'false'.startswith(flag_value.lower()) or flag_value == '0':
         return False
     raise ArgumentTypeError(f'Value has to be a prefix of "True" or "False" (case insensitive) or "1" or "0".')
+
+
+class TupleTypeEnforcer:
+    """The type argument to argparse for checking and applying types to Tuples."""
+    def __init__(self, types: List[type]):
+        self.types = [boolean_type if t == bool else t for t in types]
+        self.index = 0
+
+    def __call__(self, arg: str) -> Any:
+        output = self.types[self.index](arg)
+        self.index += 1
+
+        return output
