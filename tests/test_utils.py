@@ -224,9 +224,9 @@ class GetLiteralsTests(TestCase):
         with self.assertRaises(KeyError):
             literal_f(3)
 
-    def test_get_literals_primitives(self) -> None:
+    def test_get_literals_uniqueness(self) -> None:
         with self.assertRaises(ValueError):
-            literal_f, prims = get_literals(Literal['two', 2, '2'], 'number')
+            get_literals(Literal['two', 2, '2'], 'number')
 
     def test_get_literals_empty(self) -> None:
         literal_f, prims = get_literals(Literal, 'hi')
