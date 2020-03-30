@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from collections import OrderedDict
 from copy import deepcopy
+from itertools import cycle
 import json
 from pprint import pformat
 import sys
@@ -141,7 +142,19 @@ class Tap(ArgumentParser):
                 # Handle Tuple type (with type args) by extracting types of Tuple elements and enforcing them
                 elif get_origin(var_type) in (Tuple, tuple) and len(get_args(var_type)) > 0:
                     types = get_args(var_type)
-                    kwargs['nargs'] = len(types)
+
+                    # Don't allow Tuple[()]
+                    if len(types) == 1 and types[0] == tuple():
+                        raise ValueError('Empty Tuples (i.e. Tuple[()]) are not a valid Tap type '
+                                         'because they have no arguments.')
+
+                    # Handle Tuple[type, ...]
+                    if len(types) == 2 and types[1] == Ellipsis:
+                        types = cycle([types[0]])
+                        kwargs['nargs'] = '*'
+                    else:
+                        kwargs['nargs'] = len(types)
+
                     var_type = TupleTypeEnforcer(types=types)
                 # To identify an Optional type, check if it's a union of a None and something else
                 elif (

@@ -6,7 +6,7 @@ import os
 import re
 import subprocess
 import tokenize
-from typing import Any, Callable, Dict, Generator, List, Tuple, Union
+from typing import Any, Callable, Dict, Generator, Iterable, List, Tuple, Union
 from typing_extensions import Literal
 from typing_inspect import get_args
 
@@ -230,12 +230,14 @@ def boolean_type(flag_value: str) -> bool:
 
 class TupleTypeEnforcer:
     """The type argument to argparse for checking and applying types to Tuples."""
-    def __init__(self, types: List[type]):
-        self.types = [boolean_type if t == bool else t for t in types]
-        self.index = 0
+    def __init__(self, types: Iterable[type]):
+        self.types = (boolean_type if t == bool else t for t in types)
+        # self.index = 0
 
     def __call__(self, arg: str) -> Any:
-        output = self.types[self.index](arg)
-        self.index += 1
+        return next(self.types)(arg)
 
-        return output
+        # output = self.types[self.index](arg)
+        # self.index += 1
+        #
+        # return output
