@@ -127,19 +127,36 @@ class IntegrationDefaultTap(Tap):
     arg_bool_true: bool = True
     arg_bool_false: bool = False
     arg_literal: Literal['english', 'A', True, 88.9, 100] = 'A'
+
+    arg_optional: Optional = None
     arg_optional_str: Optional[str] = None
     arg_optional_int: Optional[int] = None
     arg_optional_float: Optional[float] = None
+    arg_optional_bool: Optional[bool] = None
     arg_optional_literal: Optional[Literal['english', 'A', True, 88.9, 100]] = None
+
+    arg_list: List = ['these', 'are', 'strings']
     arg_list_str: List[str] = ['hello', 'how are you']
     arg_list_int: List[int] = [10, -11]
     arg_list_float: List[float] = [3.14, 6.28]
-    arg_list_str_empty: List[str] = []
+    arg_list_bool: List[bool] = [True, False]
     arg_list_literal: List[Literal['H', 1, 1.00784, False]] = ['H', False]
+    arg_list_str_empty: List[str] = []
+
+    arg_set: Set = {'these', 'are', 'strings'}
     arg_set_str: Set[str] = {'hello', 'how are you'}
     arg_set_int: Set[int] = {10, -11}
     arg_set_float: Set[float] = {3.14, 6.28}
+    arg_set_bool: Set[bool] = {True, False}
     arg_set_literal: Set[Literal['H', 1, 1.00784, False]] = {'H', False}
+    arg_set_str_empty: Set[str] = set()
+
+    arg_tuple: Tuple = ('these', 'are', 'strings')
+    arg_tuple_str: Tuple[str, ...] = ('hello', 'how are you')
+    arg_tuple_int: Tuple[int, ...] = (10, -11)
+    arg_tuple_float: Tuple[float, ...] = (3.14, 6.28)
+    arg_tuple_bool: Tuple[bool, ...] = (True, True, True, False)
+    arg_tuple_multi: Tuple[float, int, str, bool, float] = (1.2, 1, 'hi', True, 1.3)
     # TODO: move these elsewhere since we don't support them as defaults
     # arg_other_type_required: Person
     # arg_other_type_default: Person = Person('tap')
@@ -185,19 +202,36 @@ class DefaultClassVariableTests(TestCase):
         self.assertEqual(args.arg_bool_true, True)
         self.assertEqual(args.arg_bool_false, False)
         self.assertEqual(args.arg_literal, 'A')
+        
+        self.assertTrue(args.arg_optional is None)
         self.assertTrue(args.arg_optional_str is None)
         self.assertTrue(args.arg_optional_int is None)
         self.assertTrue(args.arg_optional_float is None)
+        self.assertTrue(args.arg_optional_bool is None)
         self.assertTrue(args.arg_optional_literal is None)
+
+        self.assertEqual(args.arg_list, ['these', 'are', 'strings'])
         self.assertEqual(args.arg_list_str, ['hello', 'how are you'])
         self.assertEqual(args.arg_list_int, [10, -11])
         self.assertEqual(args.arg_list_float, [3.14, 6.28])
-        self.assertEqual(args.arg_list_str_empty, [])
+        self.assertEqual(args.arg_list_bool, [True, False])
         self.assertEqual(args.arg_list_literal, ['H', False])
+        self.assertEqual(args.arg_list_str_empty, [])
+        
+        self.assertEqual(args.arg_set, {'these', 'are', 'strings'})
         self.assertEqual(args.arg_set_str, {'hello', 'how are you'})
         self.assertEqual(args.arg_set_int, {10, -11})
         self.assertEqual(args.arg_set_float, {3.14, 6.28})
+        self.assertEqual(args.arg_set_bool, {True, False})
         self.assertEqual(args.arg_set_literal, {'H', False})
+        self.assertEqual(args.arg_set_str_empty, set())
+        
+        self.assertEqual(args.arg_tuple, ('these', 'are', 'strings'))
+        self.assertEqual(args.arg_tuple_str, ('hello', 'how are you'))
+        self.assertEqual(args.arg_tuple_int, (10, -11))
+        self.assertEqual(args.arg_tuple_float, (3.14, 6.28))
+        self.assertEqual(args.arg_tuple_bool, (True, True, True, False))
+        self.assertEqual(args.arg_tuple_multi, (1.2, 1, 'hi', True, 1.3))
 
     def test_set_default_args(self) -> None:
         arg_untyped = 'yes'
@@ -205,19 +239,36 @@ class DefaultClassVariableTests(TestCase):
         arg_int = '2'
         arg_float = '1e-2'
         arg_literal = 'True'
+
+        arg_optional = 'yo'
         arg_optional_str = 'hello'
         arg_optional_int = '77'
         arg_optional_float = '7.7'
+        arg_optional_bool = 'tru'
         arg_optional_literal = '88.9'
+
+        arg_list = ['string', 'list']
         arg_list_str = ['hi', 'there', 'how', 'are', 'you']
         arg_list_int = ['1', '2', '3', '10', '-11']
         arg_list_float = ['2.2', '-3.3', '2e20']
+        arg_list_bool = ['true', 'F']
         arg_list_str_empty = []
         arg_list_literal = ['H', '1']
+
+        arg_set = ['hi', 'there']
         arg_set_str = ['hi', 'hi', 'hi', 'how']
         arg_set_int = ['1', '2', '2', '2', '3']
         arg_set_float = ['1.23', '4.4', '1.23']
+        arg_set_bool = ['tru', 'fal']
+        arg_set_str_empty = []
         arg_set_literal = ['False', '1.00784']
+
+        arg_tuple = ('hi', 'there')
+        arg_tuple_str = ('hi', 'hi', 'hi', 'how')
+        arg_tuple_int = ('1', '2', '2', '2', '3')
+        arg_tuple_float = ('1.23', '4.4', '1.23')
+        arg_tuple_bool = ('tru', 'fal')
+        arg_tuple_multi = ('1.2', '1', 'hi', 'T', '1.3')
 
         args = IntegrationDefaultTap().parse_args([
             '--arg_untyped', arg_untyped,
@@ -227,53 +278,101 @@ class DefaultClassVariableTests(TestCase):
             '--arg_bool_true',
             '--arg_bool_false',
             '--arg_literal', arg_literal,
+
+            '--arg_optional', arg_optional,
             '--arg_optional_str', arg_optional_str,
             '--arg_optional_int', arg_optional_int,
             '--arg_optional_float', arg_optional_float,
+            '--arg_optional_bool', arg_optional_bool,
             '--arg_optional_literal', arg_optional_literal,
+
+            '--arg_list', *arg_list,
             '--arg_list_str', *arg_list_str,
             '--arg_list_int', *arg_list_int,
             '--arg_list_float', *arg_list_float,
+            '--arg_list_bool', *arg_list_bool,
             '--arg_list_str_empty', *arg_list_str_empty,
             '--arg_list_literal', *arg_list_literal,
+
+            '--arg_set', *arg_set,
             '--arg_set_str', *arg_set_str,
             '--arg_set_int', *arg_set_int,
             '--arg_set_float', *arg_set_float,
+            '--arg_set_bool', *arg_set_bool,
+            '--arg_set_str_empty', *arg_set_str_empty,
             '--arg_set_literal', *arg_set_literal,
+
+            '--arg_tuple', *arg_tuple,
+            '--arg_tuple_str', *arg_tuple_str,
+            '--arg_tuple_int', *arg_tuple_int,
+            '--arg_tuple_float', *arg_tuple_float,
+            '--arg_tuple_bool', *arg_tuple_bool,
+            '--arg_tuple_multi', *arg_tuple_multi,
         ])
 
         arg_int = int(arg_int)
         arg_float = float(arg_float)
+
         arg_optional_int = float(arg_optional_int)
         arg_optional_float = float(arg_optional_float)
+        arg_optional_bool = True
+
         arg_list_int = [int(arg) for arg in arg_list_int]
         arg_list_float = [float(arg) for arg in arg_list_float]
+        arg_list_bool = [True, False]
+
+        arg_set = set(arg_set)
         arg_set_str = set(arg_set_str)
         arg_set_int = {int(arg) for arg in arg_set_int}
         arg_set_float = {float(arg) for arg in arg_set_float}
+        arg_set_bool = {True, False}
+        arg_set_str_empty = set()
         arg_set_literal = set(arg_set_literal)
+
+        arg_tuple_int = tuple(int(arg) for arg in arg_tuple_int)
+        arg_tuple_float = tuple(float(arg) for arg in arg_tuple_float)
+        arg_tuple_bool = (True, False)
+        arg_tuple_multi = (1.2, 1, 'hi', True, 1.3)
 
         self.assertEqual(args.arg_untyped, arg_untyped)
         self.assertEqual(args.arg_str, arg_str)
         self.assertEqual(args.arg_int, arg_int)
         self.assertEqual(args.arg_float, arg_float)
+
         # Note: setting the bools as flags results in the opposite of their default
         self.assertEqual(args.arg_bool_true, False)
         self.assertEqual(args.arg_bool_false, True)
         self.assertEqual(args.arg_literal, True)
+
+        self.assertEqual(args.arg_optional, arg_optional)
         self.assertEqual(args.arg_optional_str, arg_optional_str)
         self.assertEqual(args.arg_optional_int, arg_optional_int)
         self.assertEqual(args.arg_optional_float, arg_optional_float)
+        self.assertEqual(args.arg_optional_bool, arg_optional_bool)
         self.assertEqual(args.arg_optional_literal, 88.9)
+
+        self.assertEqual(args.arg_list, arg_list)
         self.assertEqual(args.arg_list_str, arg_list_str)
         self.assertEqual(args.arg_list_int, arg_list_int)
         self.assertEqual(args.arg_list_float, arg_list_float)
+        self.assertEqual(args.arg_list_bool, arg_list_bool)
         self.assertEqual(args.arg_list_str_empty, arg_list_str_empty)
         self.assertEqual(args.arg_list_literal, ['H', 1])
+
+        self.assertEqual(args.arg_set, arg_set)
         self.assertEqual(args.arg_set_str, arg_set_str)
         self.assertEqual(args.arg_set_int, arg_set_int)
         self.assertEqual(args.arg_set_float, arg_set_float)
+        self.assertEqual(args.arg_set_bool, arg_set_bool)
+        self.assertEqual(args.arg_set_str_empty, arg_set_str_empty)
         self.assertEqual(args.arg_set_literal, {False, 1.00784})
+
+        self.assertEqual(args.arg_tuple, arg_tuple)
+        self.assertEqual(args.arg_tuple_str, arg_tuple_str)
+        self.assertEqual(args.arg_tuple_int, arg_tuple_int)
+        self.assertEqual(args.arg_tuple_float, arg_tuple_float)
+        self.assertEqual(args.arg_tuple_bool, arg_tuple_bool)
+        self.assertEqual(args.arg_tuple_multi, arg_tuple_multi)
 
 
 class AddArgumentTests(TestCase):

@@ -23,12 +23,14 @@ from tap.utils import (
     TupleTypeEnforcer
 )
 
+EMPTY_TYPE = get_args(List)[0]
 
 SUPPORTED_DEFAULT_BASE_TYPES = {str, int, float, bool}
-SUPPORTED_DEFAULT_OPTIONAL_TYPES = {Optional[str], Optional[int], Optional[float]}
-SUPPORTED_DEFAULT_LIST_TYPES = {List[str], List[int], List[float]}
-SUPPORTED_DEFAULT_SET_TYPES = {Set[str], Set[int], Set[float]}
+SUPPORTED_DEFAULT_OPTIONAL_TYPES = {Optional, Optional[str], Optional[int], Optional[float], Optional[bool]}
+SUPPORTED_DEFAULT_LIST_TYPES = {List, List[str], List[int], List[float], List[bool]}
+SUPPORTED_DEFAULT_SET_TYPES = {Set, Set[str], Set[int], Set[float], Set[bool]}
 SUPPORTED_DEFAULT_COLLECTION_TYPES = SUPPORTED_DEFAULT_LIST_TYPES | SUPPORTED_DEFAULT_SET_TYPES | {Tuple}
+SUPPORTED_DEFAULT_BOXED_TYPES = SUPPORTED_DEFAULT_OPTIONAL_TYPES | SUPPORTED_DEFAULT_COLLECTION_TYPES
 SUPPORTED_DEFAULT_TYPES = set.union(SUPPORTED_DEFAULT_BASE_TYPES,
                                     SUPPORTED_DEFAULT_OPTIONAL_TYPES,
                                     SUPPORTED_DEFAULT_COLLECTION_TYPES)
@@ -172,15 +174,23 @@ class Tap(ArgumentParser):
                         f'    self.add_argument("--{variable}", type=func, {"required=True" if kwargs["required"] else f"default={getattr(self, variable)}"})\n\n'
                         f'where "func" maps from str to {var_type}.')
 
-                # If Optional type, extract type
-                if var_type in SUPPORTED_DEFAULT_OPTIONAL_TYPES:
-                    var_type = get_args(var_type)[0]
-
-                # If List type, extract type of elements in list and set nargs
-                elif var_type in SUPPORTED_DEFAULT_COLLECTION_TYPES:
+                if var_type in SUPPORTED_DEFAULT_BOXED_TYPES:
+                    # If List or Set type, set nargs
+                    if var_type in SUPPORTED_DEFAULT_COLLECTION_TYPES:
+                        kwargs['nargs'] = kwargs.get('nargs', '*')
+                    
+                    # Extract boxed type for Optional, List, Set
                     arg_types = get_args(var_type)
-                    var_type = arg_types[0] if len(arg_types) > 0 else str
-                    kwargs['nargs'] = kwargs.get('nargs', '*')
+                    
+                    # Set defaults type to str for Type and Type[()]
+                    if len(arg_types) == 0 or arg_types[0] == EMPTY_TYPE:
+                        var_type = str
+                    else:
+                        var_type = arg_types[0]  
+
+                    # Handle the cases of Optional[bool], List[bool], Set[bool]
+                    if var_type == bool:
+                        var_type = boolean_type
 
                 # If bool then set action, otherwise set type
                 if var_type == bool:
