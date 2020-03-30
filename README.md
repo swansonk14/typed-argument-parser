@@ -22,6 +22,13 @@ Tap provides the following benefits:
     + [Help string](#help-string)
     + [Flexibility of `add_arguments`](#flexibility-of-add_arguments)
     + [Types](#types)
+        - [`str`, `int`, and `float`](#-str----int---and--float-)
+        - [`bool`](#-bool-)
+        - [`Optional`](#-optional-)
+        - [`List`](#-list-)
+        - [`Set`](#-set-)
+        - [`Tuple`](#-tuple-)
+        - [`Literal`](#-literal-)
     + [Argument processing with `process_args`](#argument-processing-with-process_args)
     + [Processing known args](#processing-known-args)
     + [Subclassing](#subclassing)
@@ -171,30 +178,44 @@ Tap automatically handles all of the following types:
 
 ```python
 str, int, float, bool
-Optional, Optional[str], Optional[int], Optional[float]
-List, List[str], List[int], List[float]
-Set, Set[str], Set[int], Set[float]
+Optional, Optional[str], Optional[int], Optional[float], Optional[bool]
+List, List[str], List[int], List[float], List[bool]
+Set, Set[str], Set[int], Set[float], Set[bool]
 Tuple, Tuple[Type1, Type2, etc.], Tuple[Type, ...]  
 Literal
 ```
 
-Each of these arguments is parsed as follows:
+#### `str`, `int`, and `float`
 
-`str`, `int`, and `float`: Each is automatically parsed to their respective types, just like argparse.
+Each is automatically parsed to their respective types, just like argparse.
 
-`bool`: If an argument `arg` is specified as `arg: bool` or `arg: bool = False`, then adding the `--arg` flag to the command line will set `arg` to `True`. If `arg` is specified as `arg: bool = True`, then adding `--arg` sets `arg` to `False`.
+#### `bool`
+
+If an argument `arg` is specified as `arg: bool` or `arg: bool = False`, then adding the `--arg` flag to the command line will set `arg` to `True`. If `arg` is specified as `arg: bool = True`, then adding `--arg` sets `arg` to `False`.
 
 Note that if the `Tap` instance is created with `explicit_bool=True`, then booleans can be specified on the command line as `--arg True` or `--arg False` rather than `--arg`. Additionally, booleans can be specified by prefixes of `True` and `False` with any capitalization as well as `1` or `0` (e.g. for True, `--arg tRu`, `--arg T`, `--arg 1` all suffice). 
 
-`Optional`: These arguments are parsed in exactly the same way as `str`, `int`, `float`, and `bool`. Note bools can be specified using the same rules as above and that `Optional` is equivalent to `Optional[str]`.
+#### `Optional`
 
-`List`: If an argument `arg` is a `List`, simply specify the values separated by spaces just as you would with regular argparse. For example, `--arg 1 2 3` parses to `arg = [1, 2, 3]`.
+These arguments are parsed in exactly the same way as `str`, `int`, `float`, and `bool`. Note bools can be specified using the same rules as above and that `Optional` is equivalent to `Optional[str]`.
 
-`Set`: Identical to `List` but parsed into a set rather than a list.
+#### `List`
 
-`Tuple`: Tuples can be used to specify a fixed number of arguments with specified types using the syntax `Tuple[Type1, Type2, etc.]` (e.g. `Tuple[str, int, bool, str]`). Tuples with a variable number of arguments are specified by `Tuple[Type, ...]` (e.g. `Tuple[int, ...]`). Note `Tuple` defaults to `Tuple[str, ...]`.
+If an argument `arg` is a `List`, simply specify the values separated by spaces just as you would with regular argparse. For example, `--arg 1 2 3` parses to `arg = [1, 2, 3]`.
 
-`Literal`: Literal is analagous to `argparse`'s [choices](https://docs.python.org/3/library/argparse.html#choices), which specifies the values that an argument can take. For example, if arg can only be one of 'H', 1, False, or 1.0078 then you would specify that `arg: Literal['H', 1, False, 1.0078]`. For instance, `--arg False` assigns arg to False and `--arg True` throws error. The `Literal` type was introduced in Python 3.8 ([PEP 586](https://www.python.org/dev/peps/pep-0586/)) and can be imported with `from typing_extensions import Literal`.
+#### `Set`
+
+Identical to `List` but parsed into a set rather than a list.
+
+#### `Tuple`
+
+Tuples can be used to specify a fixed number of arguments with specified types using the syntax `Tuple[Type1, Type2, etc.]` (e.g. `Tuple[str, int, bool, str]`). Tuples with a variable number of arguments are specified by `Tuple[Type, ...]` (e.g. `Tuple[int, ...]`). Note `Tuple` defaults to `Tuple[str, ...]`.
+
+#### `Literal`
+
+Literal is analagous to `argparse`'s [choices](https://docs.python.org/3/library/argparse.html#choices), which specifies the values that an argument can take. For example, if arg can only be one of 'H', 1, False, or 1.0078 then you would specify that `arg: Literal['H', 1, False, 1.0078]`. For instance, `--arg False` assigns arg to False and `--arg True` throws error. The `Literal` type was introduced in Python 3.8 ([PEP 586](https://www.python.org/dev/peps/pep-0586/)) and can be imported with `from typing_extensions import Literal`.
+
+#### Complex types
 
 More complex types _must_ be specified with the `type` keyword argument in `add_argument`, as in the example below.
 
