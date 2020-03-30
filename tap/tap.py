@@ -23,7 +23,7 @@ from tap.utils import (
     TupleTypeEnforcer
 )
 
-EMPTY_TYPE = get_args(List)[0]
+EMPTY_TYPE = get_args(List)[0] if len(get_args(List)) > 0 else tuple()
 
 SUPPORTED_DEFAULT_BASE_TYPES = {str, int, float, bool}
 SUPPORTED_DEFAULT_OPTIONAL_TYPES = {Optional, Optional[str], Optional[int], Optional[float], Optional[bool]}
@@ -136,9 +136,9 @@ class Tap(ArgumentParser):
                 # First check whether it is a literal type or a boxed literal type
                 if is_literal_type(var_type):
                     var_type, kwargs['choices'] = get_literals(var_type, variable)
-                elif get_origin(var_type) in (List, list, Set, set) and is_literal_type(
-                    get_args(var_type)[0]
-                ):
+                elif (get_origin(var_type) in (List, list, Set, set)
+                      and len(get_args(var_type)) > 0
+                      and is_literal_type(get_args(var_type)[0])):
                     var_type, kwargs['choices'] = get_literals(get_args(var_type)[0], variable)
                     kwargs['nargs'] = kwargs.get('nargs', '*')
                 # Handle Tuple type (with type args) by extracting types of Tuple elements and enforcing them
