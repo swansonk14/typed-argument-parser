@@ -218,7 +218,7 @@ class Tap(ArgumentParser):
                 name_or_flags, kwargs = self.argument_buffer[variable]
                 self._add_argument(*name_or_flags, **kwargs)
             else:
-                flag_name = variable.replace("_", "-") if self._underscores_to_dashes else variable
+                flag_name = variable.replace('_', '-') if self._underscores_to_dashes else variable
                 self._add_argument(f'--{flag_name}')
 
         # Add any arguments that were added manually in add_arguments but aren't class variables (in order)
@@ -385,10 +385,15 @@ class Tap(ArgumentParser):
 
     def _get_argument_names(self) -> Set[str]:
         """Returns a list of variable names corresponding to the arguments."""
-        return set(self._get_class_dict().keys()) | set(self._annotations.keys())
+        return (set(self._get_class_dict().keys()) |
+                set(self._annotations.keys()) |
+                set(self.argument_buffer.keys()) - {'help'}) 
 
     def as_dict(self) -> Dict[str, Any]:
-        """Returns the member variables corresponding to the class variable arguments.
+        """Returns the member variables corresponding to the parsed arguments.
+
+        Note: This does not include attributes set directly on an instance 
+        (e.g. arg is not included in MyTap().arg = "hi")
 
          :return: A dictionary mapping each argument's name to its value.
          """
@@ -402,16 +407,13 @@ class Tap(ArgumentParser):
 
         :args_dict: A dictionary from argument names to the values of the arguments.
         """
-        # Find all required arguments (in annotations without defaults)
-        # Note: Can only detect required args on objects where required args are not yet set.
-        required_args = [a for a in self._annotations if not hasattr(self, a)]
+        # All of the required arguments must be provided
+        required_args = {a.dest for a in self._actions if a.required}
+        if len(required_args - args_dict.keys()) > 0:
+            raise ValueError(f'Input dictionary "{args_dict}" does not include'
+                             f' required arguments "{required_args}".')
 
-        # All of the required args must be provided
-        if len(required_args) != len(set(required_args) & set(args_dict.keys())):
-            raise ValueError(f'Input dictionary {args_dict} does not include'
-                             f' required arguments {required_args}.')
-
-        # Set all of the attributes.
+        # Load all arguments
         for key, value in args_dict.items():
             try:
                 setattr(self, key, value)

@@ -446,7 +446,7 @@ class AddArgumentTests(TestCase):
 
         arg_str = 'non_class_arg'
         self.tap = IntegrationAddArgumentTap()
-        self.assertFalse('non_class_arg' in self.tap._get_argument_names())  # ensure it's actually not a class variable
+        self.assertTrue('non_class_arg' in self.tap._get_argument_names())
         self.args = self.tap.parse_args(['--non_class_arg', arg_str])
 
         self.assertEqual(self.args.non_class_arg, arg_str)
@@ -839,7 +839,6 @@ class TestAsDict(TestCase):
     def test_as_dict_add_arguments(self):
         class AddArgumentsTap(Tap):
             a: str
-            long_arg_name: str
             b = 1
 
             def add_arguments(self):
