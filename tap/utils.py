@@ -1,15 +1,17 @@
 from argparse import ArgumentParser, ArgumentTypeError
+from base64 import b64encode, b64decode
 from collections import OrderedDict
 import inspect
 from io import StringIO
+from json import JSONEncoder
 import os
+import pickle
 import re
 import subprocess
 import tokenize
 from typing import Any, Callable, Dict, Generator, Iterable, List, Tuple, Union
 from typing_extensions import Literal
 from typing_inspect import get_args
-
 
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
 PRIMITIVES = (str, int, float, bool)
@@ -232,12 +234,28 @@ class TupleTypeEnforcer:
     """The type argument to argparse for checking and applying types to Tuples."""
     def __init__(self, types: Iterable[type]):
         self.types = (boolean_type if t == bool else t for t in types)
-        # self.index = 0
 
     def __call__(self, arg: str) -> Any:
         return next(self.types)(arg)
 
-        # output = self.types[self.index](arg)
-        # self.index += 1
-        #
-        # return output
+
+class PythonObjectEncoder(JSONEncoder):
+    """Stores parameters that are not JSON serializable. 
+    
+    This is a hack that depends heavily on the implementation of json.
+    On the other hand, it makes tuples serialize and deserialize as tuples.
+    """
+    def default(self, obj):
+        if isinstance(obj, (list, dict, str, int, float, bool, type(None))):
+            return super().default(obj)
+        return {'_python_object': b64encode(pickle.dumps(obj)).decode('utf-8')}
+
+
+def as_python_object(dct):
+    """The hooks that allow a parameter that is not JSON serializable to be loaded.
+
+    See: https://stackoverflow.com/a/36252257
+    """
+    if '_python_object' in dct:
+        return pickle.loads(b64decode(dct['_python_object'].encode('utf-8')))
+    return dct

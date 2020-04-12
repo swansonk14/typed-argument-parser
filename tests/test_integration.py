@@ -3,6 +3,7 @@ from typing import List, Optional, Set, Tuple
 import unittest
 from unittest import TestCase
 import sys
+from tempfile import NamedTemporaryFile
 from typing_extensions import Literal
 
 from tap import Tap
@@ -901,10 +902,33 @@ class TestFromDict(TestCase):
             new_args.from_dict(d)
 
 
+class TestStoringTap(TestCase):
+
+    def test_save_load_simple(self):
+        class SimpleSaveLoadTap(Tap):
+            a: str
+            d: Tuple[str, ...]
+            b = 1
+            c: bool = True
+            e: Optional[int] = None
+            f: Set[int] = {1}
+
+        args = SimpleSaveLoadTap().parse_args(['--a', 'hi', '--d', 'a', 'b', '--e', '7'])
+        
+        with NamedTemporaryFile() as f:
+            args.save(f.name)
+            new_args = SimpleSaveLoadTap()
+            new_args.load(f.name)
+
+        # NOTE: d was a tuple now is a list. An unfortunate wart of JSON :(        
+        output = {'e': 7, 'f': {1}, 'd': ('a', 'b'), 'c': True, 'a': 'hi', 'b': 1}
+        self.assertEqual(new_args.as_dict(), output)
+
 """
 - crash if default type not supported
 - user specifying process_args
 - test save args
+- test load args
 - test get reproducibility info
 - test str?
 - test comments

@@ -21,7 +21,9 @@ from tap.utils import (
     type_to_str,
     get_literals,
     boolean_type,
-    TupleTypeEnforcer
+    TupleTypeEnforcer,
+    PythonObjectEncoder,
+    as_python_object
 )
 
 EMPTY_TYPE = get_args(List)[0] if len(get_args(List)) > 0 else tuple()
@@ -395,8 +397,8 @@ class Tap(ArgumentParser):
         Note: This does not include attributes set directly on an instance 
         (e.g. arg is not included in MyTap().arg = "hi")
 
-         :return: A dictionary mapping each argument's name to its value.
-         """
+        :return: A dictionary mapping each argument's name to its value.
+        """
         if not self._parsed:
             raise ValueError('You should call `parse_args` before retrieving arguments.')
 
@@ -405,13 +407,13 @@ class Tap(ArgumentParser):
     def from_dict(self, args_dict: Dict[str, Any]) -> None:
         """Loads arguments from a dictionary, ensuring all required arguments are set.
 
-        :args_dict: A dictionary from argument names to the values of the arguments.
+        :param args_dict: A dictionary from argument names to the values of the arguments.
         """
         # All of the required arguments must be provided
         required_args = {a.dest for a in self._actions if a.required}
         if len(required_args - args_dict.keys()) > 0:
-            raise ValueError(f'Input dictionary "{args_dict}" does not include'
-                             f' required arguments "{required_args}".')
+            raise ValueError(f'Input dictionary "{args_dict}" does not include '
+                             f'required arguments "{required_args}".')
 
         # Load all arguments
         for key, value in args_dict.items():
@@ -422,12 +424,41 @@ class Tap(ArgumentParser):
         self._parsed = True
 
     def save(self, path: str) -> None:
-        """Saves the arguments and reproducibility information in JSON format.
+        """Saves the arguments and reproducibility information in JSON format, pickling what can't be encoded.
 
         :param path: Path to the JSON file where the arguments will be saved.
         """
         with open(path, 'w') as f:
-            json.dump(self._log_all(), f, indent=4, sort_keys=True)
+            json.dump(self._log_all(), f, indent=4, sort_keys=True, cls=PythonObjectEncoder)
+
+    def load(self, path: str, check_git_hash: bool = False) -> None:
+        """Loads the arguments in JSON format. Note: Due to JSON, tuples are loaded as lists.
+
+        :param path: Path to the JSON file where the arguments will be loaded from.
+        :param check_git_hash: When True, raises an error if the loaded git commit hash doesn't
+                               match the hash of the running code. 
+        """
+        with open(path) as f:
+            args_dict = json.load(f, object_hook=as_python_object)
+
+        reproducibility = args_dict.pop('reproducibility', None)
+        
+        if check_git_hash:
+            current_reproducibility = self.get_reproducibility_info()
+            if (reproducibility is None or
+                'git_url' not in reproducibility or
+                'git_url' not in current_reproducibility):
+                raise ValueError(f'Not enough reproducibility information to ensure '
+                                 f'that the state is the same as the run that created "{path}"')
+            if (reproducibility['git_url'] != current_reproducibility['git_url'] or 
+                reproducibility['git_has_uncommitted_changes'] or 
+                current_reproducibility['git_has_uncommitted_changes']):
+                raise ValueError(f'We cannot determine that the code state is the same either '
+                                 f'because "git_url" differs or because there were uncommitted ' 
+                                 f'changes when the original experiment was run.')
+
+        self.from_dict(args_dict)
+
 
     def __str__(self) -> str:
         """Returns a string representation of self.
