@@ -6,6 +6,7 @@ import json
 from pprint import pformat
 import sys
 import time
+import warnings
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
 from typing_inspect import is_literal_type, get_args, get_origin, is_union_type
 
@@ -178,15 +179,15 @@ class Tap(ArgumentParser):
                     # If List or Set type, set nargs
                     if var_type in SUPPORTED_DEFAULT_COLLECTION_TYPES:
                         kwargs['nargs'] = kwargs.get('nargs', '*')
-                    
+
                     # Extract boxed type for Optional, List, Set
                     arg_types = get_args(var_type)
-                    
+
                     # Set defaults type to str for Type and Type[()]
                     if len(arg_types) == 0 or arg_types[0] == EMPTY_TYPE:
                         var_type = str
                     else:
-                        var_type = arg_types[0]  
+                        var_type = arg_types[0]
 
                     # Handle the cases of Optional[bool], List[bool], Set[bool]
                     if var_type == bool:
@@ -395,6 +396,28 @@ class Tap(ArgumentParser):
             raise ValueError('You should call `parse_args` before retrieving arguments.')
 
         return {var: getattr(self, var) for var in self._get_argument_names()}
+
+    def from_dict(self, args_dict: Dict[str, Any]) -> None:
+        """Loads arguments from a dictionary, ensuring all required arguments are set.
+
+        :args_dict: A dictionary from argument names to the values of the arguments.
+        """
+        # Find all required arguments (in annotations without defaults)
+        # Note: Can only detect required args on objects where required args are not yet set.
+        required_args = [a for a in self._annotations if not hasattr(self, a)]
+
+        # All of the required args must be provided
+        if len(required_args) != len(set(required_args) & set(args_dict.keys())):
+            raise ValueError(f'Input dictionary {args_dict} does not include'
+                             f' required arguments {required_args}.')
+
+        # Set all of the attributes.
+        for key, value in args_dict.items():
+            try:
+                setattr(self, key, value)
+            except AttributeError as e:
+                warnings.warn(e)
+        self._parsed = True
 
     def save(self, path: str) -> None:
         """Saves the arguments and reproducibility information in JSON format.

@@ -808,12 +808,105 @@ class TupleTests(TestCase):
             EmptyTupleTap().parse_args([])
 
 
+class TestAsDict(TestCase):
+
+    def test_as_dict_simple(self):
+        class SimpleTap(Tap):
+            a: str
+            b = 1
+            c: bool = True
+            d: Tuple[str, ...] = ('hi', 'bob')
+            e: Optional[int] = None
+            f: Set[int] = {1}
+
+        args = SimpleTap().parse_args(['--a', 'hi'])
+        as_dict_res = {'d': ('hi', 'bob'), 'b': 1, 'c': True, 'f': {1}, 'e': None, 'a': 'hi'}
+        self.assertEqual(args.as_dict(), as_dict_res)
+
+    def test_as_dict_more_init_args(self):
+        class InitArgsTap(Tap):
+            a: str
+            b = 1
+
+            def __init__(self, g):
+                super(InitArgsTap, self).__init__()
+                self.g = g
+
+        args = InitArgsTap("GG").parse_args(['--a', 'hi'])
+        as_dict_res = {'b': 1, 'a': 'hi'}
+        self.assertEqual(args.as_dict(), as_dict_res)
+
+    def test_as_dict_add_arguments(self):
+        class AddArgumentsTap(Tap):
+            a: str
+            long_arg_name: str
+            b = 1
+
+            def add_arguments(self):
+                self.add_argument('-arg_name', '--long_arg_name')
+
+        args = AddArgumentsTap().parse_args(['--a', 'hi', '--long_arg_name', 'arg'])
+
+        as_dict_res = {'a': 'hi', 'b': 1, 'long_arg_name': 'arg'}
+        self.assertEqual(args.as_dict(), as_dict_res)
+
+    def test_as_dict_manual_extra_args(self):
+        class ManualExtraArgsTap(Tap):
+            a: str
+            b: int = 1
+
+        args = ManualExtraArgsTap()
+        args.c = 7
+        args = args.parse_args(['--a', 'hi'])
+        args.d = 'big'
+
+        as_dict_res = {'a': 'hi', 'b': 1}
+        self.assertEqual(args.as_dict(), as_dict_res)
+
+
+class TestFromDict(TestCase):
+
+    def test_from_dict_simple(self):
+        class SimpleFromDictTap(Tap):
+            a: str
+            d: Tuple[str, ...]
+            b = 1
+            c: bool = True
+            e: Optional[int] = None
+            f: Set[int] = {1}
+
+        args = SimpleFromDictTap().parse_args(['--a', 'hi', '--d', 'a', 'b', '--e', '7'])
+        d = args.as_dict()
+
+        new_args = SimpleFromDictTap()
+        new_args.from_dict(d)
+
+        self.assertEqual(new_args.as_dict(), args.as_dict())
+
+    def test_from_dict_fails_without_required(self):
+        class SimpleFromDictTap(Tap):
+            a: str
+            d: Tuple[str, ...]
+            b = 1
+            c: bool = True
+            e: Optional[int] = None
+            f: Set[int] = {1}
+
+        args = SimpleFromDictTap().parse_args(['--a', 'hi', '--d', 'a', 'b', '--e', '7'])
+        d = args.as_dict()
+        d.pop('a')
+
+        new_args = SimpleFromDictTap()
+
+        with self.assertRaises(ValueError):
+            new_args.from_dict(d)
+
+
 """
 - crash if default type not supported
 - user specifying process_args
 - test save args
 - test get reproducibility info
-- test as_dict
 - test str?
 - test comments
 """
