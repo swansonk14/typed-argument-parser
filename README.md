@@ -28,7 +28,10 @@ Tap provides the following benefits:
     + [Printing](#printing)
     + [Reproducibility](#reproducibility)
       - [Reproducibility info](#reproducibility-info)
-      - [Saving arguments](#saving-arguments)
+    + [Saving and loading arguments](#saving-and-loading-arguments)
+      - [Save](#save)
+      - [Load](#load)
+      - [Load from dict](#load-from-dict)
 
 ## Installation
 
@@ -333,7 +336,9 @@ Specifically, Tap has a method called `get_reproducibility_info` that returns a 
     - Whether there are any uncommitted changes in the git repo (i.e. whether the code is different from the code at the above git hash)
     - Ex. `True` or `False`
 
-#### Saving arguments
+### Saving and loading arguments
+
+#### Save
 
 Tap has a method called `save` which saves all arguments, along with the reproducibility info, to a JSON file.
 
@@ -367,3 +372,48 @@ After running `python main.py --package Tap`, the file `args.json` will contain:
     "stars": 5
 }
 ```
+
+Note: More complex types will be encoded in JSON as a pickle string.
+
+#### Load
+
+Arguments can be loaded from a JSON file rather than parsed from the command line.
+
+```python
+"""main.py"""
+
+from tap import Tap
+
+class MyTap(Tap):
+    package: str
+    is_cool: bool = True
+    stars: int = 5
+
+args = MyTap()
+args.load('args.json')
+```
+
+Note: All required arguments (in this case `package`) must be present in the JSON file if not already set in the Tap object.
+
+#### Load from dict
+
+Arguments can be loaded from a Python dictionary rather than parsed from the command line.
+
+```python
+"""main.py"""
+
+from tap import Tap
+
+class MyTap(Tap):
+    package: str
+    is_cool: bool = True
+    stars: int = 5
+
+args = MyTap()
+args.from_dict({
+    'package': 'Tap',
+    'stars': 20
+})
+```
+
+Note: As with `load`, all required arguments must be present in the dictionary if not already set in the Tap object. All values in the provided dictionary will overwrite values currently in the Tap object.
