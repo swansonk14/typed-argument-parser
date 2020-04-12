@@ -3,6 +3,7 @@ from base64 import b64encode, b64decode
 from collections import OrderedDict
 import inspect
 from io import StringIO
+import json
 from json import JSONEncoder
 import os
 import pickle
@@ -239,23 +240,83 @@ class TupleTypeEnforcer:
         return next(self.types)(arg)
 
 
-class PythonObjectEncoder(JSONEncoder):
-    """Stores parameters that are not JSON serializable. 
-    
-    This is a hack that depends heavily on the implementation of json.
-    On the other hand, it makes tuples serialize and deserialize as tuples.
+class Tuple:
+    """Mock of a tuple needed to prevent JSON encoding tuples as lists."""
+    def __init__(self, _tuple: tuple) -> None:
+        self.tuple = _tuple
+
+
+def nested_replace_type(obj: Any, find_type: type, replace_type: type) -> Any:
+    """Replaces any instance (including instances within lists, tuple, dict) of find_type with an instance of replace_type.
+
+    Note: Tuples, lists, and dictionaries are NOT modified in place, they are replaced.
+    Note: Does NOT do a nested search through objects besides tuples, lists, and dicts (e.g. sets).
+
+    :param obj: The object to modify by replacing find_type instances with replace_type instances.
+    :param find_type: The type to find in obj.
+    :param replace_type: The type to used to replace find_type in obj.
+    :return: A version of obj with all instances of find_type replaced by replace_type
     """
-    def default(self, obj):
-        if isinstance(obj, (list, dict, str, int, float, bool, type(None))):
-            return super().default(obj)
-        return {'_python_object': b64encode(pickle.dumps(obj)).decode('utf-8')}
+    if isinstance(obj, tuple):
+        obj = tuple(nested_replace_type(item, find_type, replace_type) for item in obj)
+
+    if isinstance(obj, list):
+        obj = [nested_replace_type(item, find_type, replace_type) for item in obj]
+
+    if isinstance(obj, dict):
+        obj = {nested_replace_type(key, find_type, replace_type): nested_replace_type(value, find_type, replace_type)
+               for key, value in obj.items()}
+
+    if isinstance(obj, find_type):
+        obj = replace_type(obj)
+
+    return obj
 
 
-def as_python_object(dct):
+class PythonObjectEncoder(JSONEncoder):
+    """Stores parameters that are not JSON serializable as pickle dumps.
+
+    See: https://stackoverflow.com/a/36252257
+    """
+    def encode(self, o: Any) -> str:
+        o = nested_replace_type(o, tuple, Tuple)
+        return super(PythonObjectEncoder, self).encode(o)
+
+    def default(self, obj: Any) -> Any:
+        if isinstance(obj, set):
+            return {
+                '_type': 'set',
+                '_value': super(PythonObjectEncoder, self).encode(list(obj))
+            }
+        elif isinstance(obj, Tuple):
+            return {
+                '_type': 'tuple',
+                '_value': super(PythonObjectEncoder, self).encode(list(obj.tuple))
+            }
+        return {
+            '_type': 'python_object',
+            '_value': b64encode(pickle.dumps(obj)).decode('utf-8')
+        }
+
+
+def as_python_object(dct: Any) -> Any:
     """The hooks that allow a parameter that is not JSON serializable to be loaded.
 
     See: https://stackoverflow.com/a/36252257
     """
-    if '_python_object' in dct:
-        return pickle.loads(b64decode(dct['_python_object'].encode('utf-8')))
+    if '_type' in dct and '_value' in dct:
+        _type, value = dct['_type'], dct['_value']
+
+        if _type == 'tuple':
+            return tuple(json.loads(value, object_hook=as_python_object))
+
+        elif _type == 'set':
+            return set(json.loads(value, object_hook=as_python_object))
+
+        elif _type == 'python_object':
+            return pickle.loads(b64decode(value.encode('utf-8')))
+
+        else:
+            raise ValueError(f'Special type "{_type}" not supported for JSON loading.')
+
     return dct

@@ -409,11 +409,14 @@ class Tap(ArgumentParser):
 
         :param args_dict: A dictionary from argument names to the values of the arguments.
         """
-        # All of the required arguments must be provided
+        # All of the required arguments must be provided or already set
         required_args = {a.dest for a in self._actions if a.required}
-        if len(required_args - args_dict.keys()) > 0:
-            raise ValueError(f'Input dictionary "{args_dict}" does not include '
-                             f'required arguments "{required_args}".')
+        unprovided_required_args = required_args - args_dict.keys()
+
+        for arg in unprovided_required_args:
+            if not hasattr(self, arg):
+                raise ValueError(f'Input dictionary "{args_dict}" does not include '
+                                 f'all unset required argument "{arg}".')
 
         # Load all arguments
         for key, value in args_dict.items():
@@ -421,6 +424,7 @@ class Tap(ArgumentParser):
                 setattr(self, key, value)
             except AttributeError as e:
                 warnings.warn(e)
+
         self._parsed = True
 
     def save(self, path: str) -> None:
@@ -431,42 +435,66 @@ class Tap(ArgumentParser):
         with open(path, 'w') as f:
             json.dump(self._log_all(), f, indent=4, sort_keys=True, cls=PythonObjectEncoder)
 
-    def load(self, path: str, check_git_hash: bool = False) -> None:
+    def load(self, path: str, check_reproducibility: bool = False) -> None:
         """Loads the arguments in JSON format. Note: Due to JSON, tuples are loaded as lists.
 
         :param path: Path to the JSON file where the arguments will be loaded from.
-        :param check_git_hash: When True, raises an error if the loaded git commit hash doesn't
-                               match the hash of the running code. 
+        :param check_reproducibility: When True, raises an error if the loaded reproducibility
+                                      information doesn't match the current reproducibility information.
         """
         with open(path) as f:
             args_dict = json.load(f, object_hook=as_python_object)
 
+        # Remove loaded reproducibility information since it is no longer valid
         reproducibility = args_dict.pop('reproducibility', None)
         
-        if check_git_hash:
+        if check_reproducibility:
+            no_reproducibility_message = 'Reproducibility not guaranteed'
             current_reproducibility = self.get_reproducibility_info()
-            if (reproducibility is None or
-                'git_url' not in reproducibility or
-                'git_url' not in current_reproducibility):
-                raise ValueError(f'Not enough reproducibility information to ensure '
-                                 f'that the state is the same as the run that created "{path}"')
-            if (reproducibility['git_url'] != current_reproducibility['git_url'] or 
-                reproducibility['git_has_uncommitted_changes'] or 
-                current_reproducibility['git_has_uncommitted_changes']):
-                raise ValueError(f'We cannot determine that the code state is the same either '
-                                 f'because "git_url" differs or because there were uncommitted ' 
-                                 f'changes when the original experiment was run.')
+
+            if reproducibility is None:
+                raise ValueError(f'{no_reproducibility_message}: Could not find reproducibility '
+                                 f'information in args loaded from "{path}".')
+
+            if 'git_url' not in reproducibility:
+                raise ValueError(f'{no_reproducibility_message}: Could not find '
+                                 f'git url in args loaded from "{path}".')
+
+            if 'git_url' not in current_reproducibility:
+                raise ValueError(f'{no_reproducibility_message}: Could not find '
+                                 f'git url in current args.')
+
+            if reproducibility['git_url'] != current_reproducibility['git_url']:
+                raise ValueError(f'{no_reproducibility_message}: Differing git url/hash '
+                                 f'between current args and args loaded from "{path}".')
+
+            if reproducibility['git_has_uncommitted_changes']:
+                raise ValueError(f'{no_reproducibility_message}: Uncommitted changes '
+                                 f'in args loaded from "{path}".')
+
+            if current_reproducibility['git_has_uncommitted_changes']:
+                raise ValueError(f'{no_reproducibility_message}: Uncommitted changes '
+                                 f'in current args.')
 
         self.from_dict(args_dict)
 
-    def __deepcopy__(self, memo=None):
-        from copy import deepcopy
-        copied = type(self).__new__(type(self), self)
+    def __deepcopy__(self, memo: Dict[int, Any] = None) -> TapType:
+        """
+        Returns a deep copy of the Tap object.
+
+        :param memo: A dictionary mapping copied instance IDs to instances.
+        :return: A deep copy of the Tap object.
+        """
+        copied = type(self).__new__(type(self))
+
         if memo is None:
             memo = {}
+
         memo[id(self)] = copied
-        for (k, v) in self.__dict__.items():
-            copied.__dict__[k] = deepcopy(v, memo)
+
+        for k, v in self.__dict__.items():
+            copied.__dict__[k] = deepcopy(v, memo=memo)
+
         return copied
 
     def __str__(self) -> str:

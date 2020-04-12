@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from itertools import cycle
+import json
 import os
 import subprocess
 from tempfile import TemporaryDirectory
@@ -16,7 +17,10 @@ from tap.utils import (
     has_uncommitted_changes,
     type_to_str,
     get_literals,
-    TupleTypeEnforcer
+    TupleTypeEnforcer,
+    nested_replace_type,
+    PythonObjectEncoder,
+    as_python_object
 )
 
 
@@ -312,6 +316,62 @@ class TupleTypeEnforcerTests(TestCase):
         args = [1, 2, -5, 20]
         output = [enforcer(str(arg)) for arg in args]
         self.assertEqual(output, args)
+
+
+class NestedReplaceTypeTests(TestCase):
+    def test_nested_replace_type_notype(self):
+        obj = ['123', 4, 5, ('hello', 4.4)]
+        replaced_obj = nested_replace_type(obj, bool, int)
+        self.assertEqual(obj, replaced_obj)
+
+    def test_nested_replace_type_unnested(self):
+        obj = ['123', 4, 5, ('hello', 4.4), True, False, 'hi there']
+        replaced_obj = nested_replace_type(obj, tuple, list)
+        correct_obj = ['123', 4, 5, ['hello', 4.4], True, False, 'hi there']
+        self.assertNotEqual(obj, replaced_obj)
+        self.assertEqual(correct_obj, replaced_obj)
+
+    def test_nested_replace_type_nested(self):
+        obj = ['123', [4, (1, 2, (3, 4))], 5, ('hello', (4,), 4.4), {'1': [2, 3, [{'2': (3, 10)}, ' hi ']]}]
+        replaced_obj = nested_replace_type(obj, tuple, list)
+        correct_obj = ['123', [4, [1, 2, [3, 4]]], 5, ['hello', [4], 4.4], {'1': [2, 3, [{'2': [3, 10]}, ' hi ']]}]
+        self.assertNotEqual(obj, replaced_obj)
+        self.assertEqual(correct_obj, replaced_obj)
+
+
+class Person:
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, Person) and self.name == other.name
+
+
+class PythonObjectEncoderTests(TestCase):
+    def test_python_object_encoder_simple_types(self):
+        obj = [1, 2, 'hi', 'bye', 7.3, [1, 2, 'blarg'], True, False, None]
+        dumps = json.dumps(obj, indent=4, sort_keys=True, cls=PythonObjectEncoder)
+        recreated_obj = json.loads(dumps, object_hook=as_python_object)
+        self.assertEqual(obj, recreated_obj)
+
+    def test_python_object_encoder_tuple(self):
+        obj = [1, 2, 'hi', 'bye', 7.3, (1, 2, 'blarg'), [('hi', 'bye'), 2], {'hi': {'bye': (3, 4)}}, True, False, None]
+        dumps = json.dumps(obj, indent=4, sort_keys=True, cls=PythonObjectEncoder)
+        recreated_obj = json.loads(dumps, object_hook=as_python_object)
+        self.assertEqual(obj, recreated_obj)
+
+    def test_python_object_encoder_set(self):
+        obj = [1, 2, 'hi', 'bye', 7.3, {1, 2, 'blarg'}, [{'hi', 'bye'}, 2], {'hi': {'bye': {3, 4}}}, True, False, None]
+        dumps = json.dumps(obj, indent=4, sort_keys=True, cls=PythonObjectEncoder)
+        recreated_obj = json.loads(dumps, object_hook=as_python_object)
+        self.assertEqual(obj, recreated_obj)
+
+    def test_python_object_encoder_complex(self):
+        obj = [1, 2, 'hi', 'bye', 7.3, {1, 2, 'blarg'}, [('hi', 'bye'), 2], {'hi': {'bye': {3, 4}}}, True, False, None,
+               (Person('tappy'), Person('tapper'))]
+        dumps = json.dumps(obj, indent=4, sort_keys=True, cls=PythonObjectEncoder)
+        recreated_obj = json.loads(dumps, object_hook=as_python_object)
+        self.assertEqual(obj, recreated_obj)
 
 
 if __name__ == '__main__':
