@@ -459,6 +459,15 @@ class Tap(ArgumentParser):
 
         self.from_dict(args_dict)
 
+    def __deepcopy__(self, memo=None):
+        from copy import deepcopy
+        copied = type(self).__new__(type(self), self)
+        if memo is None:
+            memo = {}
+        memo[id(self)] = copied
+        for (k, v) in self.__dict__.items():
+            copied.__dict__[k] = deepcopy(v, memo)
+        return copied
 
     def __str__(self) -> str:
         """Returns a string representation of self.
