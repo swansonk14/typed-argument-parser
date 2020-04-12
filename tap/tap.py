@@ -1,7 +1,6 @@
 from argparse import ArgumentParser
 from collections import OrderedDict
 from copy import deepcopy
-from itertools import cycle
 import json
 from pprint import pformat
 import sys
@@ -23,9 +22,12 @@ from tap.utils import (
     boolean_type,
     TupleTypeEnforcer,
     PythonObjectEncoder,
-    as_python_object
+    as_python_object,
+    fix_py36_copy
 )
 
+
+# Constants
 EMPTY_TYPE = get_args(List)[0] if len(get_args(List)) > 0 else tuple()
 
 SUPPORTED_DEFAULT_BASE_TYPES = {str, int, float, bool}
@@ -486,3 +488,18 @@ class Tap(ArgumentParser):
         :return: A formatted string representation of the dictionary of all arguments.
         """
         return pformat(self.as_dict())
+
+    @fix_py36_copy
+    def __deepcopy__(self, memo: Dict[int, Any] = None) -> TapType:
+        """Deepcopy the Tap object."""
+        copied = type(self).__new__(type(self))
+
+        if memo is None:
+            memo = {}
+
+        memo[id(self)] = copied
+
+        for (k, v) in self.__dict__.items():
+            copied.__dict__[k] = deepcopy(v, memo)
+
+        return copied

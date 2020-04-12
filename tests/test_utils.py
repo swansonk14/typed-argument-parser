@@ -17,7 +17,7 @@ from tap.utils import (
     type_to_str,
     get_literals,
     TupleTypeEnforcer,
-    nested_replace_type,
+    _nested_replace_type,
     PythonObjectEncoder,
     as_python_object
 )
@@ -320,19 +320,19 @@ class TupleTypeEnforcerTests(TestCase):
 class NestedReplaceTypeTests(TestCase):
     def test_nested_replace_type_notype(self):
         obj = ['123', 4, 5, ('hello', 4.4)]
-        replaced_obj = nested_replace_type(obj, bool, int)
+        replaced_obj = _nested_replace_type(obj, bool, int)
         self.assertEqual(obj, replaced_obj)
 
     def test_nested_replace_type_unnested(self):
         obj = ['123', 4, 5, ('hello', 4.4), True, False, 'hi there']
-        replaced_obj = nested_replace_type(obj, tuple, list)
+        replaced_obj = _nested_replace_type(obj, tuple, list)
         correct_obj = ['123', 4, 5, ['hello', 4.4], True, False, 'hi there']
         self.assertNotEqual(obj, replaced_obj)
         self.assertEqual(correct_obj, replaced_obj)
 
     def test_nested_replace_type_nested(self):
         obj = ['123', [4, (1, 2, (3, 4))], 5, ('hello', (4,), 4.4), {'1': [2, 3, [{'2': (3, 10)}, ' hi ']]}]
-        replaced_obj = nested_replace_type(obj, tuple, list)
+        replaced_obj = _nested_replace_type(obj, tuple, list)
         correct_obj = ['123', [4, [1, 2, [3, 4]]], 5, ['hello', [4], 4.4], {'1': [2, 3, [{'2': [3, 10]}, ' hi ']]}]
         self.assertNotEqual(obj, replaced_obj)
         self.assertEqual(correct_obj, replaced_obj)
