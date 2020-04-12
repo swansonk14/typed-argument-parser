@@ -3,14 +3,13 @@ from base64 import b64encode, b64decode
 from collections import OrderedDict
 import inspect
 from io import StringIO
-import json
 from json import JSONEncoder
 import os
 import pickle
 import re
 import subprocess
 import tokenize
-from typing import Any, Callable, Dict, Generator, Iterable, List, Tuple, Union
+from typing import Any, Callable, Dict, Generator, Iterable, Iterator, List, Tuple, Union
 from typing_extensions import Literal
 from typing_inspect import get_args
 
@@ -233,11 +232,19 @@ def boolean_type(flag_value: str) -> bool:
 
 class TupleTypeEnforcer:
     """The type argument to argparse for checking and applying types to Tuples."""
-    def __init__(self, types: Iterable[type]):
-        self.types = (boolean_type if t == bool else t for t in types)
+    def __init__(self, types: List[type], loop: bool = False):
+        self.types = [boolean_type if t == bool else t for t in types]
+        self.loop = loop
+        self.index = 0
 
     def __call__(self, arg: str) -> Any:
-        return next(self.types)(arg)
+        arg = self.types[self.index](arg)
+        self.index += 1
+
+        if self.loop:
+            self.index %= len(self.types)
+
+        return arg
 
 
 class Tuple:
@@ -278,23 +285,23 @@ class PythonObjectEncoder(JSONEncoder):
 
     See: https://stackoverflow.com/a/36252257
     """
-    def encode(self, o: Any) -> str:
+    def iterencode(self, o: Any, _one_shot: bool = False) -> Iterator[str]:
         o = nested_replace_type(o, tuple, Tuple)
-        return super(PythonObjectEncoder, self).encode(o)
+        return super(PythonObjectEncoder, self).iterencode(o, _one_shot)
 
     def default(self, obj: Any) -> Any:
         if isinstance(obj, set):
             return {
                 '_type': 'set',
-                '_value': super(PythonObjectEncoder, self).encode(list(obj))
+                '_value': list(obj)
             }
         elif isinstance(obj, Tuple):
             return {
                 '_type': 'tuple',
-                '_value': super(PythonObjectEncoder, self).encode(list(obj.tuple))
+                '_value': list(obj.tuple)
             }
         return {
-            '_type': 'python_object',
+            '_type': f'python_object (type = {obj.__class__.__name__})',
             '_value': b64encode(pickle.dumps(obj)).decode('utf-8')
         }
 
@@ -308,12 +315,12 @@ def as_python_object(dct: Any) -> Any:
         _type, value = dct['_type'], dct['_value']
 
         if _type == 'tuple':
-            return tuple(json.loads(value, object_hook=as_python_object))
+            return tuple(value)
 
         elif _type == 'set':
-            return set(json.loads(value, object_hook=as_python_object))
+            return set(value)
 
-        elif _type == 'python_object':
+        elif _type.startswith('python_object'):
             return pickle.loads(b64decode(value.encode('utf-8')))
 
         else:

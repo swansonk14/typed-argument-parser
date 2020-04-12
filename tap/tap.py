@@ -146,6 +146,7 @@ class Tap(ArgumentParser):
                     kwargs['nargs'] = kwargs.get('nargs', '*')
                 # Handle Tuple type (with type args) by extracting types of Tuple elements and enforcing them
                 elif get_origin(var_type) in (Tuple, tuple) and len(get_args(var_type)) > 0:
+                    loop = False
                     types = get_args(var_type)
 
                     # Don't allow Tuple[()]
@@ -155,12 +156,13 @@ class Tap(ArgumentParser):
 
                     # Handle Tuple[type, ...]
                     if len(types) == 2 and types[1] == Ellipsis:
-                        types = cycle([types[0]])
+                        types = types[0:1]
+                        loop = True
                         kwargs['nargs'] = '*'
                     else:
                         kwargs['nargs'] = len(types)
 
-                    var_type = TupleTypeEnforcer(types=types)
+                    var_type = TupleTypeEnforcer(types=types, loop=loop)
                 # To identify an Optional type, check if it's a union of a None and something else
                 elif (
                     is_union_type(var_type)
@@ -477,25 +479,6 @@ class Tap(ArgumentParser):
                                  f'in current args.')
 
         self.from_dict(args_dict)
-
-    def __deepcopy__(self, memo: Dict[int, Any] = None) -> TapType:
-        """
-        Returns a deep copy of the Tap object.
-
-        :param memo: A dictionary mapping copied instance IDs to instances.
-        :return: A deep copy of the Tap object.
-        """
-        copied = type(self).__new__(type(self))
-
-        if memo is None:
-            memo = {}
-
-        memo[id(self)] = copied
-
-        for k, v in self.__dict__.items():
-            copied.__dict__[k] = deepcopy(v, memo=memo)
-
-        return copied
 
     def __str__(self) -> str:
         """Returns a string representation of self.

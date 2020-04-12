@@ -1,10 +1,10 @@
-from argparse import ArgumentTypeError, ArgumentError
-from typing import List, Optional, Set, Tuple
-import unittest
-from unittest import TestCase
+from copy import deepcopy
 import sys
 from tempfile import NamedTemporaryFile
+from typing import Any, List, Optional, Set, Tuple
 from typing_extensions import Literal
+import unittest
+from unittest import TestCase
 
 from tap import Tap
 
@@ -108,11 +108,8 @@ class Person:
     def __init__(self, name: str):
         self.name = name
 
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, Person):
-            return False
-
-        return self.name == other.name
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, Person) and self.name == other.name
 
 
 class IntegrationDefaultTap(Tap):
@@ -903,32 +900,76 @@ class TestFromDict(TestCase):
 
 
 class TestStoringTap(TestCase):
-
     def test_save_load_simple(self):
         class SimpleSaveLoadTap(Tap):
             a: str
-            d: Tuple[str, ...]
             b = 1
             c: bool = True
-            e: Optional[int] = None
-            f: Set[int] = {1}
 
-        args = SimpleSaveLoadTap().parse_args(['--a', 'hi', '--d', 'a', 'b', '--e', '7'])
+        args = SimpleSaveLoadTap().parse_args(['--a', 'hi'])
         
         with NamedTemporaryFile() as f:
             args.save(f.name)
             new_args = SimpleSaveLoadTap()
             new_args.load(f.name)
 
-        # NOTE: d was a tuple now is a list. An unfortunate wart of JSON :(        
-        output = {'e': 7, 'f': {1}, 'd': ('a', 'b'), 'c': True, 'a': 'hi', 'b': 1}
-        self.assertEqual(new_args.as_dict(), output)
+        output = {'a': 'hi', 'b': 1, 'c': True}
+        self.assertEqual(output, new_args.as_dict())
+
+    def test_save_load_complex(self):
+        class ComplexSaveLoadTap(Tap):
+            a: str
+            d: Tuple[str, ...]
+            b = 1
+            c: bool = True
+            e: Optional[int] = None
+            f: Set[int] = {1}
+            g: Person = Person('tappy')
+
+            def add_arguments(self) -> None:
+                self.add_argument('--g', type=Person)
+
+        args = ComplexSaveLoadTap().parse_args(['--a', 'hi', '--d', 'a', 'b', '--e', '7', '--g', 'tapper'])
+
+        with NamedTemporaryFile() as f:
+            args.save(f.name)
+            new_args = ComplexSaveLoadTap()
+            new_args.load(f.name)
+
+        output = {'e': 7, 'f': {1}, 'd': ('a', 'b'), 'c': True, 'a': 'hi', 'b': 1, 'g': Person('tapper')}
+        self.assertEqual(output, new_args.as_dict())
+
+
+class TestDeepCopy(TestCase):
+    def test_deep_copy(self):
+        class DeepCopyTap(Tap):
+            a: str
+            d: Tuple[str, ...]
+            b = 1
+            c: bool = True
+            e: Optional[int] = None
+            f: Set[int] = {1}
+            g: Person = Person('tappy')
+
+            def add_arguments(self) -> None:
+                self.add_argument('--g', type=Person)
+
+            def __eq__(self, other):
+                return isinstance(other, DeepCopyTap) and self.as_dict() == other.as_dict()
+
+        args = DeepCopyTap().parse_args(['--a', 'hi', '--d', 'a', 'b', '--e', '7', '--g', 'tapper'])
+
+        copied_args = deepcopy(args)
+        self.assertEqual(args, copied_args)
+
+        self.assertEqual(args.g, copied_args.g)
+        args.g.name = 'tap out'  # Ensure the deepcopy was recursive and deepcopied objects
+        self.assertNotEqual(args.g, copied_args.g)
+
 
 """
 - crash if default type not supported
 - user specifying process_args
-- test save args
-- test load args
 - test get reproducibility info
 - test str?
 - test comments

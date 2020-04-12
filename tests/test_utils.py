@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from itertools import cycle
 import json
 import os
 import subprocess
@@ -242,7 +241,7 @@ class GetLiteralsTests(TestCase):
 class TupleTypeEnforcerTests(TestCase):
     def test_tuple_type_enforcer_zero_types(self):
         enforcer = TupleTypeEnforcer(types=[])
-        with self.assertRaises(StopIteration):
+        with self.assertRaises(IndexError):
             enforcer('hi')
 
     def test_tuple_type_enforcer_one_type_str(self):
@@ -312,7 +311,7 @@ class TupleTypeEnforcerTests(TestCase):
         self.assertEqual(output, true_output)
 
     def test_tuple_type_enforcer_infinite(self):
-        enforcer = TupleTypeEnforcer(types=cycle([int]))
+        enforcer = TupleTypeEnforcer(types=[int], loop=True)
         args = [1, 2, -5, 20]
         output = [enforcer(str(arg)) for arg in args]
         self.assertEqual(output, args)
