@@ -340,9 +340,8 @@ def fix_py36_copy(func: Callable) -> Callable:
 
     Based on https://stackoverflow.com/questions/6279305/typeerror-cannot-deepcopy-this-pattern-object
     """
-    if sys.version_info[:2] != (3, 6):
+    if sys.version_info[:2] > (3, 6):
         return func
-
 
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -355,6 +354,8 @@ def fix_py36_copy(func: Callable) -> Callable:
 
         if has_prev_val:
             copy._deepcopy_dispatch[re_type] = prev_val
+        else:
+            del copy._deepcopy_dispatch[re_type]
 
         return result
 

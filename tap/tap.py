@@ -412,6 +412,8 @@ class Tap(ArgumentParser):
         """Loads arguments from a dictionary, ensuring all required arguments are set.
 
         :param args_dict: A dictionary from argument names to the values of the arguments.
+        :param skip_unsettable: When True, skips attributes that cannot be set in the Tap object,
+                                e.g. properties without setters.
         """
         # All of the required arguments must be provided or already set
         required_args = {a.dest for a in self._actions if a.required}
@@ -428,9 +430,9 @@ class Tap(ArgumentParser):
                 setattr(self, key, value)
             except AttributeError:
                 if not skip_unsettable:
-                    raise AttributeError(f'Cannot set attribute "{key}" to "{value}." '
+                    raise AttributeError(f'Cannot set attribute "{key}" to "{value}". '
                                          f'To skip arguments that cannot be set \n'
-                                         f'"skip_unsettable = True" \n')
+                                         f'\t"skip_unsettable = True"')
 
         self._parsed = True
 
