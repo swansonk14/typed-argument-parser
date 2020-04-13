@@ -408,7 +408,7 @@ class Tap(ArgumentParser):
 
         return {var: getattr(self, var) for var in self._get_argument_names()}
 
-    def from_dict(self, args_dict: Dict[str, Any]) -> None:
+    def from_dict(self, args_dict: Dict[str, Any], skip_unsettable: bool = False) -> None:
         """Loads arguments from a dictionary, ensuring all required arguments are set.
 
         :param args_dict: A dictionary from argument names to the values of the arguments.
@@ -426,8 +426,11 @@ class Tap(ArgumentParser):
         for key, value in args_dict.items():
             try:
                 setattr(self, key, value)
-            except AttributeError as e:
-                warnings.warn(e)
+            except AttributeError:
+                if not skip_unsettable:
+                    raise AttributeError(f'Cannot set attribute "{key}" to "{value}." '
+                                         f'To skip arguments that cannot be set \n'
+                                         f'"skip_unsettable = True" \n')
 
         self._parsed = True
 

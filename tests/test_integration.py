@@ -900,6 +900,7 @@ class TestFromDict(TestCase):
 
 
 class TestStoringTap(TestCase):
+
     def test_save_load_simple(self):
         class SimpleSaveLoadTap(Tap):
             a: str

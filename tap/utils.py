@@ -343,10 +343,10 @@ def fix_py36_copy(func: Callable) -> Callable:
     if sys.version_info[:2] != (3, 6):
         return func
 
-    re_type = type(re.compile(''))
 
     @wraps(func)
     def wrapper(*args, **kwargs):
+        re_type = type(re.compile(''))
         has_prev_val = re_type in copy._deepcopy_dispatch
         prev_val = copy._deepcopy_dispatch.get(re_type, None)
         copy._deepcopy_dispatch[type(re.compile(''))] = lambda r, _: r
@@ -355,8 +355,6 @@ def fix_py36_copy(func: Callable) -> Callable:
 
         if has_prev_val:
             copy._deepcopy_dispatch[re_type] = prev_val
-        else:
-            del copy._deepcopy_dispatch[re_type]
 
         return result
 
