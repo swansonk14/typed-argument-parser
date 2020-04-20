@@ -87,7 +87,7 @@ from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument('--name', type=str, required=True,
                     help='Your name')
-parser.add_argument('--language', type=str,
+parser.add_argument('--language', type=str, default='Python',
                     help='Programming language')
 parser.add_argument('--package', type=str, default='Tap',
                     help='Package name')
