@@ -9,6 +9,7 @@ from unittest import TestCase
 from typing_extensions import Literal
 
 from tap.utils import (
+    has_git,
     get_class_column,
     get_class_variables,
     get_git_root,
@@ -36,6 +37,15 @@ class GitTests(TestCase):
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
+
+    def test_has_git_true(self) -> None:
+        self.assertTrue(has_git())
+
+    def test_has_git_false(self) -> None:
+        with TemporaryDirectory() as temp_dir_no_git:
+            os.chdir(temp_dir_no_git)
+            self.assertFalse(has_git())
+        os.chdir(self.temp_dir.name)
 
     def test_get_git_root(self) -> None:
         self.assertTrue(get_git_root() in f'/private{self.temp_dir.name}')

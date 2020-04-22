@@ -1,3 +1,7 @@
+<p align="center">
+   <img src="images/logo.png" width="40%" align="middle">
+</p>
+
 # Typed Argument Parser (Tap)
 
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/typed-argument-parser)](https://badge.fury.io/py/typed-argument-parser)

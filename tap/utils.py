@@ -21,13 +21,17 @@ NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
 PRIMITIVES = (str, int, float, bool)
 
 
-def check_output(command: List[str]) -> str:
+def check_output(command: List[str], suppress_stderr: bool = True) -> str:
     """Runs subprocess.check_output and returns the result as a string.
 
     :param command: A list of strings representing the command to run on the command line.
+    :param suppress_stderr: Whether to suppress anything written to standard error.
     :return: The output of the command, converted from bytes to string and stripped.
     """
-    return subprocess.check_output(command).decode('utf-8').strip()
+    with open(os.devnull, 'w') as devnull:
+        devnull = devnull if suppress_stderr else None
+        output = subprocess.check_output(command, stderr=devnull).decode('utf-8').strip()
+    return output
 
 
 def has_git() -> bool:
@@ -36,9 +40,9 @@ def has_git() -> bool:
     :return: True if git is installed, False otherwise.
     """
     try:
-        subprocess.check_output(['git', '--version'])
-        return True
-    except FileNotFoundError:
+        output = check_output(['git', 'rev-parse', '--is-inside-work-tree'])
+        return output == 'true'
+    except (FileNotFoundError, subprocess.CalledProcessError):
         return False
 
 
