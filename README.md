@@ -17,6 +17,8 @@ Tap provides the following benefits:
 
 ![Tap](https://github.com/swansonk14/typed-argument-parser/raw/master/images/tap.png)
 
+See [this poster](https://docs.google.com/presentation/d/1NU-SftvBR8GzHDrghAI41o-9IjpLaJHHAKxKh5sAWs8/edit?usp=sharing) which we presented at [PyCon 2020](https://us.pycon.org/2020/), for a presentation of some of the relevant concepts we used to guide the development of Tap. 
+
 ## Table of Contents
 
 * [Installation](#installation)
