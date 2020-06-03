@@ -968,6 +968,31 @@ class TestDeepCopy(TestCase):
         self.assertNotEqual(args.g, copied_args.g)
 
 
+class TestGetClassDict(TestCase):
+
+    def test_get_class_dict(self):
+        class GetClassDictTap(Tap):
+            a: str
+            b = 1
+            d: Tuple[str, ...]
+            c: bool = True
+            e: Optional[int] = None
+            f: Set[int] = {1}
+            _hidden: int = 1
+
+            @classmethod
+            def my_class_method(cls, arg):
+                return arg
+
+            @staticmethod
+            def my_static_method(arg):
+                return arg
+
+        args = GetClassDictTap().parse_args(['--a', 'hi', '--d', 'a', 'b', '--e', '7'])        
+        result = {'b': 1, 'c': True, 'e': None, 'f': {1}}
+        self.assertEqual(args._get_class_dict(), result)
+
+
 """
 - crash if default type not supported
 - user specifying process_args
