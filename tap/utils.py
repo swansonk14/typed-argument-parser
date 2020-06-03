@@ -113,12 +113,30 @@ def type_to_str(type_annotation: Union[type, Any]) -> str:
     return str(type_annotation).replace('typing.', '')
 
 
+def get_argument_name(*name_or_flags) -> str:
+    """Gets the name of the argument.
+
+    :param name_or_flags: Either a name or a list of option strings, e.g. foo or -f, --foo.
+    :return: The name of the argument (extracted from name_or_flags).
+    """
+    if '-h' in name_or_flags or '--help' in name_or_flags:
+        return 'help'
+
+    if len(name_or_flags) > 1:
+        name_or_flags = [n_or_f for n_or_f in name_or_flags if n_or_f.startswith('--')]
+
+    if len(name_or_flags) != 1:
+        raise ValueError(f'There should only be a single canonical name for argument {name_or_flags}!')
+
+    return name_or_flags[0].lstrip('-')
+
+
 def get_dest(*name_or_flags, **kwargs) -> str:
     """Gets the name of the destination of the argument.
 
     :param name_or_flags: Either a name or a list of option strings, e.g. foo or -f, --foo.
     :param kwargs: Keyword arguments.
-    :return: The name of the argument (extracted from name_or_flags)
+    :return: The name of the argument (extracted from name_or_flags).
     """
     if '-h' in name_or_flags or '--help' in name_or_flags:
         return 'help'

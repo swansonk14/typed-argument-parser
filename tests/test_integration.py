@@ -993,6 +993,29 @@ class TestGetClassDict(TestCase):
         self.assertEqual(args._get_class_dict(), result)
 
 
+class TestArgparseActions(TestCase):
+
+    def test_actions_store_const(self):
+        class StoreConstTap(Tap):
+
+            def add_arguments(self):
+                self.add_argument('--sum',
+                                  dest='accumulate',
+                                  action='store_const',
+                                  const=sum,
+                                  default=max)
+
+        args = StoreConstTap().parse_args([])
+        self.assertFalse(hasattr(args, 'sum'))
+        self.assertEqual(args.accumulate, max)
+        self.assertEqual(args.as_dict(), {'accumulate': max})
+
+        args = StoreConstTap().parse_args(['--sum'])
+        self.assertFalse(hasattr(args, 'sum'))
+        self.assertEqual(args.accumulate, sum)
+        self.assertEqual(args.as_dict(), {'accumulate': sum})
+
+
 """
 - crash if default type not supported
 - user specifying process_args

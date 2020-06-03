@@ -10,8 +10,9 @@ from typing_inspect import is_literal_type, get_args, get_origin, is_union_type
 
 from tap.utils import (
     get_class_variables,
-    get_dest,
+    get_argument_name,
     get_git_root,
+    get_dest,
     get_git_url,
     has_git,
     has_uncommitted_changes,
@@ -100,14 +101,17 @@ class Tap(ArgumentParser):
         :param kwargs: Keyword arguments.
         """
         # Get variable name
-        variable = get_dest(*name_or_flags, **kwargs)
+        variable = get_argument_name(*name_or_flags)
 
         # Get default if not specified
         if hasattr(self, variable):
             kwargs['default'] = kwargs.get('default', getattr(self, variable))
 
         # Set required if option arg
-        if is_option_arg(*name_or_flags) and variable != 'help':
+        if (is_option_arg(*name_or_flags)
+            and variable != 'help'
+            and 'default' not in kwargs
+            and kwargs.get('action') != 'version'):
             kwargs['required'] = kwargs.get('required', not hasattr(self, variable))
 
         # Set help if necessary
@@ -204,15 +208,18 @@ class Tap(ArgumentParser):
                         kwargs['type'] = boolean_type
                         kwargs['choices'] = [True, False]  # this makes the help message more helpful
                     else:
-                        kwargs['action'] = kwargs.get('action', f'store_{"true" if kwargs["required"] or not kwargs["default"] else "false"}')
-                else:
+                        kwargs['action'] = kwargs.get('action', f'store_{"true" if kwargs.get("required", False) or not kwargs["default"] else "false"}')
+                elif kwargs.get('action') != 'count':
                     kwargs['type'] = var_type
+
+        if self._underscores_to_dashes:
+            name_or_flags = [name_or_flag.replace('_', '-') for name_or_flag in name_or_flags]
 
         super(Tap, self).add_argument(*name_or_flags, **kwargs)
 
     def add_argument(self, *name_or_flags, **kwargs) -> None:
         """Adds an argument to the argument buffer, which will later be passed to _add_argument."""
-        variable = get_dest(*name_or_flags, **kwargs)
+        variable = get_argument_name(*name_or_flags)
         self.argument_buffer[variable] = (name_or_flags, kwargs)
 
     def _add_arguments(self) -> None:
@@ -223,8 +230,7 @@ class Tap(ArgumentParser):
                 name_or_flags, kwargs = self.argument_buffer[variable]
                 self._add_argument(*name_or_flags, **kwargs)
             else:
-                flag_name = variable.replace('_', '-') if self._underscores_to_dashes else variable
-                self._add_argument(f'--{flag_name}')
+                self._add_argument(f'--{variable}')
 
         # Add any arguments that were added manually in add_arguments but aren't class variables (in order)
         for variable, (name_or_flags, kwargs) in self.argument_buffer.items():
@@ -393,9 +399,10 @@ class Tap(ArgumentParser):
 
     def _get_argument_names(self) -> Set[str]:
         """Returns a list of variable names corresponding to the arguments."""
-        return (set(self._get_class_dict().keys()) |
-                set(self._annotations.keys()) |
-                set(self.argument_buffer.keys()) - {'help'}) 
+        return ({get_dest(*name_or_flags, **kwargs)
+                 for name_or_flags, kwargs in self.argument_buffer.values()} |
+                set(self._get_class_dict().keys()) |
+                set(self._annotations.keys())) - {'help'}
 
     def as_dict(self) -> Dict[str, Any]:
         """Returns the member variables corresponding to the parsed arguments.
