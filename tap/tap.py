@@ -363,7 +363,10 @@ class Tap(ArgumentParser):
         class_dict = {
             var: val
             for var, val in class_dict.items()
-            if not (var.startswith('_') or callable(val) or isinstance(val, staticmethod))
+            if not (var.startswith('_') 
+                    or callable(val) 
+                    or isinstance(val, staticmethod) 
+                    or isinstance(val, classmethod))
         }
 
         return class_dict
