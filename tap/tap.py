@@ -186,7 +186,8 @@ class Tap(ArgumentParser):
 
                 if var_type in SUPPORTED_DEFAULT_BOXED_TYPES:
                     # If List or Set type, set nargs
-                    if var_type in SUPPORTED_DEFAULT_COLLECTION_TYPES:
+                    if (var_type in SUPPORTED_DEFAULT_COLLECTION_TYPES
+                            and kwargs.get('action') not in {'append', 'append_const'}):
                         kwargs['nargs'] = kwargs.get('nargs', '*')
 
                     # Extract boxed type for Optional, List, Set
@@ -209,7 +210,7 @@ class Tap(ArgumentParser):
                         kwargs['choices'] = [True, False]  # this makes the help message more helpful
                     else:
                         kwargs['action'] = kwargs.get('action', f'store_{"true" if kwargs.get("required", False) or not kwargs["default"] else "false"}')
-                elif kwargs.get('action') != 'count':
+                elif kwargs.get('action') not in {'count', 'append_const'}:
                     kwargs['type'] = var_type
 
         if self._underscores_to_dashes:
