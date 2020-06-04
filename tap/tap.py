@@ -108,10 +108,12 @@ class Tap(ArgumentParser):
             kwargs['default'] = kwargs.get('default', getattr(self, variable))
 
         # Set required if option arg
-        if (is_option_arg(*name_or_flags)
+        if (
+            is_option_arg(*name_or_flags)
             and variable != 'help'
             and 'default' not in kwargs
-            and kwargs.get('action') != 'version'):
+            and kwargs.get('action') != 'version'
+        ):
             kwargs['required'] = kwargs.get('required', not hasattr(self, variable))
 
         # Set help if necessary
@@ -177,11 +179,12 @@ class Tap(ArgumentParser):
                 ):
                     var_type, kwargs['choices'] = get_literals(get_args(var_type)[0], variable)
                 elif var_type not in SUPPORTED_DEFAULT_TYPES:
+                    arg_params = "required=True" if kwargs["required"] else f"default={getattr(self, variable)}"
                     raise ValueError(
                         f'Variable "{variable}" has type "{var_type}" which is not supported by default.\n'
                         f'Please explicitly add the argument to the parser by writing:\n\n'
                         f'def add_arguments(self) -> None:\n'
-                        f'    self.add_argument("--{variable}", type=func, {"required=True" if kwargs["required"] else f"default={getattr(self, variable)}"})\n\n'
+                        f'    self.add_argument("--{variable}", type=func, {arg_params})\n\n'
                         f'where "func" maps from str to {var_type}.')
 
                 if var_type in SUPPORTED_DEFAULT_BOXED_TYPES:
@@ -209,7 +212,8 @@ class Tap(ArgumentParser):
                         kwargs['type'] = boolean_type
                         kwargs['choices'] = [True, False]  # this makes the help message more helpful
                     else:
-                        kwargs['action'] = kwargs.get('action', f'store_{"true" if kwargs.get("required", False) or not kwargs["default"] else "false"}')
+                        action_cond = "true" if kwargs.get("required", False) or not kwargs["default"] else "false"
+                        kwargs['action'] = kwargs.get('action', f'store_{action_cond}')
                 elif kwargs.get('action') not in {'count', 'append_const'}:
                     kwargs['type'] = var_type
 
@@ -369,9 +373,9 @@ class Tap(ArgumentParser):
         class_dict = {
             var: val
             for var, val in class_dict.items()
-            if not (var.startswith('_') 
-                    or callable(val) 
-                    or isinstance(val, staticmethod) 
+            if not (var.startswith('_')
+                    or callable(val)
+                    or isinstance(val, staticmethod)
                     or isinstance(val, classmethod))
         }
 
@@ -420,7 +424,7 @@ class Tap(ArgumentParser):
     def as_dict(self) -> Dict[str, Any]:
         """Returns the member variables corresponding to the parsed arguments.
 
-        Note: This does not include attributes set directly on an instance 
+        Note: This does not include attributes set directly on an instance
         (e.g. arg is not included in MyTap().arg = "hi")
 
         :return: A dictionary mapping each argument's name to its value.
@@ -478,7 +482,7 @@ class Tap(ArgumentParser):
 
         # Remove loaded reproducibility information since it is no longer valid
         reproducibility = args_dict.pop('reproducibility', None)
-        
+
         if check_reproducibility:
             no_reproducibility_message = 'Reproducibility not guaranteed'
             current_reproducibility = self.get_reproducibility_info()

@@ -200,7 +200,7 @@ class DefaultClassVariableTests(TestCase):
         self.assertEqual(args.arg_bool_true, True)
         self.assertEqual(args.arg_bool_false, False)
         self.assertEqual(args.arg_literal, 'A')
-        
+
         self.assertTrue(args.arg_optional is None)
         self.assertTrue(args.arg_optional_str is None)
         self.assertTrue(args.arg_optional_int is None)
@@ -215,7 +215,7 @@ class DefaultClassVariableTests(TestCase):
         self.assertEqual(args.arg_list_bool, [True, False])
         self.assertEqual(args.arg_list_literal, ['H', False])
         self.assertEqual(args.arg_list_str_empty, [])
-        
+
         self.assertEqual(args.arg_set, {'these', 'are', 'strings'})
         self.assertEqual(args.arg_set_str, {'hello', 'how are you'})
         self.assertEqual(args.arg_set_int, {10, -11})
@@ -223,7 +223,7 @@ class DefaultClassVariableTests(TestCase):
         self.assertEqual(args.arg_set_bool, {True, False})
         self.assertEqual(args.arg_set_literal, {'H', False})
         self.assertEqual(args.arg_set_str_empty, set())
-        
+
         self.assertEqual(args.arg_tuple, ('these', 'are', 'strings'))
         self.assertEqual(args.arg_tuple_str, ('hello', 'how are you'))
         self.assertEqual(args.arg_tuple_int, (10, -11))
@@ -908,7 +908,7 @@ class TestStoringTap(TestCase):
             c: bool = True
 
         args = SimpleSaveLoadTap().parse_args(['--a', 'hi'])
-        
+
         with NamedTemporaryFile() as f:
             args.save(f.name)
             new_args = SimpleSaveLoadTap()
@@ -988,7 +988,7 @@ class TestGetClassDict(TestCase):
             def my_static_method(arg):
                 return arg
 
-        args = GetClassDictTap().parse_args(['--a', 'hi', '--d', 'a', 'b', '--e', '7'])        
+        args = GetClassDictTap().parse_args(['--a', 'hi', '--d', 'a', 'b', '--e', '7'])
         result = {'b': 1, 'c': True, 'e': None, 'f': {1}}
         self.assertEqual(args._get_class_dict(), result)
 
