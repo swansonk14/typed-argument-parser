@@ -385,15 +385,27 @@ class Tap(ArgumentParser):
 
     def _get_class_variables(self) -> OrderedDict:
         """Returns an OrderedDict mapping class variables names to their additional information."""
+        class_variable_names = self._get_class_dict().keys() | self._get_annotations().keys()
+
         try:
             class_variables = self._get_from_self_and_super(
                 extract_func=lambda super_class: get_class_variables(super_class),
                 dict_type=OrderedDict
             )
+
+            # Handle edge-case of source code modification while code is running
+            variables_to_add = class_variable_names - class_variables.keys()
+            variables_to_remove = class_variables.keys() - class_variable_names
+
+            for variable in variables_to_add:
+                class_variables[variable] = {'comment': ''}
+
+            for variable in variables_to_remove:
+                class_variables.pop(variable)
         # Exception if inspect.getsource fails to extract the source code
         except Exception:
             class_variables = OrderedDict()
-            for variable in self._get_class_dict().keys():
+            for variable in class_variable_names:
                 class_variables[variable] = {'comment': ''}
 
         return class_variables
