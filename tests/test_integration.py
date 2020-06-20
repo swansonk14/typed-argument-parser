@@ -830,8 +830,8 @@ class TestAsDict(TestCase):
                 super(InitArgsTap, self).__init__()
                 self.g = g
 
-        args = InitArgsTap("GG").parse_args(['--a', 'hi'])
-        as_dict_res = {'b': 1, 'a': 'hi'}
+        args = InitArgsTap('GG').parse_args(['--a', 'hi'])
+        as_dict_res = {'b': 1, 'a': 'hi', 'g': 'GG'}
         self.assertEqual(args.as_dict(), as_dict_res)
 
     def test_as_dict_add_arguments(self):
@@ -857,7 +857,22 @@ class TestAsDict(TestCase):
         args = args.parse_args(['--a', 'hi'])
         args.d = 'big'
 
-        as_dict_res = {'a': 'hi', 'b': 1}
+        as_dict_res = {'a': 'hi', 'b': 1, 'c': 7, 'd': 'big'}
+        self.assertEqual(args.as_dict(), as_dict_res)
+
+    def test_as_dict_property(self):
+        class PropertyTap(Tap):
+            a: str
+            b: int = 1
+
+            @property
+            def pi(self):
+                return 3.14
+
+        args = PropertyTap()
+        args = args.parse_args(['--a', 'hi'])
+
+        as_dict_res = {'a': 'hi', 'b': 1, 'pi': 3.14}
         self.assertEqual(args.as_dict(), as_dict_res)
 
 
@@ -988,7 +1003,11 @@ class TestGetClassDict(TestCase):
             def my_static_method(arg):
                 return arg
 
-        args = GetClassDictTap().parse_args(['--a', 'hi', '--d', 'a', 'b', '--e', '7'])
+            @property
+            def my_property(self):
+                return 1
+
+        args = GetClassDictTap().parse_args(['--a', 'hi', '--d', 'a', 'b', '--e', '7'])        
         result = {'b': 1, 'c': True, 'e': None, 'f': {1}}
         self.assertEqual(args._get_class_dict(), result)
 

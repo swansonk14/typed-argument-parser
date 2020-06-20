@@ -5,6 +5,7 @@ import json
 from pprint import pformat
 import sys
 import time
+from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
 from typing_inspect import is_literal_type, get_args, get_origin, is_union_type
 
@@ -376,7 +377,8 @@ class Tap(ArgumentParser):
             if not (var.startswith('_')
                     or callable(val)
                     or isinstance(val, staticmethod)
-                    or isinstance(val, classmethod))
+                    or isinstance(val, classmethod)
+                    or isinstance(val, property))
         }
 
         return class_dict
@@ -432,7 +434,22 @@ class Tap(ArgumentParser):
         if not self._parsed:
             raise ValueError('You should call `parse_args` before retrieving arguments.')
 
-        return {var: getattr(self, var) for var in self._get_argument_names()}
+        self_dict = self.__dict__
+        class_dict = {key: val for key, val in type(self).__dict__.items() if key not in self_dict}
+        stored_dict = {**self_dict, **class_dict}
+
+        stored_dict = {
+            var: getattr(self, var)
+            for var, val in stored_dict.items()
+            if not (var.startswith('_')
+                    or isinstance(val, MethodType)
+                    or isinstance(val, staticmethod))
+        }
+
+        tap_class_dict_keys = Tap().__dict__.keys() | Tap.__dict__.keys()
+        stored_dict = {key: stored_dict[key] for key in stored_dict.keys() - tap_class_dict_keys}
+
+        return stored_dict
 
     def from_dict(self, args_dict: Dict[str, Any], skip_unsettable: bool = False) -> None:
         """Loads arguments from a dictionary, ensuring all required arguments are set.
