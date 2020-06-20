@@ -487,12 +487,17 @@ class Tap(ArgumentParser):
         with open(path, 'w') as f:
             json.dump(self._log_all(), f, indent=4, sort_keys=True, cls=PythonObjectEncoder)
 
-    def load(self, path: str, check_reproducibility: bool = False) -> None:
+    def load(self,
+             path: str,
+             check_reproducibility: bool = False,
+             skip_unsettable: bool = False) -> None:
         """Loads the arguments in JSON format. Note: Due to JSON, tuples are loaded as lists.
 
         :param path: Path to the JSON file where the arguments will be loaded from.
         :param check_reproducibility: When True, raises an error if the loaded reproducibility
                                       information doesn't match the current reproducibility information.
+        :param skip_unsettable: When True, skips attributes that cannot be set in the Tap object,
+                                e.g. properties without setters.
         """
         with open(path) as f:
             args_dict = json.load(f, object_hook=as_python_object)
@@ -528,7 +533,7 @@ class Tap(ArgumentParser):
                 raise ValueError(f'{no_reproducibility_message}: Uncommitted changes '
                                  f'in current args.')
 
-        self.from_dict(args_dict)
+        self.from_dict(args_dict, skip_unsettable=skip_unsettable)
 
     def __str__(self) -> str:
         """Returns a string representation of self.

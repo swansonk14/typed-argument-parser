@@ -955,6 +955,45 @@ class TestStoringTap(TestCase):
         output = {'e': 7, 'f': {1}, 'd': ('a', 'b'), 'c': True, 'a': 'hi', 'b': 1, 'g': Person('tapper')}
         self.assertEqual(output, new_args.as_dict())
 
+    def test_save_load_property(self):
+        class PropertySaveLoadTap(Tap):
+            a: str = 'hello'
+
+            def __init__(self):
+                super(PropertySaveLoadTap, self).__init__()
+                self._prop1 = 1
+                self._prop2 = 'hi'
+
+            @property
+            def prop1(self):
+                return self._prop1
+
+            @property
+            def prop2(self):
+                return self._prop2
+
+            @prop2.setter
+            def prop2(self, prop2):
+                self._prop2 = prop2
+
+            def process_args(self) -> None:
+                self._prop1 = 2
+                self.prop2 = 'bye'
+
+        args = PropertySaveLoadTap().parse_args([])
+
+        with NamedTemporaryFile() as f:
+            args.save(f.name)
+            new_args = PropertySaveLoadTap()
+
+            with self.assertRaises(AttributeError):
+                new_args.load(f.name)  # because trying to set unsettable prop1
+
+            new_args.load(f.name, skip_unsettable=True)
+
+        output = {'a': 'hello', 'prop1': 1, 'prop2': 'bye'}
+        self.assertEqual(output, new_args.as_dict())
+
 
 class TestDeepCopy(TestCase):
     def test_deep_copy(self):
