@@ -8,7 +8,6 @@ import time
 from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
 from typing_inspect import is_literal_type, get_args, get_origin, is_union_type
-from subprocess import CalledProcessError
 
 from tap.utils import (
     get_class_variables,
@@ -272,13 +271,12 @@ class Tap(ArgumentParser):
             'command_line': f'python {" ".join(sys.argv)}',
             'time': time.strftime('%c')
         }
-        try:
-            if has_git():
-                reproducibility['git_root'] = get_git_root()
-                reproducibility['git_url'] = get_git_url(commit_hash=True)
-                reproducibility['git_has_uncommitted_changes'] = has_uncommitted_changes()
-        except CalledProcessError:
-            pass
+        
+        if has_git():
+            reproducibility['git_root'] = get_git_root()
+            reproducibility['git_url'] = get_git_url(commit_hash=True)
+            reproducibility['git_has_uncommitted_changes'] = has_uncommitted_changes()
+
 
         return reproducibility
 
