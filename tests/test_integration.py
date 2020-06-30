@@ -104,6 +104,19 @@ class RequiredClassVariableTests(TestCase):
         self.assertEqual(args.arg_list_str_required, ['hi', 'there'])
 
 
+class CrashesOnUnsupportedTypesTests(TestCase):
+
+    def test_crashes_on_unsupported(self):
+        # From PiDelport: https://github.com/swansonk14/typed-argument-parser/issues/27
+        from pathlib import Path
+
+        class CrashingArgumentParser(Tap):
+            some_path: Path = 'some_path'
+
+        with self.assertRaises(ValueError):
+            CrashingArgumentParser().parse_args([])
+
+
 class Person:
     def __init__(self, name: str):
         self.name = name

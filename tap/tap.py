@@ -180,7 +180,8 @@ class Tap(ArgumentParser):
                 ):
                     var_type, kwargs['choices'] = get_literals(get_args(var_type)[0], variable)
                 elif var_type not in SUPPORTED_DEFAULT_TYPES:
-                    arg_params = "required=True" if kwargs["required"] else f"default={getattr(self, variable)}"
+                    is_required = kwargs.get('required', False)
+                    arg_params = 'required=True' if is_required else f'default={getattr(self, variable)}'
                     raise ValueError(
                         f'Variable "{variable}" has type "{var_type}" which is not supported by default.\n'
                         f'Please explicitly add the argument to the parser by writing:\n\n'
