@@ -62,8 +62,11 @@ def get_git_url(commit_hash: bool = True) -> str:
     :return: The https url of the current git repo.
     """
     # Get git url (either https or ssh)
-    url = check_output(['git', 'remote', 'get-url', 'origin'])
-
+    try:
+        url = check_output(['git', 'remote', 'get-url', 'origin'])
+    except subprocess.CalledProcessError:
+        url = check_output(['git' 'config' '--get' 'remote.origin.url'])
+        
     # Remove .git at end
     url = url[:-len('.git')]
 
