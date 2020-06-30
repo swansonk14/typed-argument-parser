@@ -65,8 +65,9 @@ def get_git_url(commit_hash: bool = True) -> str:
     try:
         url = check_output(['git', 'remote', 'get-url', 'origin'])
     except subprocess.CalledProcessError:
+        # For git versions <2.0
         url = check_output(['git' 'config' '--get' 'remote.origin.url'])
-        
+
     # Remove .git at end
     url = url[:-len('.git')]
 

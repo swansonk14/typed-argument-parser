@@ -272,12 +272,11 @@ class Tap(ArgumentParser):
             'command_line': f'python {" ".join(sys.argv)}',
             'time': time.strftime('%c')
         }
-        
+
         if has_git():
             reproducibility['git_root'] = get_git_root()
             reproducibility['git_url'] = get_git_url(commit_hash=True)
             reproducibility['git_has_uncommitted_changes'] = has_uncommitted_changes()
-
 
         return reproducibility
 
@@ -485,12 +484,12 @@ class Tap(ArgumentParser):
         """Saves the arguments and reproducibility information in JSON format, pickling what can't be encoded.
 
         :param path: Path to the JSON file where the arguments will be saved.
+        :param with_reproducibility: If True, adds a "reproducibility" field with information (e.g. git hash)
+                                     to the JSON file.
         """
         with open(path, 'w') as f:
-            if with_reproducibility:
-                json.dump(self._log_all(), f, indent=4, sort_keys=True, cls=PythonObjectEncoder)
-            else:
-                json.dump(self.as_dict(), f, indent=4, sort_keys=True, cls=PythonObjectEncoder)
+            args = self._log_all() if with_reproducibility else self.as_dict()
+            json.dump(args, f, indent=4, sort_keys=True, cls=PythonObjectEncoder)
 
     def load(self,
              path: str,
