@@ -452,12 +452,13 @@ class Tap(ArgumentParser):
 
         return stored_dict
 
-    def from_dict(self, args_dict: Dict[str, Any], skip_unsettable: bool = False) -> None:
+    def from_dict(self, args_dict: Dict[str, Any], skip_unsettable: bool = False) -> TapType:
         """Loads arguments from a dictionary, ensuring all required arguments are set.
 
         :param args_dict: A dictionary from argument names to the values of the arguments.
         :param skip_unsettable: When True, skips attributes that cannot be set in the Tap object,
                                 e.g. properties without setters.
+        :return: Returns self.
         """
         # All of the required arguments must be provided or already set
         required_args = {a.dest for a in self._actions if a.required}
@@ -480,6 +481,8 @@ class Tap(ArgumentParser):
 
         self._parsed = True
 
+        return self
+
     def save(self, path: str, with_reproducibility: bool = True) -> None:
         """Saves the arguments and reproducibility information in JSON format, pickling what can't be encoded.
 
@@ -494,7 +497,7 @@ class Tap(ArgumentParser):
     def load(self,
              path: str,
              check_reproducibility: bool = False,
-             skip_unsettable: bool = False) -> None:
+             skip_unsettable: bool = False) -> TapType:
         """Loads the arguments in JSON format. Note: Due to JSON, tuples are loaded as lists.
 
         :param path: Path to the JSON file where the arguments will be loaded from.
@@ -502,6 +505,7 @@ class Tap(ArgumentParser):
                                       information doesn't match the current reproducibility information.
         :param skip_unsettable: When True, skips attributes that cannot be set in the Tap object,
                                 e.g. properties without setters.
+        :return: Returns self.
         """
         with open(path) as f:
             args_dict = json.load(f, object_hook=as_python_object)
@@ -538,6 +542,8 @@ class Tap(ArgumentParser):
                                  f'in current args.')
 
         self.from_dict(args_dict, skip_unsettable=skip_unsettable)
+
+        return self
 
     def __str__(self) -> str:
         """Returns a string representation of self.

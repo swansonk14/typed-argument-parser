@@ -908,6 +908,17 @@ class TestFromDict(TestCase):
 
         self.assertEqual(new_args.as_dict(), args.as_dict())
 
+    def test_from_dict_returns_self(self):
+        class FromDictReturnTap(Tap):
+            a: str
+
+        args = FromDictReturnTap().parse_args(['--a', 'hi'])
+        d = args.as_dict()
+
+        new_args = FromDictReturnTap().from_dict(d)
+
+        self.assertEqual(new_args.as_dict(), args.as_dict())
+
     def test_from_dict_fails_without_required(self):
         class SimpleFromDictTap(Tap):
             a: str
@@ -943,6 +954,19 @@ class TestStoringTap(TestCase):
             new_args.load(f.name)
 
         output = {'a': 'hi', 'b': 1, 'c': True}
+        self.assertEqual(output, new_args.as_dict())
+
+    def test_save_load_return(self):
+        class SaveLoadReturnTap(Tap):
+            a: str
+
+        args = SaveLoadReturnTap().parse_args(['--a', 'hi'])
+
+        with NamedTemporaryFile() as f:
+            args.save(f.name)
+            new_args = SaveLoadReturnTap().load(f.name)
+
+        output = {'a': 'hi'}
         self.assertEqual(output, new_args.as_dict())
 
     def test_save_load_complex(self):
