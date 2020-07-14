@@ -1,18 +1,21 @@
 from setuptools import find_packages, setup
 
+from tap import __version__
+
+
 with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
     name='typed-argument-parser',
-    version='1.5.0',
+    version=__version__,
     author='Jesse Michel and Kyle Swanson',
     author_email='jessem.michel@gmail.com, swansonk.14@gmail.com',
     description='Typed Argument Parser',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/swansonk14/typed-argument-parser',
-    download_url='https://github.com/swansonk14/typed-argument-parser/v_1.5.0.tar.gz',
+    download_url=f'https://github.com/swansonk14/typed-argument-parser/v_{__version__}.tar.gz',
     license='MIT',
     packages=find_packages(),
     package_data={'tap': ['py.typed']},
