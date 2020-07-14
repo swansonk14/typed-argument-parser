@@ -1,8 +1,16 @@
+import os
 from setuptools import find_packages, setup
 
-from tap import __version__
+# Load version number
+__version__ = None
 
+src_dir = os.path.abspath(os.path.dirname(__file__))
+version_file = os.path.join(src_dir, 'tap', '_version.py')
 
+with open(version_file) as fd:
+    exec(fd.read())
+
+# Load README
 with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
 
