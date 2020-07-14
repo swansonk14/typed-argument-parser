@@ -226,16 +226,12 @@ class GetLiteralsTests(TestCase):
         self.assertEqual(literal_f('square'), 'square')
         self.assertEqual(literal_f('triangle'), 'triangle')
         self.assertEqual(literal_f('circle'), 'circle')
-        with self.assertRaises(KeyError):
-            literal_f('tuba')
 
     def test_get_literals_primitives(self) -> None:
         literals = [True, 'one', 2, 3.14]
         literal_f, prims = get_literals(Literal[True, 'one', 2, 3.14], 'number')
         self.assertEqual(prims, literals)
         self.assertEqual([literal_f(str(p)) for p in prims], literals)
-        with self.assertRaises(KeyError):
-            literal_f(3)
 
     def test_get_literals_uniqueness(self) -> None:
         with self.assertRaises(ValueError):
@@ -244,8 +240,6 @@ class GetLiteralsTests(TestCase):
     def test_get_literals_empty(self) -> None:
         literal_f, prims = get_literals(Literal, 'hi')
         self.assertEqual(prims, [])
-        with self.assertRaises(KeyError):
-            literal_f(None)
 
 
 class TupleTypeEnforcerTests(TestCase):

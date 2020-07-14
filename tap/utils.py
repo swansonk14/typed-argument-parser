@@ -246,7 +246,7 @@ def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any],
         raise ValueError('All literals must have unique string representations')
 
     def var_type(arg: str) -> Any:
-        return str_to_literal[arg]
+        return str_to_literal.get(arg, arg)
 
     return var_type, literals
 

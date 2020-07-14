@@ -386,6 +386,22 @@ class DefaultClassVariableTests(TestCase):
         self.assertEqual(args.arg_tuple_multi, arg_tuple_multi)
 
 
+class LiteralCrashTests(TestCase):
+    def test_literal_crash(self) -> None:
+        class LiteralCrashTap(Tap):
+            arg_lit: Literal['125', 'no, 3 sir']
+
+        # Suppress prints from SystemExit
+        class DevNull:
+            def write(self, msg):
+                pass
+        self.dev_null = DevNull()
+
+        with self.assertRaises(SystemExit):
+            sys.stderr = self.dev_null
+            LiteralCrashTap().parse_args(['--arg_lit', '123'])
+
+
 class AddArgumentTests(TestCase):
     def test_positional(self) -> None:
         class IntegrationAddArgumentTap(IntegrationDefaultTap):
