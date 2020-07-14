@@ -310,12 +310,13 @@ class Tap(ArgumentParser):
         for variable, value in vars(default_namespace).items():
             # Conversion from list to set or tuple
             if variable in self._annotations:
-                var_type = get_origin(self._annotations[variable])
+                if type(value) == list:
+                    var_type = get_origin(self._annotations[variable])
 
-                if var_type in (Set, set):
-                    value = set(value)
-                elif var_type in (Tuple, tuple):
-                    value = tuple(value)
+                    if var_type in (Set, set):
+                        value = set(value)
+                    elif var_type in (Tuple, tuple):
+                        value = tuple(value)
 
             # Set variable in self (and deepcopy)
             setattr(self, variable, deepcopy(value))

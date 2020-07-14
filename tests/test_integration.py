@@ -696,6 +696,17 @@ class ParseExplicitBoolArgsTests(TestCase):
         self.test_bool_cases(ExplicitBoolTrueTap)
 
 
+class SetTests(TestCase):
+    def test_set_non_set_default(self):
+        class SetNonSetTap(Tap):
+            set_1: Set[str] = None
+            set_2: Set[int] = 3.7
+
+        args = SetNonSetTap().parse_args([])
+        self.assertEqual(args.set_1, None)
+        self.assertEqual(args.set_2, 3.7)
+
+
 class TupleTests(TestCase):
     def setUp(self) -> None:
         class DevNull:
@@ -833,6 +844,15 @@ class TupleTests(TestCase):
 
         with self.assertRaises(ValueError):
             EmptyTupleTap().parse_args([])
+
+    def test_tuple_non_tuple_default(self):
+        class TupleNonTupleTap(Tap):
+            tup_1: Tuple[int, str] = None
+            tup_2: Tuple[str, int] = 3
+
+        args = TupleNonTupleTap().parse_args([])
+        self.assertEqual(args.tup_1, None)
+        self.assertEqual(args.tup_2, 3)
 
 
 class TestAsDict(TestCase):
