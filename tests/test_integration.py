@@ -924,6 +924,23 @@ class TestAsDict(TestCase):
         as_dict_res = {'a': 'hi', 'b': 1, 'pi': 3.14}
         self.assertEqual(args.as_dict(), as_dict_res)
 
+    def test_as_dict_superclass_property(self):
+        class SuperPropertyTap(Tap):
+            a: str
+
+            @property
+            def pi(self):
+                return 3.14
+
+        class SubPropertyTap(SuperPropertyTap):
+            b: int = 1
+
+        args = SubPropertyTap()
+        args = args.parse_args(['--a', 'hi'])
+
+        as_dict_res = {'a': 'hi', 'b': 1, 'pi': 3.14}
+        self.assertEqual(args.as_dict(), as_dict_res)
+
 
 class TestFromDict(TestCase):
 

@@ -437,7 +437,10 @@ class Tap(ArgumentParser):
             raise ValueError('You should call `parse_args` before retrieving arguments.')
 
         self_dict = self.__dict__
-        class_dict = {key: val for key, val in type(self).__dict__.items() if key not in self_dict}
+        class_dict = self._get_from_self_and_super(
+            extract_func=lambda super_class: dict(getattr(super_class, '__dict__', dict()))
+        )
+        class_dict = {key: val for key, val in class_dict.items() if key not in self_dict}
         stored_dict = {**self_dict, **class_dict}
 
         stored_dict = {
