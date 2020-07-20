@@ -55,7 +55,10 @@ class Tap(ArgumentParser):
         """Initializes the Tap instance.
 
         :param args: Arguments passed to the super class ArgumentParser.
-        :param underscores_to_dashes: If True, convert underscores in flags to dashes
+        :param underscores_to_dashes: If True, convert underscores in flags to dashes.
+        :param explicit_bool: Booleans can be specified on the command line as "--arg True" or "--arg False"
+                              rather than "--arg". Additionally, booleans can be specified by prefixes of True and False
+                              with any capitalization as well as 1 or 0.
         :param kwargs: Keyword arguments passed to the super class ArgumentParser.
         """
         # Whether boolean flags have to be explicitly set to True or False
