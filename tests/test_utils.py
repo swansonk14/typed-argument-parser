@@ -215,7 +215,7 @@ class ClassVariableTests(TestCase):
         class_variables = OrderedDict()
         class_variables['arg_1'] = {'comment': 'Arg 1 comment'}
         class_variables['arg_2'] = {'comment': 'Arg 2 comment'}
-        class_variables['arg_3'] = {'comment': 'Poorly   formatted comment\n\nMore comment'}
+        class_variables['arg_3'] = {'comment': 'Poorly   formatted comment More comment'}
         self.assertEqual(get_class_variables(CommentedVariable), class_variables)
 
     def test_bad_spacing_multiline(self):
@@ -237,7 +237,7 @@ T
                 """
 
         class_variables = OrderedDict()
-        comment = 'Header line\n\nFooter\nT\n        A\n                P\n\n            multi\n            line!!'
+        comment = 'Header line Footer\nT\n        A\n                P\n\n            multi\n            line!!'
         class_variables['foo'] = {'comment': comment}
         self.assertEqual(get_class_variables(TrickyMultiline), class_variables)
 
@@ -254,9 +254,9 @@ T
         class FunctionsWithDocs:
             i: int = 0
 
-            def f():
+            def f(self):
                 """Function"""
-                a: str = 0
+                a: str = 'hello'
                 """with docs"""
 
         class_variables = OrderedDict()

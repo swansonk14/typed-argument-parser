@@ -213,7 +213,7 @@ def get_class_variables(cls: type) -> OrderedDict:
             if (class_variable is not None
                     and token['token_type'] == tokenize.STRING
                     and token['token'][:3] in {'"""', "'''"}):
-                sep = '\n\n' if variable_to_comment[class_variable]['comment'] else ''
+                sep = ' ' if variable_to_comment[class_variable]['comment'] else ''
                 variable_to_comment[class_variable]['comment'] += sep + token['token'][3:-3].strip()
 
             # Match class variable
