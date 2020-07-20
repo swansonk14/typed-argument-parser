@@ -200,6 +200,7 @@ def get_class_variables(cls: type) -> OrderedDict:
     class_variable_column = get_class_column(cls)
 
     # Extract class variables
+    class_variable = None
     variable_to_comment = OrderedDict()
     for tokens in line_to_tokens.values():
         for i, token in enumerate(tokens):
@@ -208,7 +209,15 @@ def get_class_variables(cls: type) -> OrderedDict:
             if token['token'].strip() == '':
                 continue
 
+            # Extract multiline comments
+            if (class_variable is not None
+                    and token['token_type'] == tokenize.STRING
+                    and token['token'][:3] in {'"""', "'''"}):
+                sep = '\n\n' if variable_to_comment[class_variable]['comment'] else ''
+                variable_to_comment[class_variable]['comment'] += sep + token['token'][3:-3].strip()
+
             # Match class variable
+            class_variable = None
             if (token['token_type'] == tokenize.NAME and
                     token['start_column'] == class_variable_column and
                     len(tokens) > i and

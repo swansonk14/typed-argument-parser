@@ -195,7 +195,7 @@ class ClassVariableTests(TestCase):
             """More comment"""
         class_variables = OrderedDict()
         class_variables['arg_1'] = {'comment': ''}
-        class_variables['arg_2'] = {'comment': ''}
+        class_variables['arg_2'] = {'comment': 'More comment'}
         self.assertEqual(get_class_variables(SeparatedVariable), class_variables)
 
     def test_commented_variables(self):
@@ -215,8 +215,53 @@ class ClassVariableTests(TestCase):
         class_variables = OrderedDict()
         class_variables['arg_1'] = {'comment': 'Arg 1 comment'}
         class_variables['arg_2'] = {'comment': 'Arg 2 comment'}
-        class_variables['arg_3'] = {'comment': 'Poorly   formatted comment'}
+        class_variables['arg_3'] = {'comment': 'Poorly   formatted comment\n\nMore comment'}
         self.assertEqual(get_class_variables(CommentedVariable), class_variables)
+
+    def test_bad_spacing_multiline(self):
+        class TrickyMultiline:
+            """   This is really difficult
+
+        so
+            so very difficult
+            """
+            foo: str = 'my'  # Header line
+
+            """    Footer
+T
+        A
+                P
+
+            multi
+            line!!
+                """
+
+        class_variables = OrderedDict()
+        comment = 'Header line\n\nFooter\nT\n        A\n                P\n\n            multi\n            line!!'
+        class_variables['foo'] = {'comment': comment}
+        self.assertEqual(get_class_variables(TrickyMultiline), class_variables)
+
+    def test_single_quote_multiline(self):
+        class SingleQuoteMultiline:
+            bar: int = 0
+            '''biz baz'''
+
+        class_variables = OrderedDict()
+        class_variables['bar'] = {'comment': 'biz baz'}
+        self.assertEqual(get_class_variables(SingleQuoteMultiline), class_variables)
+
+    def test_functions_with_docs_multiline(self):
+        class FunctionsWithDocs:
+            i: int = 0
+
+            def f():
+                """Function"""
+                a: str = 0
+                """with docs"""
+
+        class_variables = OrderedDict()
+        class_variables['i'] = {'comment': ''}
+        self.assertEqual(get_class_variables(FunctionsWithDocs), class_variables)
 
 
 class GetLiteralsTests(TestCase):
