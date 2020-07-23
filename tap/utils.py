@@ -12,7 +12,17 @@ import re
 import subprocess
 import sys
 import tokenize
-from typing import Any, Callable, Dict, Generator, Iterator, List, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 from typing_extensions import Literal
 from typing_inspect import get_args
 
@@ -321,30 +331,53 @@ def _nested_replace_type(obj: Any, find_type: type, replace_type: type) -> Any:
     return obj
 
 
-class PythonObjectEncoder(JSONEncoder):
-    """Stores parameters that are not JSON serializable as pickle dumps.
+def define_python_object_encoder(skip_unpicklable: bool = False) -> 'PythonObjectEncoder':
 
-    See: https://stackoverflow.com/a/36252257
-    """
-    def iterencode(self, o: Any, _one_shot: bool = False) -> Iterator[str]:
-        o = _nested_replace_type(o, tuple, MockTuple)
-        return super(PythonObjectEncoder, self).iterencode(o, _one_shot)
+    class PythonObjectEncoder(JSONEncoder):
+        """Stores parameters that are not JSON serializable as pickle dumps.
 
-    def default(self, obj: Any) -> Any:
-        if isinstance(obj, set):
-            return {
-                '_type': 'set',
-                '_value': list(obj)
-            }
-        elif isinstance(obj, MockTuple):
-            return {
-                '_type': 'tuple',
-                '_value': list(obj.tuple)
-            }
-        return {
-            '_type': f'python_object (type = {obj.__class__.__name__})',
-            '_value': b64encode(pickle.dumps(obj)).decode('utf-8')
-        }
+        See: https://stackoverflow.com/a/36252257
+        """
+        def iterencode(self, o: Any, _one_shot: bool = False) -> Iterator[str]:
+            o = _nested_replace_type(o, tuple, MockTuple)
+            return super(PythonObjectEncoder, self).iterencode(o, _one_shot)
+
+        def default(self, obj: Any) -> Any:
+            if isinstance(obj, set):
+                return {
+                    '_type': 'set',
+                    '_value': list(obj)
+                }
+            elif isinstance(obj, MockTuple):
+                return {
+                    '_type': 'tuple',
+                    '_value': list(obj.tuple)
+                }
+
+            try:
+                return {
+                    '_type': f'python_object (type = {obj.__class__.__name__})',
+                    '_value': b64encode(pickle.dumps(obj)).decode('utf-8')
+                }
+            except (pickle.PicklingError, TypeError, AttributeError) as e:
+                if not skip_unpicklable:
+                    raise ValueError(f'Could not pickle this object: Failed with exception {e}\n'
+                                     f'If you would like to ignore unpicklable attributes set '
+                                     f'skip_unpickleable = True in save.')
+                else:
+                    return {
+                        '_type': f'unpicklable_object {obj.__class__.__name__}',
+                        '_value': None
+                    }
+
+    return PythonObjectEncoder
+
+
+class UnpicklableObject:
+    """A class that serves as a placeholder for an object that could not be pickled. """
+
+    def __eq__(self, other):
+        return isinstance(other, UnpicklableObject)
 
 
 def as_python_object(dct: Any) -> Any:
@@ -363,6 +396,9 @@ def as_python_object(dct: Any) -> Any:
 
         elif _type.startswith('python_object'):
             return pickle.loads(b64decode(value.encode('utf-8')))
+
+        elif _type.startswith('unpicklable_object'):
+            return UnpicklableObject()
 
         else:
             raise ValueError(f'Special type "{_type}" not supported for JSON loading.')
@@ -395,3 +431,39 @@ def fix_py36_copy(func: Callable) -> Callable:
         return result
 
     return wrapper
+
+
+def enforce_reproducibility(saved_reproducibility_data: Optional[Dict[str, str]],
+                            current_reproducibility_data: Dict[str, str],
+                            path: str) -> None:
+    """Checks if reproducibility has failed and raises the appropriate error.
+
+    :param saved_reproducibility_data: Reproducibility information loaded from a saved file.
+    :param current_reproducibility_data: Reproducibility information from the current object.
+    :param path: The path name of the file that is being loaded.
+    """
+    no_reproducibility_message = 'Reproducibility not guaranteed'
+
+    if saved_reproducibility_data is None:
+        raise ValueError(f'{no_reproducibility_message}: Could not find reproducibility '
+                         f'information in args loaded from "{path}".')
+
+    if 'git_url' not in saved_reproducibility_data:
+        raise ValueError(f'{no_reproducibility_message}: Could not find '
+                         f'git url in args loaded from "{path}".')
+
+    if 'git_url' not in current_reproducibility_data:
+        raise ValueError(f'{no_reproducibility_message}: Could not find '
+                         f'git url in current args.')
+
+    if saved_reproducibility_data['git_url'] != current_reproducibility_data['git_url']:
+        raise ValueError(f'{no_reproducibility_message}: Differing git url/hash '
+                         f'between current args and args loaded from "{path}".')
+
+    if saved_reproducibility_data['git_has_uncommitted_changes']:
+        raise ValueError(f'{no_reproducibility_message}: Uncommitted changes '
+                         f'in args loaded from "{path}".')
+
+    if current_reproducibility_data['git_has_uncommitted_changes']:
+        raise ValueError(f'{no_reproducibility_message}: Uncommitted changes '
+                         f'in current args.')

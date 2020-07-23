@@ -22,9 +22,10 @@ from tap.utils import (
     get_literals,
     boolean_type,
     TupleTypeEnforcer,
-    PythonObjectEncoder,
+    define_python_object_encoder,
     as_python_object,
-    fix_py36_copy
+    fix_py36_copy,
+    enforce_reproducibility,
 )
 
 
@@ -490,16 +491,17 @@ class Tap(ArgumentParser):
 
         return self
 
-    def save(self, path: str, with_reproducibility: bool = True) -> None:
+    def save(self, path: str, with_reproducibility: bool = True, skip_unpicklable: bool = False) -> None:
         """Saves the arguments and reproducibility information in JSON format, pickling what can't be encoded.
 
         :param path: Path to the JSON file where the arguments will be saved.
         :param with_reproducibility: If True, adds a "reproducibility" field with information (e.g. git hash)
                                      to the JSON file.
+        :param skip_unpicklable: If True, does not save attributes whose values cannot be pickled.
         """
         with open(path, 'w') as f:
             args = self._log_all() if with_reproducibility else self.as_dict()
-            json.dump(args, f, indent=4, sort_keys=True, cls=PythonObjectEncoder)
+            json.dump(args, f, indent=4, sort_keys=True, cls=define_python_object_encoder(skip_unpicklable))
 
     def load(self,
              path: str,
@@ -518,35 +520,10 @@ class Tap(ArgumentParser):
             args_dict = json.load(f, object_hook=as_python_object)
 
         # Remove loaded reproducibility information since it is no longer valid
-        reproducibility = args_dict.pop('reproducibility', None)
-
+        saved_reproducibility_data = args_dict.pop('reproducibility', None)
         if check_reproducibility:
-            no_reproducibility_message = 'Reproducibility not guaranteed'
-            current_reproducibility = self.get_reproducibility_info()
-
-            if reproducibility is None:
-                raise ValueError(f'{no_reproducibility_message}: Could not find reproducibility '
-                                 f'information in args loaded from "{path}".')
-
-            if 'git_url' not in reproducibility:
-                raise ValueError(f'{no_reproducibility_message}: Could not find '
-                                 f'git url in args loaded from "{path}".')
-
-            if 'git_url' not in current_reproducibility:
-                raise ValueError(f'{no_reproducibility_message}: Could not find '
-                                 f'git url in current args.')
-
-            if reproducibility['git_url'] != current_reproducibility['git_url']:
-                raise ValueError(f'{no_reproducibility_message}: Differing git url/hash '
-                                 f'between current args and args loaded from "{path}".')
-
-            if reproducibility['git_has_uncommitted_changes']:
-                raise ValueError(f'{no_reproducibility_message}: Uncommitted changes '
-                                 f'in args loaded from "{path}".')
-
-            if current_reproducibility['git_has_uncommitted_changes']:
-                raise ValueError(f'{no_reproducibility_message}: Uncommitted changes '
-                                 f'in current args.')
+            current_reproducibility_data = self.get_reproducibility_info()
+            enforce_reproducibility(saved_reproducibility_data, current_reproducibility_data, path)
 
         self.from_dict(args_dict, skip_unsettable=skip_unsettable)
 

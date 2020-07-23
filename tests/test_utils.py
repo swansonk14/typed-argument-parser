@@ -19,7 +19,8 @@ from tap.utils import (
     get_literals,
     TupleTypeEnforcer,
     _nested_replace_type,
-    PythonObjectEncoder,
+    define_python_object_encoder,
+    UnpicklableObject,
     as_python_object
 )
 
@@ -398,28 +399,43 @@ class Person:
 class PythonObjectEncoderTests(TestCase):
     def test_python_object_encoder_simple_types(self):
         obj = [1, 2, 'hi', 'bye', 7.3, [1, 2, 'blarg'], True, False, None]
-        dumps = json.dumps(obj, indent=4, sort_keys=True, cls=PythonObjectEncoder)
+        dumps = json.dumps(obj, indent=4, sort_keys=True, cls=define_python_object_encoder())
         recreated_obj = json.loads(dumps, object_hook=as_python_object)
-        self.assertEqual(obj, recreated_obj)
+        self.assertEqual(recreated_obj, obj)
 
     def test_python_object_encoder_tuple(self):
         obj = [1, 2, 'hi', 'bye', 7.3, (1, 2, 'blarg'), [('hi', 'bye'), 2], {'hi': {'bye': (3, 4)}}, True, False, None]
-        dumps = json.dumps(obj, indent=4, sort_keys=True, cls=PythonObjectEncoder)
+        dumps = json.dumps(obj, indent=4, sort_keys=True, cls=define_python_object_encoder())
         recreated_obj = json.loads(dumps, object_hook=as_python_object)
-        self.assertEqual(obj, recreated_obj)
+        self.assertEqual(recreated_obj, obj)
 
     def test_python_object_encoder_set(self):
         obj = [1, 2, 'hi', 'bye', 7.3, {1, 2, 'blarg'}, [{'hi', 'bye'}, 2], {'hi': {'bye': {3, 4}}}, True, False, None]
-        dumps = json.dumps(obj, indent=4, sort_keys=True, cls=PythonObjectEncoder)
+        dumps = json.dumps(obj, indent=4, sort_keys=True, cls=define_python_object_encoder())
         recreated_obj = json.loads(dumps, object_hook=as_python_object)
-        self.assertEqual(obj, recreated_obj)
+        self.assertEqual(recreated_obj, obj)
 
     def test_python_object_encoder_complex(self):
         obj = [1, 2, 'hi', 'bye', 7.3, {1, 2, 'blarg'}, [('hi', 'bye'), 2], {'hi': {'bye': {3, 4}}}, True, False, None,
                (Person('tappy'), Person('tapper'))]
-        dumps = json.dumps(obj, indent=4, sort_keys=True, cls=PythonObjectEncoder)
+        dumps = json.dumps(obj, indent=4, sort_keys=True, cls=define_python_object_encoder())
         recreated_obj = json.loads(dumps, object_hook=as_python_object)
-        self.assertEqual(obj, recreated_obj)
+        self.assertEqual(recreated_obj, obj)
+
+    def test_python_object_encoder_unpicklable(self):
+        class CannotPickleThis:
+            """Da na na na. Can't pickle this. """
+            def __init__(self):
+                self.x = 1
+
+        obj = [1, CannotPickleThis()]
+        expected_obj = [1, UnpicklableObject()]
+        with self.assertRaises(ValueError):
+            dumps = json.dumps(obj, indent=4, sort_keys=True, cls=define_python_object_encoder())
+
+        dumps = json.dumps(obj, indent=4, sort_keys=True, cls=define_python_object_encoder(True))
+        recreated_obj = json.loads(dumps, object_hook=as_python_object)
+        self.assertEqual(recreated_obj, expected_obj)
 
 
 if __name__ == '__main__':
