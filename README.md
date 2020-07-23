@@ -128,7 +128,7 @@ class MyTap(Tap):
 
 ### Help string
 
-Single line comments are automatically parsed into the help string provided when running `python main.py -h`. The type and default values of arguments are also provided in the help string.
+Single line and/or multiline comments which appear after the argument are automatically parsed into the help string provided when running `python main.py -h`. The type and default values of arguments are also provided in the help string.
 
 ```python
 """main.py"""
@@ -138,6 +138,7 @@ from tap import Tap
 class MyTap(Tap):
     x: float  # What am I?
     pi: float = 3.14  # I'm pi!
+    """Pi is my favorite number!"""
 
 args = MyTap().parse_args()
 ```
@@ -150,7 +151,7 @@ usage: demo.py --x X [--pi PI] [-h]
 
 optional arguments:
   --x X       (float, required) What am I?
-  --pi PI     (float, default=3.14) I'm pi!
+  --pi PI     (float, default=3.14) I'm pi! Pi is my favorite number.
   -h, --help  show this help message and exit
 ```
 
