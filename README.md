@@ -19,6 +19,23 @@ Tap provides the following benefits:
 
 See [this poster](https://docs.google.com/presentation/d/1AirN6gpiq4P1L8K003EsXmobVxP3A4AVEIR2KOEQN7Y/edit?usp=sharing), which we presented at [PyCon 2020](https://us.pycon.org/2020/), for a presentation of some of the relevant concepts we used to guide the development of Tap. 
 
+## Installation
+
+Tap requires Python 3.6+
+
+To install Tap from PyPI run: 
+```
+pip install typed-argument-parser
+```
+
+To install Tap from source, run the following commands:
+
+```
+git clone https://github.com/swansonk14/typed-argument-parser.git
+cd typed-argument-parser
+pip install -e .
+```
+
 ## Table of Contents
 
 * [Installation](#installation)
@@ -38,23 +55,6 @@ See [this poster](https://docs.google.com/presentation/d/1AirN6gpiq4P1L8K003EsXm
       - [Save](#save)
       - [Load](#load)
       - [Load from dict](#load-from-dict)
-
-## Installation
-
-Tap requires Python 3.6+
-
-To install Tap from PyPI run: 
-```
-pip install typed-argument-parser
-```
-
-To install Tap from source, run the following commands:
-
-```
-git clone https://github.com/swansonk14/typed-argument-parser.git
-cd typed-argument-parser
-pip install -e .
-```
 
 ## Tap is Python-native
 To see this, let's look at an example:
