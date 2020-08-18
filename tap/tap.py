@@ -62,6 +62,9 @@ class Tap(ArgumentParser):
                               with any capitalization as well as 1 or 0.
         :param kwargs: Keyword arguments passed to the super class ArgumentParser.
         """
+        # Whether the Tap object has been initialized
+        self._initialized = False
+
         # Whether boolean flags have to be explicitly set to True or False
         self._explicit_bool = explicit_bool
 
@@ -89,6 +92,9 @@ class Tap(ArgumentParser):
         # Add arguments to self
         self.add_arguments()  # Adds user-overridden arguments to the arguments buffer
         self._add_arguments()  # Adds all arguments in order to self
+
+        # Indicate that initialization is complete
+        self._initialized = True
 
     def _add_argument(self, *name_or_flags, **kwargs) -> None:
         """Adds an argument to self (i.e. the super class ArgumentParser).
@@ -230,6 +236,11 @@ class Tap(ArgumentParser):
 
     def add_argument(self, *name_or_flags, **kwargs) -> None:
         """Adds an argument to the argument buffer, which will later be passed to _add_argument."""
+        if self._initialized:
+            raise ValueError('add_argument cannot be called after initialization. '
+                             'Arguments must be added either as class variables or by overriding '
+                             'add_arguments and including a self.add_argument call there.')
+
         variable = get_argument_name(*name_or_flags)
         self.argument_buffer[variable] = (name_or_flags, kwargs)
 
@@ -304,6 +315,10 @@ class Tap(ArgumentParser):
         Unparsed arguments are saved to self.extra_args.
         :return: self, which is a Tap instance containing all of the parsed args.
         """
+        # Prevent double parsing
+        if self._parsed:
+            raise ValueError('parse_args can only be called once.')
+
         # Parse args using super class ArgumentParser's parse_args or parse_known_args function
         if known_only:
             default_namespace, self.extra_args = super(Tap, self).parse_known_args(args)

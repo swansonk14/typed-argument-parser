@@ -65,6 +65,13 @@ class EdgeCaseTests(TestCase):
         self.assertEqual(args.a_number, a_number)
         self.assertEqual(args.a_list, a_list)
 
+    def test_parse_twice(self) -> None:
+        class ParseTwiceTap(Tap):
+            a: int = 5
+
+        with self.assertRaises(ValueError):
+            ParseTwiceTap().parse_args(['--a', '6']).parse_args(['--a', '7'])
+
 
 class RequiredClassVariableTests(TestCase):
 
@@ -599,6 +606,12 @@ class AddArgumentTests(TestCase):
 
         args = IntegrationAddArgumentTap().parse_args(['--arg_bool_false'])
         self.assertEqual(args.arg_bool_false, False)
+
+    def test_add_argument_post_initialization(self) -> None:
+        args = IntegrationDefaultTap()
+
+        with self.assertRaises(ValueError):
+            args.add_argument('--arg')
 
 
 class KnownTap(Tap):
