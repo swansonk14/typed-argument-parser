@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, _SubParsersAction
 from collections import OrderedDict
 from copy import deepcopy
 import json
@@ -80,6 +80,9 @@ class Tap(ArgumentParser):
         # Create argument buffer
         self.argument_buffer = OrderedDict()
 
+        # Create a place to put all of the subparsers
+        self._subparser_buffer: List[Tuple[str, type, Dict[str, Any]]] = []
+
         # Get class variables help strings from the comments
         self.class_variables = self._get_class_variables()
 
@@ -92,6 +95,11 @@ class Tap(ArgumentParser):
         # Add arguments to self
         self.add_arguments()  # Adds user-overridden arguments to the arguments buffer
         self._add_arguments()  # Adds all arguments in order to self
+
+        # Add subparsers to self
+        self._subparsers = None
+        self.new_subparsers()
+        self._new_subparsers()
 
         # Indicate that initialization is complete
         self._initialized = True
@@ -259,12 +267,31 @@ class Tap(ArgumentParser):
             if variable not in self.class_variables:
                 self._add_argument(*name_or_flags, **kwargs)
 
+        
+
     def add_arguments(self) -> None:
         """Explicitly add arguments to the argument buffer if not using default settings."""
         pass
 
     def process_args(self) -> None:
         """Perform additional argument processing and/or validation."""
+        pass
+
+    def add_subparser(self, flag: str, subparser_type: type, **kwargs) -> None:
+        """Add a subparser to the collection of subparsers"""
+        self._subparser_buffer.append((flag, subparser_type, kwargs))
+
+    def _new_subparsers(self) -> None:
+        """Add each of the subparsers to the Tap object. """
+        for flag, subparser_type, kwargs in self._subparser_buffer:
+            self._subparsers._parser_class = subparser_type
+            subparser = self._subparsers.add_parser(flag, **kwargs)
+
+    def add_subparsers(self, **kwargs) -> None:
+        self._subparsers = super().add_subparsers(**kwargs)
+
+    def new_subparsers(self) -> type:
+        """Add subparsers to the current object. """
         pass
 
     @staticmethod
