@@ -155,11 +155,14 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 
-### Flexibility of `add_arguments`
+### Flexibility of `configure`
+To specify behavior beyond what can be specified using arguments as class variables, override the `configure` method.
+`configure` provides access to advanced argument parsing features such as `add_argument` and `add_subparser`.
+Since Tap is a wrapper around argparse, Tap provides all of the same functionality.
+We detail these two functions below.
 
-Python's argparse provides a number of advanced argument parsing features with the `add_argument` method. Since Tap is a wrapper around argparse, Tap provides all of the same functionality.
-
-To make use of this functionality, first define arguments as class variables as usual, then override Tap's `add_arguments` and use `self.add_argument` just as you would use argparse's `add_argument`.
+#### Adding special argument behavior
+In the `configure` method, call `self.add_argument` just as you would use argparse's `add_argument`. For example,
 
 ```python
 from tap import Tap
@@ -169,10 +172,30 @@ class MyTap(Tap):
     list_of_three_things: List[str]
     argument_with_really_long_name: int
 
-    def add_arguments(self):
+    def configure(self):
         self.add_argument('positional_argument')
         self.add_argument('--list_of_three_things', nargs=3)
         self.add_argument('-arg', '--argument_with_really_long_name')
+```
+
+#### Adding subparsers
+In the `configure` method, call `self.add_subparsers` to set up the subparsers (e.g., to add a help string). Then add each subparser with `self.add_subparser`.
+For example,
+
+```python
+class SubparserA(Tap):
+    bar: int  # bar help
+
+class SubparserB(Tap):
+    baz: Literal['X', 'Y', 'Z']  # baz help
+
+class Args(Tap):
+    foo = True  # foo help
+
+    def configure(self):
+        self.add_subparsers(help='sub-command help')
+        self.add_subparser('a', SubparserA, help='a help')
+        self.add_subparser('b', SubparserB, help='b help')
 ```
 
 ### Types

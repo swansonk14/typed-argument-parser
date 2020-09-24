@@ -18,7 +18,7 @@ class EdgeCaseTests(TestCase):
 
     def test_empty_add_argument(self) -> None:
         class EmptyAddArgument(Tap):
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('--hi')
 
         hi = 'yo'
@@ -412,7 +412,7 @@ class LiteralCrashTests(TestCase):
 class AddArgumentTests(TestCase):
     def test_positional(self) -> None:
         class IntegrationAddArgumentTap(IntegrationDefaultTap):
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('arg_str')
 
         arg_str = 'positional'
@@ -422,7 +422,7 @@ class AddArgumentTests(TestCase):
 
     def test_positional_ordering(self) -> None:
         class IntegrationAddArgumentTap(IntegrationDefaultTap):
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('arg_str')
                 self.add_argument('arg_int')
                 self.add_argument('arg_float')
@@ -441,7 +441,7 @@ class AddArgumentTests(TestCase):
 
     def test_one_dash(self) -> None:
         class IntegrationAddArgumentTap(IntegrationDefaultTap):
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('-arg_str')
 
         arg_str = 'one_dash'
@@ -451,7 +451,7 @@ class AddArgumentTests(TestCase):
 
     def test_two_dashes(self) -> None:
         class IntegrationAddArgumentTap(IntegrationDefaultTap):
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('--arg_str')
 
         arg_str = 'two_dashes'
@@ -461,7 +461,7 @@ class AddArgumentTests(TestCase):
 
     def test_one_and_two_dashes(self) -> None:
         class IntegrationAddArgumentTap(IntegrationDefaultTap):
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('-a', '--arg_str')
 
         arg_str = 'one_or_two_dashes'
@@ -475,7 +475,7 @@ class AddArgumentTests(TestCase):
 
     def test_not_class_variable(self) -> None:
         class IntegrationAddArgumentTap(IntegrationDefaultTap):
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('--non_class_arg')
 
         arg_str = 'non_class_arg'
@@ -492,7 +492,7 @@ class AddArgumentTests(TestCase):
             arg_person_untyped = Person('tap untyped')
 
             # TODO: assert a crash if any complex types are not explicitly added in add_argument
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('--arg_person', type=Person)
                 # self.add_argument('--arg_person_required', type=Person)  # TODO
                 self.add_argument('--arg_person_untyped', type=Person)
@@ -512,7 +512,7 @@ class AddArgumentTests(TestCase):
 
     def test_repeat_default(self) -> None:
         class IntegrationAddArgumentTap(IntegrationDefaultTap):
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('--arg_str', default=IntegrationDefaultTap.arg_str)
 
         args = IntegrationAddArgumentTap().parse_args()
@@ -520,7 +520,7 @@ class AddArgumentTests(TestCase):
 
     def test_conflicting_default(self) -> None:
         class IntegrationAddArgumentTap(IntegrationDefaultTap):
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('--arg_str', default='yo dude')
 
         args = IntegrationAddArgumentTap().parse_args()
@@ -536,7 +536,7 @@ class AddArgumentTests(TestCase):
 
     def test_repeat_type(self) -> None:
         class IntegrationAddArgumentTap(IntegrationDefaultTap):
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('--arg_int', type=int)
 
         args = IntegrationAddArgumentTap().parse_args()
@@ -551,7 +551,7 @@ class AddArgumentTests(TestCase):
 
     def test_conflicting_type(self) -> None:
         class IntegrationAddArgumentTap(IntegrationDefaultTap):
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('--arg_int', type=str)
 
         arg_int = 'yo dude'
@@ -569,7 +569,7 @@ class AddArgumentTests(TestCase):
 
     def test_repeat_nargs(self) -> None:
         class IntegrationAddArgumentTap(IntegrationDefaultTap):
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('--arg_list_str', nargs='*')
 
         arg_list_str = ['hi', 'there', 'person', '123']
@@ -579,7 +579,7 @@ class AddArgumentTests(TestCase):
     # TODO: figure out how to check for system exit
     # def test_conflicting_nargs(self) -> None:
     #     class IntegrationAddArgumentTap(IntegrationDefaultTap):
-    #         def add_arguments(self) -> None:
+    #         def configure(self) -> None:
     #             self.add_argument('--arg_list_str', nargs=3)
     #
     #     arg_list_str = ['hi', 'there', 'person', '123']
@@ -587,7 +587,7 @@ class AddArgumentTests(TestCase):
 
     def test_repeat_action(self) -> None:
         class IntegrationAddArgumentTap(IntegrationDefaultTap):
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('--arg_bool_false', action='store_true', default=False)
 
         args = IntegrationAddArgumentTap().parse_args()
@@ -598,7 +598,7 @@ class AddArgumentTests(TestCase):
 
     def test_conflicting_action(self) -> None:
         class IntegrationAddArgumentTap(IntegrationDefaultTap):
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('--arg_bool_false', action='store_false', default=True)
 
         args = IntegrationAddArgumentTap().parse_args()
@@ -901,7 +901,7 @@ class TestAsDict(TestCase):
             a: str
             b = 1
 
-            def add_arguments(self):
+            def configure(self):
                 self.add_argument('-arg_name', '--long_arg_name')
 
         args = AddArgumentsTap().parse_args(['--a', 'hi', '--long_arg_name', 'arg'])
@@ -1045,7 +1045,7 @@ class TestStoringTap(TestCase):
             f: Set[int] = {1}
             g: Person = Person('tappy')
 
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('--g', type=Person)
 
         args = ComplexSaveLoadTap().parse_args(['--a', 'hi', '--d', 'a', 'b', '--e', '7', '--g', 'tapper'])
@@ -1109,7 +1109,7 @@ class TestDeepCopy(TestCase):
             f: Set[int] = {1}
             g: Person = Person('tappy')
 
-            def add_arguments(self) -> None:
+            def configure(self) -> None:
                 self.add_argument('--g', type=Person)
 
             def __eq__(self, other):

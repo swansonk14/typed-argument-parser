@@ -5,6 +5,7 @@ import json
 from pprint import pformat
 import sys
 import time
+from warnings import warn
 from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
 from typing_inspect import is_literal_type, get_args, get_origin, is_union_type
@@ -92,14 +93,11 @@ class Tap(ArgumentParser):
         # Initialize the super class, i.e. ArgumentParser
         super(Tap, self).__init__(*args, **kwargs)
 
-        # Add arguments to self
-        self.add_arguments()  # Adds user-overridden arguments to the arguments buffer
-        self._add_arguments()  # Adds all arguments in order to self
-
-        # Add subparsers to self
+        # Stores all of the subparsers
         self._subparsers = None
-        self.new_subparsers()
-        self._new_subparsers()
+
+        # Perform additional configuration such as modifying add_arguments or adding subparsers
+        self._configure()
 
         # Indicate that initialization is complete
         self._initialized = True
@@ -267,10 +265,11 @@ class Tap(ArgumentParser):
             if variable not in self.class_variables:
                 self._add_argument(*name_or_flags, **kwargs)
 
-        
-
     def add_arguments(self) -> None:
-        """Explicitly add arguments to the argument buffer if not using default settings."""
+        """Deprecated and will be removed by January 1st, 2021.
+
+        Explicitly add arguments to the argument buffer if not using default settings.
+        """
         pass
 
     def process_args(self) -> None:
@@ -281,7 +280,7 @@ class Tap(ArgumentParser):
         """Add a subparser to the collection of subparsers"""
         self._subparser_buffer.append((flag, subparser_type, kwargs))
 
-    def _new_subparsers(self) -> None:
+    def _add_subparsers(self) -> None:
         """Add each of the subparsers to the Tap object. """
         for flag, subparser_type, kwargs in self._subparser_buffer:
             self._subparsers._parser_class = subparser_type
@@ -290,8 +289,36 @@ class Tap(ArgumentParser):
     def add_subparsers(self, **kwargs) -> None:
         self._subparsers = super().add_subparsers(**kwargs)
 
-    def new_subparsers(self) -> type:
-        """Add subparsers to the current object. """
+    def _configure(self) -> None:
+        """Executes the user-defined configuration. """
+        # Call the user-defined configuration
+        self.configure()
+
+        # Support the previous add_arguments interface with a deprecation warning
+        if self.__class__.add_arguments != Tap.add_arguments:
+            warn('add_arguments is deprecated and will be removed on January 1st, 2021'
+                 ' please override "configure" instead and call add_argument there. ')
+            self.add_arguments()
+
+        # Add arguments to self
+        self._add_arguments()
+
+        # Add subparsers to self
+        self._add_subparsers()
+
+
+    def configure(self) -> None:
+        """Overwrite this method to configure the parser during initialization.
+
+        For example,
+            self.add_argument('--sum',
+                              dest='accumulate',
+                              action='store_const',
+                              const=sum,
+                              default=max)
+            self.add_subparsers(help='sub-command help')
+            self.add_subparser('a', SubparserA, help='a help')
+        """
         pass
 
     @staticmethod

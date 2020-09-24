@@ -11,7 +11,7 @@ class TestArgparseActions(TestCase):
     def test_actions_store_const(self):
         class StoreConstTap(Tap):
 
-            def add_arguments(self):
+            def configure(self):
                 self.add_argument('--sum',
                                   dest='accumulate',
                                   action='store_const',
@@ -32,7 +32,7 @@ class TestArgparseActions(TestCase):
         class StoreTrueDefaultTrueTap(Tap):
             foobar: bool = True
 
-            def add_arguments(self):
+            def configure(self):
                 self.add_argument('--foobar', action='store_true')
         args = StoreTrueDefaultTrueTap().parse_args([])
         self.assertTrue(args.foobar)
@@ -44,7 +44,7 @@ class TestArgparseActions(TestCase):
         class StoreTrueDefaultFalseTap(Tap):
             foobar: bool = False
 
-            def add_arguments(self):
+            def configure(self):
                 self.add_argument('--foobar', action='store_true')
         args = StoreTrueDefaultFalseTap().parse_args([])
         self.assertFalse(args.foobar)
@@ -56,7 +56,7 @@ class TestArgparseActions(TestCase):
         class StoreFalseDefaultTrueTap(Tap):
             foobar: bool = True
 
-            def add_arguments(self):
+            def configure(self):
                 self.add_argument('--foobar', action='store_false')
         args = StoreFalseDefaultTrueTap().parse_args([])
         self.assertTrue(args.foobar)
@@ -68,7 +68,7 @@ class TestArgparseActions(TestCase):
         class StoreFalseDefaultFalseTap(Tap):
             foobar: bool = False
 
-            def add_arguments(self):
+            def configure(self):
                 self.add_argument('--foobar', action='store_false')
         args = StoreFalseDefaultFalseTap().parse_args([])
         self.assertFalse(args.foobar)
@@ -80,7 +80,7 @@ class TestArgparseActions(TestCase):
         class AppendListTap(Tap):
             arg: List = ['what', 'is']
 
-            def add_arguments(self):
+            def configure(self):
                 self.add_argument('--arg', action='append')
 
         args = AppendListTap().parse_args([])
@@ -93,7 +93,7 @@ class TestArgparseActions(TestCase):
         class AppendListIntTap(Tap):
             arg: List[int] = [1, 2]
 
-            def add_arguments(self):
+            def configure(self):
                 self.add_argument('--arg', action='append')
 
         args = AppendListIntTap().parse_args('--arg 3 --arg 4'.split())
@@ -103,7 +103,7 @@ class TestArgparseActions(TestCase):
         class AppendListStrTap(Tap):
             arg = ['what', 'is']
 
-            def add_arguments(self):
+            def configure(self):
                 self.add_argument('--arg', action='append')
 
         args = AppendListStrTap().parse_args([])
@@ -116,7 +116,7 @@ class TestArgparseActions(TestCase):
         class AppendConstTap(Tap):
             arg: List[int] = [1, 2, 3]
 
-            def add_arguments(self):
+            def configure(self):
                 self.add_argument('--arg', action='append_const', const=7)
 
         args = AppendConstTap().parse_args([])
@@ -129,7 +129,7 @@ class TestArgparseActions(TestCase):
         class CountTap(Tap):
             arg = 7
 
-            def add_arguments(self):
+            def configure(self):
                 self.add_argument('--arg', '-a', action='count')
 
         args = CountTap().parse_args([])
@@ -142,7 +142,7 @@ class TestArgparseActions(TestCase):
         class CountIntTap(Tap):
             arg: int = 7
 
-            def add_arguments(self):
+            def configure(self):
                 self.add_argument('--arg', '-a', action='count')
 
         args = CountIntTap().parse_args([])
@@ -154,7 +154,7 @@ class TestArgparseActions(TestCase):
     def test_actions_version(self):
         class VersionTap(Tap):
 
-            def add_arguments(self):
+            def configure(self):
                 self.add_argument('--version', action='version', version='2.0')
 
         # Ensure that nothing breaks without version flag
@@ -169,7 +169,7 @@ class TestArgparseActions(TestCase):
         class ExtendTap(Tap):
             arg = [1, 2]
 
-            def add_arguments(self):
+            def configure(self):
                 self.add_argument('--arg', nargs="+", action='extend')
 
         args = ExtendTap().parse_args([])
@@ -183,7 +183,7 @@ class TestArgparseActions(TestCase):
         class ExtendListTap(Tap):
             arg: List = ['hi']
 
-            def add_arguments(self):
+            def configure(self):
                 self.add_argument('--arg', action='extend')
 
         args = ExtendListTap().parse_args('--arg yo yo --arg yoyo --arg yo yo'.split())
@@ -194,7 +194,7 @@ class TestArgparseActions(TestCase):
         class ExtendListIntTap(Tap):
             arg: List[int] = [0]
 
-            def add_arguments(self):
+            def configure(self):
                 self.add_argument('--arg', action='extend')
 
         args = ExtendListIntTap().parse_args('--arg 1 2 --arg 3 --arg 4 5'.split())
