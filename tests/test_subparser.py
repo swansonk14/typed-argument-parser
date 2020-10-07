@@ -1,5 +1,5 @@
 import sys
-from typing import Literal
+from typing_extensions import Literal
 import unittest
 from unittest import TestCase
 
