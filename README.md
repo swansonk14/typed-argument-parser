@@ -43,7 +43,7 @@ pip install -e .
 * [Tap features](#tap-features)
     + [Arguments](#arguments)
     + [Help string](#help-string)
-    + [Flexibility of `add_arguments`](#flexibility-of-add_arguments)
+    + [Flexibility of `configure`](#flexibility-of-configure)
     + [Types](#types)
     + [Argument processing with `process_args`](#argument-processing-with-process_args)
     + [Processing known args](#processing-known-args)
