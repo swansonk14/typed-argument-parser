@@ -282,9 +282,14 @@ class Tap(ArgumentParser):
 
     def _add_subparsers(self) -> None:
         """Add each of the subparsers to the Tap object. """
+        # Initialize the _subparsers object if not already created
+        if self._subparsers is None and len(self._subparser_buffer) > 0:
+            self._subparsers = super(Tap, self).add_subparsers()
+
+        # Load each subparser
         for flag, subparser_type, kwargs in self._subparser_buffer:
             self._subparsers._parser_class = subparser_type
-            subparser = self._subparsers.add_parser(flag, **kwargs)
+            self._subparsers.add_parser(flag, **kwargs)
 
     def add_subparsers(self, **kwargs) -> None:
         self._subparsers = super().add_subparsers(**kwargs)
@@ -305,7 +310,6 @@ class Tap(ArgumentParser):
 
         # Add subparsers to self
         self._add_subparsers()
-
 
     def configure(self) -> None:
         """Overwrite this method to configure the parser during initialization.

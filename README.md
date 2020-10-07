@@ -190,7 +190,7 @@ class SubparserB(Tap):
     baz: Literal['X', 'Y', 'Z']  # baz help
 
 class Args(Tap):
-    foo = True  # foo help
+    foo: bool = False  # foo help
 
     def configure(self):
         self.add_subparsers(help='sub-command help')
