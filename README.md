@@ -179,8 +179,7 @@ class MyTap(Tap):
 ```
 
 #### Adding subparsers
-In the `configure` method, call `self.add_subparsers` to set up the subparsers (e.g., to add a help string). Then add each subparser with `self.add_subparser`.
-For example,
+To add a subparser, override the `configure` method and call `self.add_subparser`. Optionally, to specify keyword arguments (e.g., `help`) to the subparser collection, call `self.add_subparsers`. For example,
 
 ```python
 class SubparserA(Tap):
