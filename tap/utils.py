@@ -265,6 +265,12 @@ def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any],
         raise ValueError('All literals must have unique string representations')
 
     def var_type(arg: str) -> Any:
+        """
+        Returns the type of a variable.
+
+        Args:
+            arg: (todo): write your description
+        """
         return str_to_literal.get(arg, arg)
 
     return var_type, literals
@@ -282,11 +288,26 @@ def boolean_type(flag_value: str) -> bool:
 class TupleTypeEnforcer:
     """The type argument to argparse for checking and applying types to Tuples."""
     def __init__(self, types: List[type], loop: bool = False):
+        """
+        Initialize the loop.
+
+        Args:
+            self: (todo): write your description
+            types: (todo): write your description
+            loop: (str): write your description
+        """
         self.types = [boolean_type if t == bool else t for t in types]
         self.loop = loop
         self.index = 0
 
     def __call__(self, arg: str) -> Any:
+        """
+        Calls the given arg.
+
+        Args:
+            self: (todo): write your description
+            arg: (int): write your description
+        """
         arg = self.types[self.index](arg)
         self.index += 1
 
@@ -299,6 +320,13 @@ class TupleTypeEnforcer:
 class MockTuple:
     """Mock of a tuple needed to prevent JSON encoding tuples as lists."""
     def __init__(self, _tuple: tuple) -> None:
+        """
+        Initialize a tuple.
+
+        Args:
+            self: (todo): write your description
+            _tuple: (todo): write your description
+        """
         self.tuple = _tuple
 
 
@@ -339,10 +367,25 @@ def define_python_object_encoder(skip_unpicklable: bool = False) -> 'PythonObjec
         See: https://stackoverflow.com/a/36252257
         """
         def iterencode(self, o: Any, _one_shot: bool = False) -> Iterator[str]:
+            """
+            Return an iterator over the o.
+
+            Args:
+                self: (todo): write your description
+                o: (todo): write your description
+                _one_shot: (bool): write your description
+            """
             o = _nested_replace_type(o, tuple, MockTuple)
             return super(PythonObjectEncoder, self).iterencode(o, _one_shot)
 
         def default(self, obj: Any) -> Any:
+            """
+            Default pickle. pickle.
+
+            Args:
+                self: (todo): write your description
+                obj: (todo): write your description
+            """
             if isinstance(obj, set):
                 return {
                     '_type': 'set',
@@ -377,6 +420,13 @@ class UnpicklableObject:
     """A class that serves as a placeholder for an object that could not be pickled. """
 
     def __eq__(self, other):
+        """
+        Determine if two : class objects are equal.
+
+        Args:
+            self: (todo): write your description
+            other: (todo): write your description
+        """
         return isinstance(other, UnpicklableObject)
 
 
@@ -416,6 +466,11 @@ def fix_py36_copy(func: Callable) -> Callable:
 
     @wraps(func)
     def wrapper(*args, **kwargs):
+        """
+        Decorator for wrapping methods.
+
+        Args:
+        """
         re_type = type(re.compile(''))
         has_prev_val = re_type in copy._deepcopy_dispatch
         prev_val = copy._deepcopy_dispatch.get(re_type, None)

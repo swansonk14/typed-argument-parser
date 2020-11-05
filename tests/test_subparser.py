@@ -9,13 +9,32 @@ from tap import Tap
 class TestSubparser(TestCase):
 
     def setUp(self) -> None:
+        """
+        Sets the terminal.
+
+        Args:
+            self: (todo): write your description
+        """
         # Suppress prints from SystemExit
         class DevNull:
             def write(self, msg):
+                """
+                Write a message
+
+                Args:
+                    self: (todo): write your description
+                    msg: (str): write your description
+                """
                 pass
         self.dev_null = DevNull()
 
     def test_subparser_documentation_example(self):
+        """
+        Sets the argument parser.
+
+        Args:
+            self: (todo): write your description
+        """
         class SubparserA(Tap):
             bar: int  # bar help
 
@@ -26,6 +45,12 @@ class TestSubparser(TestCase):
             foo: bool = False  # foo help
 
             def configure(self):
+                """
+                Configure the subcommand.
+
+                Args:
+                    self: (todo): write your description
+                """
                 self.add_subparsers(help='sub-command help')
                 self.add_subparser('a', SubparserA, help='a help')
                 self.add_subparser('b', SubparserB, help='b help')
@@ -62,6 +87,12 @@ class TestSubparser(TestCase):
             Args().parse_args('--foo a --bar 1 b --baz X'.split())
 
     def test_name_collision(self):
+        """
+        Configure the argument parser.
+
+        Args:
+            self: (todo): write your description
+        """
         class SubparserA(Tap):
             a: int
 
@@ -69,6 +100,12 @@ class TestSubparser(TestCase):
             foo: bool = False
 
             def configure(self):
+                """
+                Configure the subparser.
+
+                Args:
+                    self: (todo): write your description
+                """
                 self.add_subparsers(help='sub-command help')
                 self.add_subparser('a', SubparserA, help='a help')
 
@@ -77,6 +114,12 @@ class TestSubparser(TestCase):
         self.assertEqual(args.a, 1)
 
     def test_name_overriding(self):
+        """
+        Configure command line options.
+
+        Args:
+            self: (todo): write your description
+        """
         class SubparserA(Tap):
             foo: int
 
@@ -84,6 +127,12 @@ class TestSubparser(TestCase):
             foo: bool = False
 
             def configure(self):
+                """
+                Configure the subparser.
+
+                Args:
+                    self: (todo): write your description
+                """
                 self.add_subparsers(help='sub-command help')
                 self.add_subparser('a', SubparserA)
 
@@ -97,6 +146,12 @@ class TestSubparser(TestCase):
         self.assertEqual(args.foo, 2)
 
     def test_add_subparser_twice(self):
+        """
+        Configure subparser parser.
+
+        Args:
+            self: (todo): write your description
+        """
         class SubparserA(Tap):
             bar: int
 
@@ -107,6 +162,12 @@ class TestSubparser(TestCase):
             foo: bool = False
 
             def configure(self):
+                """
+                Configure the subparser.
+
+                Args:
+                    self: (todo): write your description
+                """
                 self.add_subparser('a', SubparserB)
                 self.add_subparser('a', SubparserA)
 
@@ -120,6 +181,12 @@ class TestSubparser(TestCase):
             Args().parse_args('a --baz 2'.split())
 
     def test_add_subparsers_twice(self):
+        """
+        Sets up the subparser.
+
+        Args:
+            self: (todo): write your description
+        """
         class SubparserA(Tap):
             a: int
 
@@ -127,6 +194,12 @@ class TestSubparser(TestCase):
             foo: bool = False
 
             def configure(self):
+                """
+                Configure the subparser.
+
+                Args:
+                    self: (todo): write your description
+                """
                 self.add_subparser('a', SubparserA)
                 self.add_subparsers(help='sub-command1 help')
                 self.add_subparsers(help='sub-command2 help')
@@ -136,6 +209,12 @@ class TestSubparser(TestCase):
             Args().parse_args([])
 
     def test_add_subparsers_with_add_argument(self):
+        """
+        Add the argument parser.
+
+        Args:
+            self: (todo): write your description
+        """
         class SubparserA(Tap):
             for_sure: bool = False
 
@@ -144,6 +223,12 @@ class TestSubparser(TestCase):
             bar: int = 1
 
             def configure(self):
+                """
+                Configure the argument parser.
+
+                Args:
+                    self: (todo): write your description
+                """
                 self.add_argument('--bar', '-ib')
                 self.add_subparser('is_terrible', SubparserA)
                 self.add_argument('--foo', '-m')
@@ -154,6 +239,12 @@ class TestSubparser(TestCase):
         self.assertTrue(args.for_sure)
 
     def test_add_subsubparsers(self):
+        """
+        Configure subcommands.
+
+        Args:
+            self: (todo): write your description
+        """
 
         class SubSubparserB(Tap):
             baz: bool = False
@@ -162,6 +253,12 @@ class TestSubparser(TestCase):
             biz: bool = False
 
             def configure(self):
+                """
+                Configure the sub - command.
+
+                Args:
+                    self: (todo): write your description
+                """
                 self.add_subparser('b', SubSubparserB)
 
         class SubparserB(Tap):
@@ -171,6 +268,12 @@ class TestSubparser(TestCase):
             foo: bool = False
 
             def configure(self):
+                """
+                Configure the subparser.
+
+                Args:
+                    self: (todo): write your description
+                """
                 self.add_subparser('a', SubparserA)
                 self.add_subparser('b', SubparserB)
 

@@ -292,6 +292,12 @@ class Tap(ArgumentParser):
             self._subparsers.add_parser(flag, **kwargs)
 
     def add_subparsers(self, **kwargs) -> None:
+        """
+        Add subparsers.
+
+        Args:
+            self: (todo): write your description
+        """
         self._subparsers = super().add_subparsers(**kwargs)
 
     def _configure(self) -> None:

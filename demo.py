@@ -3,6 +3,12 @@ from tap import Tap
 
 
 def add_one(num: int) -> int:
+    """
+    Add one one - to another.
+
+    Args:
+        num: (int): write your description
+    """
     return num + 1
 
 
