@@ -53,6 +53,7 @@ class Tap(ArgumentParser):
                  *args,
                  underscores_to_dashes: bool = False,
                  explicit_bool: bool = False,
+                 config_files: Optional[List[str]] = None,
                  **kwargs):
         """Initializes the Tap instance.
 
@@ -61,6 +62,10 @@ class Tap(ArgumentParser):
         :param explicit_bool: Booleans can be specified on the command line as "--arg True" or "--arg False"
                               rather than "--arg". Additionally, booleans can be specified by prefixes of True and False
                               with any capitalization as well as 1 or 0.
+        :param config_files: A list of paths to configuration files containing the command line arguments
+                             (e.g., '--arg1 a1 --arg2 a2'). Arguments passed in from the command line
+                             overwrite arguments from the configuration files. Arguments in configuration files
+                             that appear later in the list overwrite the arguments in previous configuration files.
         :param kwargs: Keyword arguments passed to the super class ArgumentParser.
         """
         # Whether the Tap object has been initialized
@@ -96,6 +101,9 @@ class Tap(ArgumentParser):
         # Stores all of the subparsers
         self._subparsers = None
 
+        # Load in the configuration files
+        self._load_from_config_files(config_files)
+
         # Perform additional configuration such as modifying add_arguments or adding subparsers
         self._configure()
 
@@ -122,6 +130,7 @@ class Tap(ArgumentParser):
 
         # Get default if not specified
         if hasattr(self, variable):
+            import ipdb; ipdb.set_trace()
             kwargs['default'] = kwargs.get('default', getattr(self, variable))
 
         # Set required if option arg
@@ -382,7 +391,7 @@ class Tap(ArgumentParser):
             default_namespace, self.extra_args = super(Tap, self).parse_known_args(args)
         else:
             default_namespace = super(Tap, self).parse_args(args)
-
+        import ipdb; ipdb.set_trace()
         # Copy parsed arguments to self
         for variable, value in vars(default_namespace).items():
             # Conversion from list to set or tuple
@@ -601,6 +610,22 @@ class Tap(ArgumentParser):
         self.from_dict(args_dict, skip_unsettable=skip_unsettable)
 
         return self
+
+    def _load_from_config_files(self, config_files: Optional[List[str]]) -> None:
+        """Loads arguments from a list of configuration files containing command line arguments.
+
+        :param config_files: A list of paths to configuration files containing the command line arguments
+                        (e.g., '--arg1 a1 --arg2 a2'). Arguments passed in from the command line
+                        overwrite arguments from the configuration files. Arguments in configuration files
+                        that appear later in the list overwrite the arguments in previous configuration files.
+        """
+        if config_files is not None:
+            for file in config_files:
+                with open(file) as f:
+                    arg_list = f.read().split()
+                    print(arg_list)
+                self.parse_args(arg_list, known_only=True)
+                self._parsed = False
 
     def __str__(self) -> str:
         """Returns a string representation of self.
