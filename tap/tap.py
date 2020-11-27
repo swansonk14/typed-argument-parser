@@ -629,7 +629,7 @@ class Tap(ArgumentParser):
 
         if config_files is not None:
             # Read arguments from all configs from the lowest precedence config to the highest
-            for file in reversed(config_files):
+            for file in config_files:
                 with open(file) as f:
                     args_from_config.append(f.read().strip())
 

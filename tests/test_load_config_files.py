@@ -100,7 +100,7 @@ class LoadConfigFilesTests(TestCase):
             f2.flush()
             args = MultipleOverwritingTap(config_files=[f1.name, f2.name]).parse_args('--b four'.split())
 
-        self.assertEqual(args.a, 1)
+        self.assertEqual(args.a, 2)
         self.assertEqual(args.b, 'four')
         self.assertEqual(args.c, 'see')
 
