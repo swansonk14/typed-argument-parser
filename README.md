@@ -55,6 +55,7 @@ pip install -e .
       - [Save](#save)
       - [Load](#load)
       - [Load from dict](#load-from-dict)
+    + [Loading from configuration files](#loading-from-configuration-files)
 
 ## Tap is Python-native
 To see this, let's look at an example:
@@ -446,3 +447,22 @@ args.from_dict({
 ```
 
 Note: As with `load`, all required arguments must be present in the dictionary if not already set in the Tap object. All values in the provided dictionary will overwrite values currently in the Tap object.
+
+### Loading from configuration files
+Configuration files can be loaded along with arguments with the optional flag `config_files: List[str]`. Arguments passed in from the command line overwrite arguments from the configuration files. Arguments in configuration files that appear later in the list overwrite the arguments in previous configuration files.
+
+For example, if you have the config file `my_config.txt` 
+```
+--arg1 1
+--arg2 two
+```
+then you can write
+```python
+from tap import Tap
+
+class Args(Tap):
+    arg1: int
+    arg2: str
+
+args = Args(config_files=['my_config']).parse_args()
+```

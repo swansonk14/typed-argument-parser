@@ -1,4 +1,4 @@
-from argparse import ArgumentParser, _SubParsersAction
+from argparse import ArgumentParser
 from collections import OrderedDict
 from copy import deepcopy
 import json
@@ -53,6 +53,7 @@ class Tap(ArgumentParser):
                  *args,
                  underscores_to_dashes: bool = False,
                  explicit_bool: bool = False,
+                 config_files: Optional[List[str]] = None,
                  **kwargs):
         """Initializes the Tap instance.
 
@@ -61,6 +62,10 @@ class Tap(ArgumentParser):
         :param explicit_bool: Booleans can be specified on the command line as "--arg True" or "--arg False"
                               rather than "--arg". Additionally, booleans can be specified by prefixes of True and False
                               with any capitalization as well as 1 or 0.
+        :param config_files: A list of paths to configuration files containing the command line arguments
+                             (e.g., '--arg1 a1 --arg2 a2'). Arguments passed in from the command line
+                             overwrite arguments from the configuration files. Arguments in configuration files
+                             that appear later in the list overwrite the arguments in previous configuration files.
         :param kwargs: Keyword arguments passed to the super class ArgumentParser.
         """
         # Whether the Tap object has been initialized
@@ -95,6 +100,9 @@ class Tap(ArgumentParser):
 
         # Stores all of the subparsers
         self._subparsers = None
+
+        # Load in the configuration files
+        self.args_from_configs = self._load_from_config_files(config_files)
 
         # Perform additional configuration such as modifying add_arguments or adding subparsers
         self._configure()
@@ -377,6 +385,12 @@ class Tap(ArgumentParser):
         if self._parsed:
             raise ValueError('parse_args can only be called once.')
 
+        # Collect arguments from all of the configs
+        config_args = [arg for args_from_config in self.args_from_configs for arg in args_from_config.split()]
+
+        # Add config args at lower precedence and extract args from the command line if they are not passed explicitly
+        args = config_args + (sys.argv[1:] if args is None else list(args))
+
         # Parse args using super class ArgumentParser's parse_args or parse_known_args function
         if known_only:
             default_namespace, self.extra_args = super(Tap, self).parse_known_args(args)
@@ -601,6 +615,25 @@ class Tap(ArgumentParser):
         self.from_dict(args_dict, skip_unsettable=skip_unsettable)
 
         return self
+
+    def _load_from_config_files(self, config_files: Optional[List[str]]) -> List[str]:
+        """Loads arguments from a list of configuration files containing command line arguments.
+
+        :param config_files: A list of paths to configuration files containing the command line arguments
+                             (e.g., '--arg1 a1 --arg2 a2'). Arguments passed in from the command line
+                             overwrite arguments from the configuration files. Arguments in configuration files
+                             that appear later in the list overwrite the arguments in previous configuration files.
+        :return: A list of the contents of each config file in order of increasing precedence (highest last).
+        """
+        args_from_config = []
+
+        if config_files is not None:
+            # Read arguments from all configs from the lowest precedence config to the highest
+            for file in config_files:
+                with open(file) as f:
+                    args_from_config.append(f.read().strip())
+
+        return args_from_config
 
     def __str__(self) -> str:
         """Returns a string representation of self.
