@@ -1,4 +1,4 @@
-from argparse import ArgumentParser, _SubParsersAction
+from argparse import ArgumentParser
 from collections import OrderedDict
 from copy import deepcopy
 import json
@@ -102,7 +102,7 @@ class Tap(ArgumentParser):
         self._subparsers = None
 
         # Load in the configuration files
-        self._load_from_config_files(config_files)
+        self.args_from_configs = self._load_from_config_files(config_files)
 
         # Perform additional configuration such as modifying add_arguments or adding subparsers
         self._configure()
@@ -130,7 +130,6 @@ class Tap(ArgumentParser):
 
         # Get default if not specified
         if hasattr(self, variable):
-            import ipdb; ipdb.set_trace()
             kwargs['default'] = kwargs.get('default', getattr(self, variable))
 
         # Set required if option arg
@@ -386,12 +385,18 @@ class Tap(ArgumentParser):
         if self._parsed:
             raise ValueError('parse_args can only be called once.')
 
+        # Collect arguments from all of the configs
+        config_args = [arg for args_from_config in self.args_from_configs for arg in args_from_config.split()]
+
+        # Add config args at lower precedence and extract args from the command line if they are not passed explicitly
+        args = config_args + (sys.argv[1:] if args is None else list(args))
+
         # Parse args using super class ArgumentParser's parse_args or parse_known_args function
         if known_only:
             default_namespace, self.extra_args = super(Tap, self).parse_known_args(args)
         else:
             default_namespace = super(Tap, self).parse_args(args)
-        import ipdb; ipdb.set_trace()
+
         # Copy parsed arguments to self
         for variable, value in vars(default_namespace).items():
             # Conversion from list to set or tuple
@@ -611,21 +616,24 @@ class Tap(ArgumentParser):
 
         return self
 
-    def _load_from_config_files(self, config_files: Optional[List[str]]) -> None:
+    def _load_from_config_files(self, config_files: Optional[List[str]]) -> List[str]:
         """Loads arguments from a list of configuration files containing command line arguments.
 
         :param config_files: A list of paths to configuration files containing the command line arguments
-                        (e.g., '--arg1 a1 --arg2 a2'). Arguments passed in from the command line
-                        overwrite arguments from the configuration files. Arguments in configuration files
-                        that appear later in the list overwrite the arguments in previous configuration files.
+                             (e.g., '--arg1 a1 --arg2 a2'). Arguments passed in from the command line
+                             overwrite arguments from the configuration files. Arguments in configuration files
+                             that appear later in the list overwrite the arguments in previous configuration files.
+        :return: A list of the contents of each config file in order of increasing precedence (highest last).
         """
+        args_from_config = []
+
         if config_files is not None:
-            for file in config_files:
+            # Read arguments from all configs from the lowest precedence config to the highest
+            for file in reversed(config_files):
                 with open(file) as f:
-                    arg_list = f.read().split()
-                    print(arg_list)
-                self.parse_args(arg_list, known_only=True)
-                self._parsed = False
+                    args_from_config.append(f.read().strip())
+
+        return args_from_config
 
     def __str__(self) -> str:
         """Returns a string representation of self.
