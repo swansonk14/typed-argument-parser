@@ -14,7 +14,7 @@ class EdgeCaseTests(TestCase):
         class EmptyTap(Tap):
             pass
 
-        EmptyTap().parse_args()
+        EmptyTap().parse_args([])
 
     def test_empty_add_argument(self) -> None:
         class EmptyAddArgument(Tap):
@@ -29,7 +29,7 @@ class EdgeCaseTests(TestCase):
         class NoTypedTap(Tap):
             hi = 3
 
-        args = NoTypedTap().parse_args()
+        args = NoTypedTap().parse_args([])
         self.assertEqual(args.hi, 3)
 
         hi = 'yo'
@@ -40,7 +40,7 @@ class EdgeCaseTests(TestCase):
         class OnlyTypedTap(Tap):
             hi: str = 'sup'
 
-        args = OnlyTypedTap().parse_args()
+        args = OnlyTypedTap().parse_args([])
         self.assertEqual(args.hi, 'sup')
 
         hi = 'yo'
@@ -52,7 +52,7 @@ class EdgeCaseTests(TestCase):
             a_number: "int" = 3
             a_list: "List[float]" = [3.7, 0.3]
 
-        args = TypeAsString().parse_args()
+        args = TypeAsString().parse_args([])
         self.assertEqual(args.a_number, 3)
         self.assertEqual(args.a_list, [3.7, 0.3])
 
@@ -211,7 +211,7 @@ class SubclassTests(TestCase):
 class DefaultClassVariableTests(TestCase):
 
     def test_get_default_args(self) -> None:
-        args = IntegrationDefaultTap().parse_args()
+        args = IntegrationDefaultTap().parse_args([])
 
         self.assertEqual(args.arg_untyped, 42)
         self.assertEqual(args.arg_str, 'hello there')
@@ -410,18 +410,25 @@ class LiteralCrashTests(TestCase):
 
 
 class AddArgumentTests(TestCase):
+    def setUp(self) -> None:
+        # Suppress prints from SystemExit
+        class DevNull:
+            def write(self, msg):
+                pass
+        self.dev_null = DevNull()
+
     def test_positional(self) -> None:
-        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+        class AddArgumentPositionalTap(IntegrationDefaultTap):
             def configure(self) -> None:
                 self.add_argument('arg_str')
 
         arg_str = 'positional'
-        self.args = IntegrationAddArgumentTap().parse_args([arg_str])
+        self.args = AddArgumentPositionalTap().parse_args([arg_str])
 
         self.assertEqual(self.args.arg_str, arg_str)
 
     def test_positional_ordering(self) -> None:
-        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+        class AddArgumentPositionalOrderingTap(IntegrationDefaultTap):
             def configure(self) -> None:
                 self.add_argument('arg_str')
                 self.add_argument('arg_int')
@@ -430,7 +437,7 @@ class AddArgumentTests(TestCase):
         arg_str = 'positional'
         arg_int = '5'
         arg_float = '1.1'
-        self.args = IntegrationAddArgumentTap().parse_args([arg_str, arg_int, arg_float])
+        self.args = AddArgumentPositionalOrderingTap().parse_args([arg_str, arg_int, arg_float])
 
         arg_int = int(arg_int)
         arg_float = float(arg_float)
@@ -440,53 +447,53 @@ class AddArgumentTests(TestCase):
         self.assertEqual(self.args.arg_float, arg_float)
 
     def test_one_dash(self) -> None:
-        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+        class AddArgumentOneDashTap(IntegrationDefaultTap):
             def configure(self) -> None:
                 self.add_argument('-arg_str')
 
         arg_str = 'one_dash'
-        self.args = IntegrationAddArgumentTap().parse_args(['-arg_str', arg_str])
+        self.args = AddArgumentOneDashTap().parse_args(['-arg_str', arg_str])
 
         self.assertEqual(self.args.arg_str, arg_str)
 
     def test_two_dashes(self) -> None:
-        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+        class AddArgumentTwoDashesTap(IntegrationDefaultTap):
             def configure(self) -> None:
                 self.add_argument('--arg_str')
 
         arg_str = 'two_dashes'
-        self.args = IntegrationAddArgumentTap().parse_args(['--arg_str', arg_str])
+        self.args = AddArgumentTwoDashesTap().parse_args(['--arg_str', arg_str])
 
         self.assertEqual(self.args.arg_str, arg_str)
 
     def test_one_and_two_dashes(self) -> None:
-        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+        class AddArgumentOneAndTwoDashesTap(IntegrationDefaultTap):
             def configure(self) -> None:
                 self.add_argument('-a', '--arg_str')
 
         arg_str = 'one_or_two_dashes'
-        self.args = IntegrationAddArgumentTap().parse_args(['-a', arg_str])
+        self.args = AddArgumentOneAndTwoDashesTap().parse_args(['-a', arg_str])
 
         self.assertEqual(self.args.arg_str, arg_str)
 
-        self.args = IntegrationAddArgumentTap().parse_args(['--arg_str', arg_str])
+        self.args = AddArgumentOneAndTwoDashesTap().parse_args(['--arg_str', arg_str])
 
         self.assertEqual(self.args.arg_str, arg_str)
 
     def test_not_class_variable(self) -> None:
-        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+        class AddArgumentNotClassVariableTap(IntegrationDefaultTap):
             def configure(self) -> None:
                 self.add_argument('--non_class_arg')
 
         arg_str = 'non_class_arg'
-        self.tap = IntegrationAddArgumentTap()
+        self.tap = AddArgumentNotClassVariableTap()
         self.assertTrue('non_class_arg' in self.tap._get_argument_names())
         self.args = self.tap.parse_args(['--non_class_arg', arg_str])
 
         self.assertEqual(self.args.non_class_arg, arg_str)
 
     def test_complex_type(self) -> None:
-        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+        class AddArgumentComplexTypeTap(IntegrationDefaultTap):
             arg_person: Person = Person('tap')
             # arg_person_required: Person  # TODO
             arg_person_untyped = Person('tap untyped')
@@ -497,13 +504,13 @@ class AddArgumentTests(TestCase):
                 # self.add_argument('--arg_person_required', type=Person)  # TODO
                 self.add_argument('--arg_person_untyped', type=Person)
 
-        args = IntegrationAddArgumentTap().parse_args()
+        args = AddArgumentComplexTypeTap().parse_args([])
         self.assertEqual(args.arg_person, Person('tap'))
         self.assertEqual(args.arg_person_untyped, Person('tap untyped'))
 
         arg_person = Person('hi there')
         arg_person_untyped = Person('heyyyy')
-        args = IntegrationAddArgumentTap().parse_args([
+        args = AddArgumentComplexTypeTap().parse_args([
             '--arg_person', arg_person.name,
             '--arg_person_untyped', arg_person_untyped.name
         ])
@@ -511,19 +518,19 @@ class AddArgumentTests(TestCase):
         self.assertEqual(args.arg_person_untyped, arg_person_untyped)
 
     def test_repeat_default(self) -> None:
-        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+        class AddArgumentRepeatDefaultTap(IntegrationDefaultTap):
             def configure(self) -> None:
                 self.add_argument('--arg_str', default=IntegrationDefaultTap.arg_str)
 
-        args = IntegrationAddArgumentTap().parse_args()
+        args = AddArgumentRepeatDefaultTap().parse_args([])
         self.assertEqual(args.arg_str, IntegrationDefaultTap.arg_str)
 
     def test_conflicting_default(self) -> None:
-        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+        class AddArgumentConflictingDefaultTap(IntegrationDefaultTap):
             def configure(self) -> None:
                 self.add_argument('--arg_str', default='yo dude')
 
-        args = IntegrationAddArgumentTap().parse_args()
+        args = AddArgumentConflictingDefaultTap().parse_args([])
         self.assertEqual(args.arg_str, 'yo dude')
 
     # TODO: this
@@ -535,27 +542,27 @@ class AddArgumentTests(TestCase):
         pass
 
     def test_repeat_type(self) -> None:
-        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+        class AddArgumentRepeatTypeTap(IntegrationDefaultTap):
             def configure(self) -> None:
                 self.add_argument('--arg_int', type=int)
 
-        args = IntegrationAddArgumentTap().parse_args()
+        args = AddArgumentRepeatTypeTap().parse_args([])
         self.assertEqual(type(args.arg_int), int)
         self.assertEqual(args.arg_int, IntegrationDefaultTap.arg_int)
 
         arg_int = '99'
-        args = IntegrationAddArgumentTap().parse_args(['--arg_int', arg_int])
+        args = AddArgumentRepeatTypeTap().parse_args(['--arg_int', arg_int])
         arg_int = int(arg_int)
         self.assertEqual(type(args.arg_int), int)
         self.assertEqual(args.arg_int, arg_int)
 
     def test_conflicting_type(self) -> None:
-        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+        class AddArgumentConflictingTypeTap(IntegrationDefaultTap):
             def configure(self) -> None:
                 self.add_argument('--arg_int', type=str)
 
         arg_int = 'yo dude'
-        args = IntegrationAddArgumentTap().parse_args(['--arg_int', arg_int])
+        args = AddArgumentConflictingTypeTap().parse_args(['--arg_int', arg_int])
         self.assertEqual(type(args.arg_int), str)
         self.assertEqual(args.arg_int, arg_int)
 
@@ -568,43 +575,45 @@ class AddArgumentTests(TestCase):
         pass
 
     def test_repeat_nargs(self) -> None:
-        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+        class AddArgumentRepeatNargsTap(IntegrationDefaultTap):
             def configure(self) -> None:
                 self.add_argument('--arg_list_str', nargs='*')
 
         arg_list_str = ['hi', 'there', 'person', '123']
-        args = IntegrationAddArgumentTap().parse_args(['--arg_list_str', *arg_list_str])
+        args = AddArgumentRepeatNargsTap().parse_args(['--arg_list_str', *arg_list_str])
         self.assertEqual(args.arg_list_str, arg_list_str)
 
-    # TODO: figure out how to check for system exit
-    # def test_conflicting_nargs(self) -> None:
-    #     class IntegrationAddArgumentTap(IntegrationDefaultTap):
-    #         def configure(self) -> None:
-    #             self.add_argument('--arg_list_str', nargs=3)
-    #
-    #     arg_list_str = ['hi', 'there', 'person', '123']
-    #     self.assertRaises(SystemExit, IntegrationAddArgumentTap().parse_args(['--arg_list_str', *arg_list_str]))
+    def test_conflicting_nargs(self) -> None:
+        class AddArgumentConflictingNargsTap(IntegrationDefaultTap):
+            def configure(self) -> None:
+                self.add_argument('--arg_list_str', nargs=3)
+
+        arg_list_str = ['hi', 'there', 'person', '123']
+
+        with self.assertRaises(SystemExit):
+            sys.stderr = self.dev_null
+            AddArgumentConflictingNargsTap().parse_args(['--arg_list_str', *arg_list_str])
 
     def test_repeat_action(self) -> None:
-        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+        class AddArgumentRepeatActionTap(IntegrationDefaultTap):
             def configure(self) -> None:
                 self.add_argument('--arg_bool_false', action='store_true', default=False)
 
-        args = IntegrationAddArgumentTap().parse_args()
+        args = AddArgumentRepeatActionTap().parse_args([])
         self.assertEqual(args.arg_bool_false, False)
 
-        args = IntegrationAddArgumentTap().parse_args(['--arg_bool_false'])
+        args = AddArgumentRepeatActionTap().parse_args(['--arg_bool_false'])
         self.assertEqual(args.arg_bool_false, True)
 
     def test_conflicting_action(self) -> None:
-        class IntegrationAddArgumentTap(IntegrationDefaultTap):
+        class AddArgumentConflictingActionTap(IntegrationDefaultTap):
             def configure(self) -> None:
                 self.add_argument('--arg_bool_false', action='store_false', default=True)
 
-        args = IntegrationAddArgumentTap().parse_args()
+        args = AddArgumentConflictingActionTap().parse_args([])
         self.assertEqual(args.arg_bool_false, True)
 
-        args = IntegrationAddArgumentTap().parse_args(['--arg_bool_false'])
+        args = AddArgumentConflictingActionTap().parse_args(['--arg_bool_false'])
         self.assertEqual(args.arg_bool_false, False)
 
     def test_add_argument_post_initialization(self) -> None:
@@ -676,15 +685,15 @@ class ParseExplicitBoolArgsTests(TestCase):
 
         self.test_bool_cases = test_bool_cases
 
-    def test_explicit_bool(self):
-        class ExplicitBoolTap(Tap):
-            is_gpu: bool
-
         # Suppress prints from SystemExit
         class DevNull:
             def write(self, msg):
                 pass
         self.dev_null = DevNull()
+
+    def test_explicit_bool(self):
+        class ExplicitBoolTap(Tap):
+            is_gpu: bool
 
         with self.assertRaises(SystemExit):
             sys.stderr = self.dev_null
@@ -1149,7 +1158,7 @@ class TestGetClassDict(TestCase):
             def my_property(self):
                 return 1
 
-        args = GetClassDictTap().parse_args(['--a', 'hi', '--d', 'a', 'b', '--e', '7'])        
+        args = GetClassDictTap().parse_args(['--a', 'hi', '--d', 'a', 'b', '--e', '7'])
         result = {'b': 1, 'c': True, 'e': None, 'f': {1}}
         self.assertEqual(args._get_class_dict(), result)
 

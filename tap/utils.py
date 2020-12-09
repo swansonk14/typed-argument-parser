@@ -276,7 +276,7 @@ def boolean_type(flag_value: str) -> bool:
         return True
     if 'false'.startswith(flag_value.lower()) or flag_value == '0':
         return False
-    raise ArgumentTypeError(f'Value has to be a prefix of "True" or "False" (case insensitive) or "1" or "0".')
+    raise ArgumentTypeError('Value has to be a prefix of "True" or "False" (case insensitive) or "1" or "0".')
 
 
 class TupleTypeEnforcer:
