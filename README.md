@@ -451,7 +451,7 @@ Note: As with `load`, all required arguments must be present in the dictionary i
 ### Loading from configuration files
 Configuration files can be loaded along with arguments with the optional flag `config_files: List[str]`. Arguments passed in from the command line overwrite arguments from the configuration files. Arguments in configuration files that appear later in the list overwrite the arguments in previous configuration files.
 
-For example, if you have the config file `my_config.txt` 
+For example, if you have the config file `my_config.txt`
 ```
 --arg1 1
 --arg2 two
@@ -464,5 +464,5 @@ class Args(Tap):
     arg1: int
     arg2: str
 
-args = Args(config_files=['my_config']).parse_args()
+args = Args(config_files=['my_config.txt']).parse_args()
 ```
