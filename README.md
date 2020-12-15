@@ -252,7 +252,7 @@ def to_number(string: str):
 class MyTap(Tap):
     number: Union[int, float]
 
-    def add_arguments(self):
+    def configure(self):
         self.add_argument('--number', type=to_number)
 ```
 
