@@ -104,7 +104,7 @@ class Tap(ArgumentParser):
         # Load in the configuration files
         self.args_from_configs = self._load_from_config_files(config_files)
 
-        # Perform additional configuration such as modifying add_arguments or adding subparsers
+        # Perform additional configuration such as adding arguments or adding subparsers
         self._configure()
 
         # Indicate that initialization is complete
@@ -209,7 +209,7 @@ class Tap(ArgumentParser):
                     raise ValueError(
                         f'Variable "{variable}" has type "{var_type}" which is not supported by default.\n'
                         f'Please explicitly add the argument to the parser by writing:\n\n'
-                        f'def add_arguments(self) -> None:\n'
+                        f'def configure(self) -> None:\n'
                         f'    self.add_argument("--{variable}", type=func, {arg_params})\n\n'
                         f'where "func" maps from str to {var_type}.')
 
@@ -253,7 +253,7 @@ class Tap(ArgumentParser):
         if self._initialized:
             raise ValueError('add_argument cannot be called after initialization. '
                              'Arguments must be added either as class variables or by overriding '
-                             'add_arguments and including a self.add_argument call there.')
+                             'configure and including a self.add_argument call there.')
 
         variable = get_argument_name(*name_or_flags)
         self.argument_buffer[variable] = (name_or_flags, kwargs)
@@ -268,7 +268,7 @@ class Tap(ArgumentParser):
             else:
                 self._add_argument(f'--{variable}')
 
-        # Add any arguments that were added manually in add_arguments but aren't class variables (in order)
+        # Add any arguments that were added manually in configure but aren't class variables (in order)
         for variable, (name_or_flags, kwargs) in self.argument_buffer.items():
             if variable not in self.class_variables:
                 self._add_argument(*name_or_flags, **kwargs)
