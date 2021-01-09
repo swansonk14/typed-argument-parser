@@ -3,4 +3,6 @@ __pycache__
 .DS_Store
 *.json
 *.egg-info
+.eggs
+.coverage
 dist
