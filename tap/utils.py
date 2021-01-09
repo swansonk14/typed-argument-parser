@@ -331,7 +331,7 @@ def _nested_replace_type(obj: Any, find_type: type, replace_type: type) -> Any:
     return obj
 
 
-def define_python_object_encoder(skip_unpicklable: bool = False) -> 'PythonObjectEncoder':
+def define_python_object_encoder(skip_unpicklable: bool = False) -> 'PythonObjectEncoder':  # noqa F821
 
     class PythonObjectEncoder(JSONEncoder):
         """Stores parameters that are not JSON serializable as pickle dumps.

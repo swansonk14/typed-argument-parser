@@ -109,7 +109,8 @@ class TypeToStrTests(TestCase):
         self.assertEqual(type_to_str(bool), 'bool')
         self.assertEqual(type_to_str(Any), 'Any')
         self.assertEqual(type_to_str(Callable[[str], str]), 'Callable[[str], str]')
-        self.assertEqual(type_to_str(Callable[[str, int], Tuple[float, bool]]), 'Callable[[str, int], Tuple[float, bool]]')
+        self.assertEqual(type_to_str(Callable[[str, int], Tuple[float, bool]]),
+                         'Callable[[str, int], Tuple[float, bool]]')
         self.assertEqual(type_to_str(List[int]), 'List[int]')
         self.assertEqual(type_to_str(List[str]), 'List[str]')
         self.assertEqual(type_to_str(List[float]), 'List[float]')
@@ -211,12 +212,12 @@ class ClassVariableTests(TestCase):
                 pass
 
             arg_2: int = 3  # Arg 2 comment
-            arg_3   :   Dict[str, int]      #     Poorly   formatted comment
+            arg_3   :   Dict[str, int]      # noqa E203,E262   Poorly   formatted comment
             """More comment"""
         class_variables = OrderedDict()
         class_variables['arg_1'] = {'comment': 'Arg 1 comment'}
         class_variables['arg_2'] = {'comment': 'Arg 2 comment'}
-        class_variables['arg_3'] = {'comment': 'Poorly   formatted comment More comment'}
+        class_variables['arg_3'] = {'comment': 'noqa E203,E262   Poorly   formatted comment'}
         self.assertEqual(get_class_variables(CommentedVariable), class_variables)
 
     def test_bad_spacing_multiline(self):
@@ -257,7 +258,7 @@ T
 
             def f(self):
                 """Function"""
-                a: str = 'hello'
+                a: str = 'hello'  # noqa F841
                 """with docs"""
 
         class_variables = OrderedDict()
