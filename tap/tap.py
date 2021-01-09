@@ -404,6 +404,11 @@ class Tap(ArgumentParser):
                 if type(value) == list:
                     var_type = get_origin(self._annotations[variable])
 
+                    # TODO: remove this once typing_inspect.get_origin is fixed for Python 3.9
+                    # https://github.com/ilevkivskyi/typing_inspect/issues/64
+                    # https://github.com/ilevkivskyi/typing_inspect/issues/65
+                    var_type = var_type if var_type is not None else self._annotations[variable]
+
                     if var_type in (Set, set):
                         value = set(value)
                     elif var_type in (Tuple, tuple):
