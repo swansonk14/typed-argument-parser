@@ -26,11 +26,11 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
+        git config --global user.email "you@example.com"
+        git config --global user.name "Your Name"
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
         python -m pip install -e .
-        git config --global user.email "you@example.com"
-        git config --global user.name "Your Name"
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
