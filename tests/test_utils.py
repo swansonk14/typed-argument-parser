@@ -217,7 +217,7 @@ class ClassVariableTests(TestCase):
         class_variables = OrderedDict()
         class_variables['arg_1'] = {'comment': 'Arg 1 comment'}
         class_variables['arg_2'] = {'comment': 'Arg 2 comment'}
-        class_variables['arg_3'] = {'comment': 'noqa E203,E262   Poorly   formatted comment'}
+        class_variables['arg_3'] = {'comment': 'noqa E203,E262   Poorly   formatted comment More comment'}
         self.assertEqual(get_class_variables(CommentedVariable), class_variables)
 
     def test_bad_spacing_multiline(self):
