@@ -39,6 +39,12 @@ class GitTests(TestCase):
 
     def tearDown(self) -> None:
         os.chdir(self.prev_dir)
+
+        # Add permissions to temporary directory to enable cleanup in Windows
+        for root, dirs, files in os.walk(self.temp_dir.name):
+            for name in dirs + files:
+                os.chmod(os.path.join(root, name), 0o777)
+
         self.temp_dir.cleanup()
 
     def test_has_git_true(self) -> None:
