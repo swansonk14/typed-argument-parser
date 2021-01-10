@@ -7,8 +7,8 @@
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/typed-argument-parser)](https://badge.fury.io/py/typed-argument-parser)
 [![PyPI version](https://badge.fury.io/py/typed-argument-parser.svg)](https://badge.fury.io/py/typed-argument-parser)
 [![Build Status](https://github.com/swansonk14/typed-argument-parser/workflows/tests/badge.svg)](https://github.com/swansonk14/typed-argument-parser)
-[![license](https://img.shields.io/github/license/swansonk14/typed-argument-parser.svg)](https://github.com/swansonk14/typed-argument-parser/blob/master/LICENSE.txt)
 [![codecov](https://codecov.io/gh/swansonk14/typed-argument-parser/branch/master/graph/badge.svg)](https://codecov.io/gh/swansonk14/typed-argument-parser)
+[![license](https://img.shields.io/github/license/swansonk14/typed-argument-parser.svg)](https://github.com/swansonk14/typed-argument-parser/blob/master/LICENSE.txt)
 
 Tap is a typed modernization of Python's [argparse](https://docs.python.org/3/library/argparse.html) library.
 

@@ -28,6 +28,7 @@ from tap.utils import (
 class GitTests(TestCase):
     def setUp(self) -> None:
         self.temp_dir = TemporaryDirectory()
+        self.prev_dir = os.getcwd()
         os.chdir(self.temp_dir.name)
         subprocess.check_output(['git', 'init'])
         self.url = 'https://github.com/test_account/test_repo'
@@ -37,6 +38,7 @@ class GitTests(TestCase):
         subprocess.check_output(['git', 'commit', '-m', 'Initial commit'])
 
     def tearDown(self) -> None:
+        os.chdir(self.prev_dir)
         self.temp_dir.cleanup()
 
     def test_has_git_true(self) -> None:
