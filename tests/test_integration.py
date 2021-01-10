@@ -3,12 +3,21 @@ import os
 from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
-from typing import Any, List, Optional, Set, Tuple
+from typing import Any, Iterable, List, Optional, Set, Tuple
 from typing_extensions import Literal
 import unittest
 from unittest import TestCase
 
 from tap import Tap
+
+
+def stringify(arg_list: Iterable[Any]) -> List[str]:
+    """Converts an iterable of arguments of any type to a list of strings.
+
+    :param arg_list: An iterable of arguments of any type.
+    :return: A list of the arguments as strings.
+    """
+    return [str(arg) for arg in arg_list]
 
 
 class EdgeCaseTests(TestCase):
@@ -113,8 +122,113 @@ class RequiredClassVariableTests(TestCase):
         self.assertEqual(args.arg_list_str_required, ['hi', 'there'])
 
 
-class OptionalTests(TestCase):
-    pass
+# TODO: need to implement list[str] etc.
+# class ParameterizedStandardCollectionTap(Tap):
+#     arg_list_str: list[str]
+#     arg_list_int: list[int]
+#     arg_list_int_default: list[int] = [1, 2, 5]
+#     arg_set_float: set[float]
+#     arg_set_str_default: set[str] = ['one', 'two', 'five']
+#     arg_tuple_int: tuple[int, ...]
+#     arg_tuple_float_default: tuple[float, float, float] = (1.0, 2.0, 5.0)
+#     arg_tuple_str_override: tuple[str, str] = ('hi', 'there')
+#     arg_optional_list_int: Optional[list[int]] = None
+
+
+# class ParameterizedStandardCollectionTests(TestCase):
+#     @unittest.skipIf(sys.version_info < (3, 9), 'Parameterized standard collections (e.g., list[int]) introduced in Python 3.9')
+#     def test_parameterized_standard_collection(self):
+#         arg_list_str = ['a', 'b', 'pi']
+#         arg_list_int = [-2, -5, 10]
+#         arg_set_float = {3.54, 2.235}
+#         arg_tuple_int = (-4, 5, 9, 103)
+#         arg_tuple_str_override = ('why', 'so', 'many', 'tests?')
+#         arg_optional_list_int = [5, 4, 3]
+
+#         args = ParameterizedStandardCollectionTap().parse_args([
+#             '--arg_list_str', *arg_list_str,
+#             '--arg_list_int', *[str(var) for var in arg_list_int],
+#             '--arg_set_float', *[str(var) for var in arg_set_float],
+#             '--arg_tuple_int', *[str(var) for var in arg_tuple_int],
+#             '--arg_tuple_str_override', *arg_tuple_str_override,
+#             '--arg_optional_list_int', *[str(var) for var in arg_optional_list_int]
+#         ])
+
+#         self.assertEqual(args.arg_list_str, arg_list_str)
+#         self.assertEqual(args.arg_list_int, arg_list_int)
+#         self.assertEqual(args.arg_list_int_default, ParameterizedStandardCollectionTap.arg_list_int_default)
+#         self.assertEqual(args.arg_set_float, arg_set_float)
+#         self.assertEqual(args.arg_set_str_default, ParameterizedStandardCollectionTap.arg_set_str_default)
+#         self.assertEqual(args.arg_tuple_int, arg_tuple_int)
+#         self.assertEqual(args.arg_tuple_float_default, ParameterizedStandardCollectionTap.arg_tuple_float_default)
+#         self.assertEqual(args.arg_tuple_str_override, arg_tuple_str_override)
+#         self.assertEqual(args.arg_optional_list_int, arg_optional_list_int)
+
+
+class NestedOptionalTypesTap(Tap):
+    list_bool: Optional[List[bool]]
+    list_int: Optional[List[int]]
+    list_str: Optional[List[str]]
+    set_bool: Optional[Set[bool]]
+    set_int: Optional[Set[int]]
+    set_str: Optional[Set[str]]
+    # tuple_bool: Optional[Tuple[bool]]
+    # tuple_int: Optional[Tuple[int]]
+    # tuple_str: Optional[Tuple[str]]
+    # tuple_pair: Optional[Tuple[bool, str, int]]
+    # tuple_arbitrary_len_bool: Optional[Tuple[bool, ...]]
+    # tuple_arbitrary_len_int: Optional[Tuple[int, ...]]
+    # tuple_arbitrary_len_str: Optional[Tuple[str, ...]]    
+    
+
+class NestedOptionalTypeTests(TestCase):
+
+    def test_nested_optional_types(self):
+        list_bool = [True, False]
+        list_int = [0, 1, 2]
+        list_str = ['a', 'bee', 'cd', 'ee']
+        set_bool = {True, False, True}
+        set_int = {0, 1}
+        set_str = {'a', 'bee', 'cd'}
+        tuple_bool = (False,)
+        tuple_int = (0,)
+        tuple_str = ('a',)
+        tuple_pair = (False, 'a', 1)
+        tuple_arbitrary_len_bool = (True, False, False)
+        tuple_arbitrary_len_int = (1, 2, 3, 4)
+        tuple_arbitrary_len_str = ('a', 'b')
+
+        args = NestedOptionalTypesTap().parse_args([
+            '--list_bool', *stringify(list_bool),
+            '--list_int', *stringify(list_int),
+            '--list_str', *stringify(list_str),
+            '--set_bool', *stringify(set_bool),
+            '--set_int', *stringify(set_int),
+            '--set_str', *stringify(set_str),
+            # '--tuple_bool', *stringify(tuple_bool),
+            # '--tuple_int', *stringify(tuple_int),
+            # '--tuple_str', *stringify(tuple_str),
+            # '--tuple_pair', *stringify(tuple_pair),
+            # '--tuple_arbitrary_len_bool', *stringify(tuple_arbitrary_len_bool), 
+            # '--tuple_arbitrary_len_int', *stringify(tuple_arbitrary_len_int),
+            # '--tuple_arbitrary_len_str', *stringify(tuple_arbitrary_len_str),
+        ])
+
+        self.assertEqual(args.list_bool, list_bool)
+        self.assertEqual(args.list_int, list_int)
+        self.assertEqual(args.list_str, list_str)
+
+        self.assertEqual(args.set_bool, set_bool)
+        self.assertEqual(args.set_int, set_int)
+        self.assertEqual(args.set_str, set_str)
+
+        self.assertEqual(args.tuple_bool, tuple_bool)
+        self.assertEqual(args.tuple_int, tuple_int)
+        self.assertEqual(args.tuple_str, tuple_str)
+        self.assertEqual(args.tuple_pair, tuple_pair)
+        self.assertEqual(args.tuple_arbitrary_len_bool, tuple_arbitrary_len_bool)
+        self.assertEqual(args.tuple_arbitrary_len_int, tuple_arbitrary_len_int)
+        self.assertEqual(args.tuple_arbitrary_len_str, tuple_arbitrary_len_str)
 
 
 class ComplexTypeTap(Tap):
@@ -146,7 +260,6 @@ class ComplexTypeTests(TestCase):
         self.assertEqual(args.list_path, list_path)
         self.assertEqual(args.set_path, set_path)
         self.assertEqual(args.tuple_path, tuple_path)
-
 
 class Person:
     def __init__(self, name: str):
