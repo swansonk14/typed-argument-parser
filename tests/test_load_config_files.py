@@ -1,5 +1,6 @@
+import os
 import sys
-from tempfile import NamedTemporaryFile
+from tempfile import TemporaryDirectory
 import unittest
 from unittest import TestCase
 
@@ -26,10 +27,13 @@ class LoadConfigFilesTests(TestCase):
             a: int
             b: str = 'b'
 
-        with NamedTemporaryFile() as f:
-            f.write(b'--a 1')
-            f.flush()
-            args = SimpleTap(config_files=[f.name]).parse_args([])
+        with TemporaryDirectory() as temp_dir:
+            fname = os.path.join(temp_dir, 'config.txt')
+
+            with open(fname, 'w') as f:
+                f.write('--a 1')
+
+            args = SimpleTap(config_files=[fname]).parse_args([])
 
         self.assertEqual(args.a, 1)
         self.assertEqual(args.b, 'b')
@@ -39,10 +43,13 @@ class LoadConfigFilesTests(TestCase):
             a: int
             b: str = 'b'
 
-        with NamedTemporaryFile() as f:
-            f.write(b'--a 1 --b two')
-            f.flush()
-            args = SimpleOverwritingTap(config_files=[f.name]).parse_args('--a 2'.split())
+        with TemporaryDirectory() as temp_dir:
+            fname = os.path.join(temp_dir, 'config.txt')
+
+            with open(fname, 'w') as f:
+                f.write('--a 1 --b two')
+
+            args = SimpleOverwritingTap(config_files=[fname]).parse_args('--a 2'.split())
 
         self.assertEqual(args.a, 2)
         self.assertEqual(args.b, 'two')
@@ -52,10 +59,13 @@ class LoadConfigFilesTests(TestCase):
             a: int
             b: str = 'b'
 
-        with NamedTemporaryFile() as f:
-            f.write(b'--a 1 --c seeNothing')
-            f.flush()
-            args = KnownOnlyTap(config_files=[f.name]).parse_args([], known_only=True)
+        with TemporaryDirectory() as temp_dir:
+            fname = os.path.join(temp_dir, 'config.txt')
+
+            with open(fname, 'w') as f:
+                f.write('--a 1 --c seeNothing')
+
+            args = KnownOnlyTap(config_files=[fname]).parse_args([], known_only=True)
 
         self.assertEqual(args.a, 1)
         self.assertEqual(args.b, 'b')
@@ -66,23 +76,28 @@ class LoadConfigFilesTests(TestCase):
             a: int
             b: str = 'b'
 
-        with NamedTemporaryFile() as f, self.assertRaises(SystemExit):
+        with TemporaryDirectory() as temp_dir, self.assertRaises(SystemExit):
             sys.stderr = self.dev_null
-            f.write(b'--b fore')
-            f.flush()
-            KnownOnlyTap(config_files=[f.name]).parse_args([])
+            fname = os.path.join(temp_dir, 'config.txt')
+
+            with open(fname, 'w') as f:
+                f.write('--b fore')
+
+            KnownOnlyTap(config_files=[fname]).parse_args([])
 
     def test_multiple_configs(self) -> None:
         class MultipleTap(Tap):
             a: int
             b: str = 'b'
 
-        with NamedTemporaryFile() as f1, NamedTemporaryFile() as f2:
-            f1.write(b'--b two')
-            f1.flush()
-            f2.write(b'--a 1')
-            f2.flush()
-            args = MultipleTap(config_files=[f1.name, f2.name]).parse_args([])
+        with TemporaryDirectory() as temp_dir:
+            fname1, fname2 = os.path.join(temp_dir, 'config1.txt'), os.path.join(temp_dir, 'config2.txt')
+
+            with open(fname1, 'w') as f1, open(fname2, 'w') as f2:
+                f1.write('--b two')
+                f2.write('--a 1')
+
+            args = MultipleTap(config_files=[fname1, fname2]).parse_args([])
 
         self.assertEqual(args.a, 1)
         self.assertEqual(args.b, 'two')
@@ -93,12 +108,14 @@ class LoadConfigFilesTests(TestCase):
             b: str = 'b'
             c: str = 'c'
 
-        with NamedTemporaryFile() as f1, NamedTemporaryFile() as f2:
-            f1.write(b'--a 1 --b two')
-            f1.flush()
-            f2.write(b'--a 2 --c see')
-            f2.flush()
-            args = MultipleOverwritingTap(config_files=[f1.name, f2.name]).parse_args('--b four'.split())
+        with TemporaryDirectory() as temp_dir:
+            fname1, fname2 = os.path.join(temp_dir, 'config1.txt'), os.path.join(temp_dir, 'config2.txt')
+
+            with open(fname1, 'w') as f1, open(fname2, 'w') as f2:
+                f1.write('--a 1 --b two')
+                f2.write('--a 2 --c see')
+
+            args = MultipleOverwritingTap(config_files=[fname1, fname2]).parse_args('--b four'.split())
 
         self.assertEqual(args.a, 2)
         self.assertEqual(args.b, 'four')
@@ -109,11 +126,14 @@ class LoadConfigFilesTests(TestCase):
             a: int
             b: str = 'b'
 
-        with NamedTemporaryFile() as f1, self.assertRaises(SystemExit):
+        with TemporaryDirectory() as temp_dir, self.assertRaises(SystemExit):
             sys.stderr = self.dev_null
-            f1.write(b'is not a file that can reasonably be parsed')
-            f1.flush()
-            JunkConfigTap(config_files=[f1.name]).parse_args()
+            fname = os.path.join(temp_dir, 'config.txt')
+
+            with open(fname, 'w') as f:
+                f.write('is not a file that can reasonably be parsed')
+
+            JunkConfigTap(config_files=[fname]).parse_args()
 
 
 if __name__ == '__main__':

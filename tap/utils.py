@@ -90,7 +90,7 @@ def get_git_url(commit_hash: bool = True) -> str:
 
     if commit_hash:
         # Add tree and hash of current commit
-        url = os.path.join(url, 'tree', get_git_hash())
+        url = f'{url}/tree/{get_git_hash()}'
 
     return url
 
