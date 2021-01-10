@@ -54,14 +54,21 @@ class GitTests(TestCase):
         with TemporaryDirectory() as temp_dir_no_git:
             os.chdir(temp_dir_no_git)
             self.assertFalse(has_git())
-        os.chdir(self.temp_dir.name)
+            os.chdir(self.temp_dir.name)
 
     def test_get_git_root(self) -> None:
-        self.assertTrue(get_git_root() in f'/private{self.temp_dir.name}')
+        # Ideally should be self.temp_dir.name == get_git_root() but the OS may add a prefix like /private
+        self.assertTrue(get_git_root().endswith(self.temp_dir.name))
 
     def test_get_git_root_subdir(self) -> None:
-        os.makedirs(os.path.join(self.temp_dir.name, 'subdir'))
-        self.assertTrue(get_git_root() in f'/private{self.temp_dir.name}')
+        subdir = os.path.join(self.temp_dir.name, 'subdir')
+        os.makedirs(subdir)
+        os.chdir(subdir)
+
+        # Ideally should be self.temp_dir.name == get_git_root() but the OS may add a prefix like /private
+        self.assertTrue(get_git_root().endswith(self.temp_dir.name))
+
+        os.chdir(self.temp_dir.name)
 
     def test_get_git_url_https(self) -> None:
         self.assertEqual(get_git_url(commit_hash=False), self.url)
