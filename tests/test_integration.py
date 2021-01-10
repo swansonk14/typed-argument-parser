@@ -1,6 +1,7 @@
 from copy import deepcopy
+import os
 import sys
-from tempfile import NamedTemporaryFile
+from tempfile import TemporaryDirectory
 from typing import Any, List, Optional, Set, Tuple
 from typing_extensions import Literal
 import unittest
@@ -1023,10 +1024,11 @@ class TestStoringTap(TestCase):
 
         args = SimpleSaveLoadTap().parse_args(['--a', 'hi'])
 
-        with NamedTemporaryFile() as f:
-            args.save(f.name)
+        with TemporaryDirectory() as temp_dir:
+            fname = os.path.join(temp_dir, 'args.json')
+            args.save(fname)
             new_args = SimpleSaveLoadTap()
-            new_args.load(f.name)
+            new_args.load(fname)
 
         output = {'a': 'hi', 'b': 1, 'c': True}
         self.assertEqual(output, new_args.as_dict())
@@ -1037,9 +1039,10 @@ class TestStoringTap(TestCase):
 
         args = SaveLoadReturnTap().parse_args(['--a', 'hi'])
 
-        with NamedTemporaryFile() as f:
-            args.save(f.name)
-            new_args = SaveLoadReturnTap().load(f.name)
+        with TemporaryDirectory() as temp_dir:
+            fname = os.path.join(temp_dir, 'args.json')
+            args.save(fname)
+            new_args = SaveLoadReturnTap().load(fname)
 
         output = {'a': 'hi'}
         self.assertEqual(output, new_args.as_dict())
@@ -1059,10 +1062,11 @@ class TestStoringTap(TestCase):
 
         args = ComplexSaveLoadTap().parse_args(['--a', 'hi', '--d', 'a', 'b', '--e', '7', '--g', 'tapper'])
 
-        with NamedTemporaryFile() as f:
-            args.save(f.name)
+        with TemporaryDirectory() as temp_dir:
+            fname = os.path.join(temp_dir, 'args.json')
+            args.save(fname)
             new_args = ComplexSaveLoadTap()
-            new_args.load(f.name)
+            new_args.load(fname)
 
         output = {'e': 7, 'f': {1}, 'd': ('a', 'b'), 'c': True, 'a': 'hi', 'b': 1, 'g': Person('tapper')}
         self.assertEqual(output, new_args.as_dict())
@@ -1094,14 +1098,15 @@ class TestStoringTap(TestCase):
 
         args = PropertySaveLoadTap().parse_args([])
 
-        with NamedTemporaryFile() as f:
-            args.save(f.name)
+        with TemporaryDirectory() as temp_dir:
+            fname = os.path.join(temp_dir, 'args.json')
+            args.save(fname)
             new_args = PropertySaveLoadTap()
 
             with self.assertRaises(AttributeError):
-                new_args.load(f.name)  # because trying to set unsettable prop1
+                new_args.load(fname)  # because trying to set unsettable prop1
 
-            new_args.load(f.name, skip_unsettable=True)
+            new_args.load(fname, skip_unsettable=True)
 
         output = {'a': 'hello', 'prop1': 1, 'prop2': 'bye'}
         self.assertEqual(output, new_args.as_dict())
