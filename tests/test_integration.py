@@ -172,14 +172,14 @@ class NestedOptionalTypesTap(Tap):
     set_bool: Optional[Set[bool]]
     set_int: Optional[Set[int]]
     set_str: Optional[Set[str]]
-    # tuple_bool: Optional[Tuple[bool]]
-    # tuple_int: Optional[Tuple[int]]
-    # tuple_str: Optional[Tuple[str]]
+    tuple_bool: Optional[Tuple[bool]]
+    tuple_int: Optional[Tuple[int]]
+    tuple_str: Optional[Tuple[str]]
     # tuple_pair: Optional[Tuple[bool, str, int]]
     # tuple_arbitrary_len_bool: Optional[Tuple[bool, ...]]
     # tuple_arbitrary_len_int: Optional[Tuple[int, ...]]
     # tuple_arbitrary_len_str: Optional[Tuple[str, ...]]    
-    
+
 
 class NestedOptionalTypeTests(TestCase):
 
@@ -205,9 +205,9 @@ class NestedOptionalTypeTests(TestCase):
             '--set_bool', *stringify(set_bool),
             '--set_int', *stringify(set_int),
             '--set_str', *stringify(set_str),
-            # '--tuple_bool', *stringify(tuple_bool),
-            # '--tuple_int', *stringify(tuple_int),
-            # '--tuple_str', *stringify(tuple_str),
+            '--tuple_bool', *stringify(tuple_bool),
+            '--tuple_int', *stringify(tuple_int),
+            '--tuple_str', *stringify(tuple_str),
             # '--tuple_pair', *stringify(tuple_pair),
             # '--tuple_arbitrary_len_bool', *stringify(tuple_arbitrary_len_bool), 
             # '--tuple_arbitrary_len_int', *stringify(tuple_arbitrary_len_int),
@@ -225,10 +225,10 @@ class NestedOptionalTypeTests(TestCase):
         self.assertEqual(args.tuple_bool, tuple_bool)
         self.assertEqual(args.tuple_int, tuple_int)
         self.assertEqual(args.tuple_str, tuple_str)
-        self.assertEqual(args.tuple_pair, tuple_pair)
-        self.assertEqual(args.tuple_arbitrary_len_bool, tuple_arbitrary_len_bool)
-        self.assertEqual(args.tuple_arbitrary_len_int, tuple_arbitrary_len_int)
-        self.assertEqual(args.tuple_arbitrary_len_str, tuple_arbitrary_len_str)
+        # self.assertEqual(args.tuple_pair, tuple_pair)
+        # self.assertEqual(args.tuple_arbitrary_len_bool, tuple_arbitrary_len_bool)
+        # self.assertEqual(args.tuple_arbitrary_len_int, tuple_arbitrary_len_int)
+        # self.assertEqual(args.tuple_arbitrary_len_str, tuple_arbitrary_len_str)
 
 
 class ComplexTypeTap(Tap):

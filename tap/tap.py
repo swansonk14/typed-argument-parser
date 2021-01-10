@@ -228,7 +228,6 @@ class Tap(ArgumentParser):
                     # Handle the cases of List[bool], Set[bool], Tuple[bool]
                     if var_type == bool:
                         var_type = boolean_type
-
                 # If bool then set action, otherwise set type
                 if var_type == bool:
                     if explicit_bool:
@@ -400,6 +399,10 @@ class Tap(ArgumentParser):
             if variable in self._annotations:
                 if type(value) == list:
                     var_type = get_origin(self._annotations[variable])
+
+                    # Unpack nested boxed types such as Optional[List[int]]
+                    if var_type is Union:
+                        var_type = get_origin(get_args(self._annotations[variable])[0])
 
                     if var_type in (Set, set):
                         value = set(value)
