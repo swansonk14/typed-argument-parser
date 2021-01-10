@@ -1,5 +1,6 @@
 from copy import deepcopy
 import os
+from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
 from typing import Any, List, Optional, Set, Tuple
@@ -112,17 +113,39 @@ class RequiredClassVariableTests(TestCase):
         self.assertEqual(args.arg_list_str_required, ['hi', 'there'])
 
 
-class CrashesOnUnsupportedTypesTests(TestCase):
+class OptionalTests(TestCase):
+    pass
 
-    def test_crashes_on_unsupported(self):
-        # From PiDelport: https://github.com/swansonk14/typed-argument-parser/issues/27
-        from pathlib import Path
 
-        class CrashingArgumentParser(Tap):
-            some_path: Path = 'some_path'
+class ComplexTypeTap(Tap):
+    path: Path
+    optional_path: Optional[Path]
+    list_path: List[Path]
+    set_path: Set[Path]
+    tuple_path: Tuple[Path, Path]
 
-        with self.assertRaises(ValueError):
-            CrashingArgumentParser().parse_args([])
+
+class ComplexTypeTests(TestCase):
+    def test_complex_types(self):
+        path = Path('/path/to/file.txt')
+        optional_path = Path('/path/to/optional/file.txt')
+        list_path = [Path('/path/to/list/file1.txt'), Path('/path/to/list/file2.txt')]
+        set_path = {Path('/path/to/set/file1.txt'), Path('/path/to/set/file2.txt')}
+        tuple_path = (Path('/path/to/tuple/file1.txt'), Path('/path/to/tuple/file2.txt'))
+
+        args = ComplexTypeTap().parse_args([
+            '--path', str(path),
+            '--optional_path', str(optional_path),
+            '--list_path', *[str(path) for path in list_path],
+            '--set_path', *[str(path) for path in set_path],
+            '--tuple_path', *[str(path) for path in tuple_path]
+        ])
+
+        self.assertEqual(args.path, path)
+        self.assertEqual(args.optional_path, optional_path)
+        self.assertEqual(args.list_path, list_path)
+        self.assertEqual(args.set_path, set_path)
+        self.assertEqual(args.tuple_path, tuple_path)
 
 
 class Person:
@@ -312,7 +335,6 @@ class DefaultClassVariableTests(TestCase):
             '--arg_list_bool', *arg_list_bool,
             '--arg_list_str_empty', *arg_list_str_empty,
             '--arg_list_literal', *arg_list_literal,
-
             '--arg_set', *arg_set,
             '--arg_set_str', *arg_set_str,
             '--arg_set_int', *arg_set_int,

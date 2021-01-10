@@ -8,7 +8,7 @@ import time
 from warnings import warn
 from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
-from typing_inspect import is_literal_type, get_args, get_origin, is_union_type
+from typing_inspect import is_literal_type, get_args, is_union_type
 
 from tap.utils import (
     get_class_variables,
@@ -16,6 +16,7 @@ from tap.utils import (
     get_git_root,
     get_dest,
     get_git_url,
+    get_origin,
     has_git,
     has_uncommitted_changes,
     is_option_arg,
@@ -32,16 +33,10 @@ from tap.utils import (
 
 # Constants
 EMPTY_TYPE = get_args(List)[0] if len(get_args(List)) > 0 else tuple()
+BOXED_COLLECTION_TYPES = {List, list, Set, set, Tuple, tuple}
+OPTIONAL_TYPES = {Optional, Union}
+BOXED_TYPES = BOXED_COLLECTION_TYPES | OPTIONAL_TYPES
 
-SUPPORTED_DEFAULT_BASE_TYPES = {str, int, float, bool}
-SUPPORTED_DEFAULT_OPTIONAL_TYPES = {Optional, Optional[str], Optional[int], Optional[float], Optional[bool]}
-SUPPORTED_DEFAULT_LIST_TYPES = {List, List[str], List[int], List[float], List[bool]}
-SUPPORTED_DEFAULT_SET_TYPES = {Set, Set[str], Set[int], Set[float], Set[bool]}
-SUPPORTED_DEFAULT_COLLECTION_TYPES = SUPPORTED_DEFAULT_LIST_TYPES | SUPPORTED_DEFAULT_SET_TYPES | {Tuple}
-SUPPORTED_DEFAULT_BOXED_TYPES = SUPPORTED_DEFAULT_OPTIONAL_TYPES | SUPPORTED_DEFAULT_COLLECTION_TYPES
-SUPPORTED_DEFAULT_TYPES = set.union(SUPPORTED_DEFAULT_BASE_TYPES,
-                                    SUPPORTED_DEFAULT_OPTIONAL_TYPES,
-                                    SUPPORTED_DEFAULT_COLLECTION_TYPES)
 
 TapType = TypeVar('TapType', bound='Tap')
 
@@ -125,6 +120,9 @@ class Tap(ArgumentParser):
         :param name_or_flags: Either a name or a list of option strings, e.g. foo or -f, --foo.
         :param kwargs: Keyword arguments.
         """
+        # Set explicit bool
+        explicit_bool = self._explicit_bool
+
         # Get variable name
         variable = get_argument_name(*name_or_flags)
 
@@ -203,19 +201,18 @@ class Tap(ArgumentParser):
                     and is_literal_type(get_args(var_type)[0])
                 ):
                     var_type, kwargs['choices'] = get_literals(get_args(var_type)[0], variable)
-                elif var_type not in SUPPORTED_DEFAULT_TYPES:
-                    is_required = kwargs.get('required', False)
-                    arg_params = 'required=True' if is_required else f'default={getattr(self, variable)}'
-                    raise ValueError(
-                        f'Variable "{variable}" has type "{var_type}" which is not supported by default.\n'
-                        f'Please explicitly add the argument to the parser by writing:\n\n'
-                        f'def configure(self) -> None:\n'
-                        f'    self.add_argument("--{variable}", type=func, {arg_params})\n\n'
-                        f'where "func" maps from str to {var_type}.')
 
-                if var_type in SUPPORTED_DEFAULT_BOXED_TYPES:
+                # Unbox Optional[type] and set var_type = type
+                if get_origin(var_type) in OPTIONAL_TYPES:
+                    var_args = get_args(var_type)
+
+                    if len(var_args) > 0:
+                        var_type = get_args(var_type)[0]
+                        explicit_bool = True
+
+                if get_origin(var_type) in BOXED_TYPES:
                     # If List or Set type, set nargs
-                    if (var_type in SUPPORTED_DEFAULT_COLLECTION_TYPES
+                    if (get_origin(var_type) in BOXED_COLLECTION_TYPES
                             and kwargs.get('action') not in {'append', 'append_const'}):
                         kwargs['nargs'] = kwargs.get('nargs', '*')
 
@@ -228,13 +225,13 @@ class Tap(ArgumentParser):
                     else:
                         var_type = arg_types[0]
 
-                    # Handle the cases of Optional[bool], List[bool], Set[bool]
+                    # Handle the cases of List[bool], Set[bool], Tuple[bool]
                     if var_type == bool:
                         var_type = boolean_type
 
                 # If bool then set action, otherwise set type
                 if var_type == bool:
-                    if self._explicit_bool:
+                    if explicit_bool:
                         kwargs['type'] = boolean_type
                         kwargs['choices'] = [True, False]  # this makes the help message more helpful
                     else:
@@ -403,11 +400,6 @@ class Tap(ArgumentParser):
             if variable in self._annotations:
                 if type(value) == list:
                     var_type = get_origin(self._annotations[variable])
-
-                    # TODO: remove this once typing_inspect.get_origin is fixed for Python 3.9
-                    # https://github.com/ilevkivskyi/typing_inspect/issues/64
-                    # https://github.com/ilevkivskyi/typing_inspect/issues/65
-                    var_type = var_type if var_type is not None else self._annotations[variable]
 
                     if var_type in (Set, set):
                         value = set(value)
