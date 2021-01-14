@@ -26,7 +26,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        if [ "$RUNNER_OS" == "Windows" ] then;
+        if [ "$RUNNER_OS" == "Windows" ]; then
           echo "TMP=$env:USERPROFILE\AppData\Local\Temp" >> $env:GITHUB_ENV
           echo "TEMP=$env:USERPROFILE\AppData\Local\Temp" >> $env:GITHUB_ENV
         fi
