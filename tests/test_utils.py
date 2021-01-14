@@ -59,6 +59,8 @@ class GitTests(TestCase):
 
     def test_get_git_root(self) -> None:
         # Ideally should be self.temp_dir.name == get_git_root() but the OS may add a prefix like /private
+        print(f'git root: {get_git_root()}')
+        print(f'temp dir: {self.temp_dir.name}')
         self.assertTrue(get_git_root().endswith(self.temp_dir.name))
 
     def test_get_git_root_subdir(self) -> None:
