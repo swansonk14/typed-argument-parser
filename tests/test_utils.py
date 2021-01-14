@@ -59,9 +59,7 @@ class GitTests(TestCase):
 
     def test_get_git_root(self) -> None:
         # Ideally should be self.temp_dir.name == get_git_root() but the OS may add a prefix like /private
-        print(f'git root: {get_git_root()}')
-        print(f'temp dir: {self.temp_dir.name}')
-        self.assertTrue(get_git_root().endswith(self.temp_dir.name))
+        self.assertTrue(get_git_root().endswith(self.temp_dir.name.replace('\\', '/')))
 
     def test_get_git_root_subdir(self) -> None:
         subdir = os.path.join(self.temp_dir.name, 'subdir')
@@ -69,7 +67,7 @@ class GitTests(TestCase):
         os.chdir(subdir)
 
         # Ideally should be self.temp_dir.name == get_git_root() but the OS may add a prefix like /private
-        self.assertTrue(get_git_root().endswith(self.temp_dir.name))
+        self.assertTrue(get_git_root().endswith(self.temp_dir.name.replace('\\', '/')))
 
         os.chdir(self.temp_dir.name)
 
