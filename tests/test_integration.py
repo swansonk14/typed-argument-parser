@@ -671,6 +671,16 @@ class DashedArgumentsTests(TestCase):
         self.assertEqual(args.arg_u_ment, 12)
         self.assertEqual(args.arg_you_mean_, 13)
 
+    def test_mismatch_dash_underscore_config_vs_annotations(self) -> None:
+        class MismatchTap(Tap):
+            arg_arg_arg: int
+
+            def configure(self):
+                self.add_argument('--arg-arg_arg', '-arg', type=str)
+
+        args = MismatchTap(underscores_to_dashes=True).parse_args('--arg-arg-arg aarg'.split())
+        self.assertEqual(args.arg_arg_arg, 'aarg')
+
 
 class ParseExplicitBoolArgsTests(TestCase):
 

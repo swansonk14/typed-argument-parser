@@ -255,7 +255,7 @@ class Tap(ArgumentParser):
                              'Arguments must be added either as class variables or by overriding '
                              'configure and including a self.add_argument call there.')
 
-        variable = get_argument_name(*name_or_flags)
+        variable = get_argument_name(*name_or_flags).replace('-', '_')
         self.argument_buffer[variable] = (name_or_flags, kwargs)
 
     def _add_arguments(self) -> None:
