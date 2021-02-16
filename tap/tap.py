@@ -578,7 +578,10 @@ class Tap(ArgumentParser):
                     raise AttributeError(f'Cannot set attribute "{key}" to "{value}". '
                                          f'To skip arguments that cannot be set \n'
                                          f'\t"skip_unsettable = True"')
-
+        
+        # Process args
+        self.process_args()
+        
         self._parsed = True
 
         return self
