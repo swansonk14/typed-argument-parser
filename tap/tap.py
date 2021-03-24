@@ -9,6 +9,7 @@ from warnings import warn
 from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
 from typing_inspect import is_literal_type, get_args, get_origin, is_union_type
+from pathlib import Path
 
 from tap.utils import (
     get_class_variables,
@@ -33,10 +34,10 @@ from tap.utils import (
 # Constants
 EMPTY_TYPE = get_args(List)[0] if len(get_args(List)) > 0 else tuple()
 
-SUPPORTED_DEFAULT_BASE_TYPES = {str, int, float, bool}
-SUPPORTED_DEFAULT_OPTIONAL_TYPES = {Optional, Optional[str], Optional[int], Optional[float], Optional[bool]}
-SUPPORTED_DEFAULT_LIST_TYPES = {List, List[str], List[int], List[float], List[bool]}
-SUPPORTED_DEFAULT_SET_TYPES = {Set, Set[str], Set[int], Set[float], Set[bool]}
+SUPPORTED_DEFAULT_BASE_TYPES = {str, int, float, bool, Path}
+SUPPORTED_DEFAULT_OPTIONAL_TYPES = {Optional, Optional[str], Optional[int], Optional[float], Optional[bool], Optional[Path]}
+SUPPORTED_DEFAULT_LIST_TYPES = {List, List[str], List[int], List[float], List[bool], List[Path]}
+SUPPORTED_DEFAULT_SET_TYPES = {Set, Set[str], Set[int], Set[float], Set[bool], Set[Path]}
 SUPPORTED_DEFAULT_COLLECTION_TYPES = SUPPORTED_DEFAULT_LIST_TYPES | SUPPORTED_DEFAULT_SET_TYPES | {Tuple}
 SUPPORTED_DEFAULT_BOXED_TYPES = SUPPORTED_DEFAULT_OPTIONAL_TYPES | SUPPORTED_DEFAULT_COLLECTION_TYPES
 SUPPORTED_DEFAULT_TYPES = set.union(SUPPORTED_DEFAULT_BASE_TYPES,
