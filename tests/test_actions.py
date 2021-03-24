@@ -1,5 +1,6 @@
 import sys
-from typing import List
+from pathlib import Path
+from typing import List, Set
 import unittest
 from unittest import TestCase
 
@@ -200,6 +201,15 @@ class TestArgparseActions(TestCase):
         args = ExtendListIntTap().parse_args('--arg 1 2 --arg 3 --arg 4 5'.split())
         self.assertEqual(args.arg, [0, 1, 2, 3, 4, 5])
 
+    @unittest.skipIf(sys.version_info < (3, 4), 'pathlib.Path introduced in Python 3.4')
+    def test_actions_path(self):
+        class ExtendPathTap(Tap):
+            arg: Path = []
+            arg2: Set[Path] = []
+
+        args = ExtendPathTap().parse_args('--arg 1.txt --arg2 2.txt 3.txt 2.txt'.split())
+        self.assertEqual(args.arg, Path("1.txt"))
+        self.assertEqual(args.arg2, {Path("2.txt"), Path("3.txt")})
 
 if __name__ == '__main__':
     unittest.main()
