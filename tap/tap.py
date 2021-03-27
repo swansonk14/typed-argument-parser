@@ -173,6 +173,12 @@ class Tap(ArgumentParser):
 
                     if len(var_args) > 0:
                         var_type = get_args(var_type)[0]
+
+                        # If var_type is tuple as in Python 3.6, change to a typing type
+                        # (e.g., (typing.List, <class 'bool'>) ==> typing.List[bool])
+                        if isinstance(var_type, tuple):
+                            var_type = var_type[0][var_type[1:]]
+
                         explicit_bool = True
 
                 # First check whether it is a literal type or a boxed literal type
@@ -396,6 +402,11 @@ class Tap(ArgumentParser):
                     # Unpack nested boxed types such as Optional[List[int]]
                     if var_type is Union:
                         var_type = get_origin(get_args(self._annotations[variable])[0])
+
+                        # If var_type is tuple as in Python 3.6, change to a typing type
+                        # (e.g., (typing.Tuple, <class 'bool'>) ==> typing.Tuple)
+                        if isinstance(var_type, tuple):
+                            var_type = var_type[0]
 
                     if var_type in (Set, set):
                         value = set(value)
