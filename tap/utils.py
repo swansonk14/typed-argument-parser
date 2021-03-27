@@ -24,7 +24,7 @@ from typing import (
     Union,
 )
 from typing_extensions import Literal
-from typing_inspect import get_args
+from typing_inspect import get_args, get_origin as typing_inspect_get_origin
 
 
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
@@ -467,3 +467,16 @@ def enforce_reproducibility(saved_reproducibility_data: Optional[Dict[str, str]]
     if current_reproducibility_data['git_has_uncommitted_changes']:
         raise ValueError(f'{no_reproducibility_message}: Uncommitted changes '
                          f'in current args.')
+
+
+# TODO: remove this once typing_inspect.get_origin is fixed for Python 3.8 and 3.9
+# https://github.com/ilevkivskyi/typing_inspect/issues/64
+# https://github.com/ilevkivskyi/typing_inspect/issues/65
+def get_origin(tp: Any) -> Any:
+    """Same as typing_inspect.get_origin but fixes unparameterized generic types like Set."""
+    origin = typing_inspect_get_origin(tp)
+
+    if origin is None:
+        origin = tp
+
+    return origin
