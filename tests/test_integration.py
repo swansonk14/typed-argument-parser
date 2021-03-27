@@ -166,12 +166,15 @@ class RequiredClassVariableTests(TestCase):
 
 
 class NestedOptionalTypesTap(Tap):
+    list: Optional[List]
     list_bool: Optional[List[bool]]
     list_int: Optional[List[int]]
     list_str: Optional[List[str]]
+    set: Optional[Set]
     set_bool: Optional[Set[bool]]
     set_int: Optional[Set[int]]
     set_str: Optional[Set[str]]
+    tuple: Optional[Tuple]
     tuple_bool: Optional[Tuple[bool]]
     tuple_int: Optional[Tuple[int]]
     tuple_str: Optional[Tuple[str]]
@@ -184,12 +187,15 @@ class NestedOptionalTypesTap(Tap):
 class NestedOptionalTypeTests(TestCase):
 
     def test_nested_optional_types(self):
+        list_ = ['I', 'was', 'wondering']
         list_bool = [True, False]
         list_int = [0, 1, 2]
         list_str = ['a', 'bee', 'cd', 'ee']
+        set_ = {'if', 'after', 'all'}
         set_bool = {True, False, True}
         set_int = {0, 1}
         set_str = {'a', 'bee', 'cd'}
+        tuple_ = ('these', 'years')
         tuple_bool = (False,)
         tuple_int = (0,)
         tuple_str = ('a',)
@@ -199,12 +205,15 @@ class NestedOptionalTypeTests(TestCase):
         tuple_arbitrary_len_str = ('a', 'b')
 
         args = NestedOptionalTypesTap().parse_args([
+            '--list', *stringify(list_),
             '--list_bool', *stringify(list_bool),
             '--list_int', *stringify(list_int),
             '--list_str', *stringify(list_str),
+            '--set', *stringify(set_),
             '--set_bool', *stringify(set_bool),
             '--set_int', *stringify(set_int),
             '--set_str', *stringify(set_str),
+            '--tuple', *stringify(tuple_),
             '--tuple_bool', *stringify(tuple_bool),
             '--tuple_int', *stringify(tuple_int),
             '--tuple_str', *stringify(tuple_str),
@@ -214,14 +223,17 @@ class NestedOptionalTypeTests(TestCase):
             '--tuple_arbitrary_len_str', *stringify(tuple_arbitrary_len_str),
         ])
 
+        self.assertEqual(args.list, list_)
         self.assertEqual(args.list_bool, list_bool)
         self.assertEqual(args.list_int, list_int)
         self.assertEqual(args.list_str, list_str)
 
+        self.assertEqual(args.set, set_)
         self.assertEqual(args.set_bool, set_bool)
         self.assertEqual(args.set_int, set_int)
         self.assertEqual(args.set_str, set_str)
 
+        self.assertEqual(args.tuple, tuple_)
         self.assertEqual(args.tuple_bool, tuple_bool)
         self.assertEqual(args.tuple_int, tuple_int)
         self.assertEqual(args.tuple_str, tuple_str)
