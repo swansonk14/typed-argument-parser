@@ -8,7 +8,7 @@ import time
 from warnings import warn
 from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
-from typing_inspect import is_literal_type, get_args, is_union_type
+from typing_inspect import is_literal_type, get_args
 
 from tap.utils import (
     get_class_variables,
@@ -166,6 +166,15 @@ class Tap(ArgumentParser):
 
             # If type is not explicitly provided, set it if it's one of our supported default types
             if 'type' not in kwargs:
+
+                # Unbox Optional[type] and set var_type = type
+                if get_origin(var_type) in OPTIONAL_TYPES:
+                    var_args = get_args(var_type)
+
+                    if len(var_args) > 0:
+                        var_type = get_args(var_type)[0]
+                        explicit_bool = True
+
                 # First check whether it is a literal type or a boxed literal type
                 if is_literal_type(var_type):
                     var_type, kwargs['choices'] = get_literals(var_type, variable)
@@ -193,22 +202,6 @@ class Tap(ArgumentParser):
                         kwargs['nargs'] = len(types)
 
                     var_type = TupleTypeEnforcer(types=types, loop=loop)
-                # To identify an Optional type, check if it's a union of a None and something else
-                elif (
-                    is_union_type(var_type)
-                    and len(get_args(var_type)) == 2
-                    and isinstance(None, get_args(var_type)[1])
-                    and is_literal_type(get_args(var_type)[0])
-                ):
-                    var_type, kwargs['choices'] = get_literals(get_args(var_type)[0], variable)
-
-                # Unbox Optional[type] and set var_type = type
-                if get_origin(var_type) in OPTIONAL_TYPES:
-                    var_args = get_args(var_type)
-
-                    if len(var_args) > 0:
-                        var_type = get_args(var_type)[0]
-                        explicit_bool = True
 
                 if get_origin(var_type) in BOXED_TYPES:
                     # If List or Set type, set nargs

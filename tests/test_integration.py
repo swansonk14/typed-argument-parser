@@ -175,10 +175,10 @@ class NestedOptionalTypesTap(Tap):
     tuple_bool: Optional[Tuple[bool]]
     tuple_int: Optional[Tuple[int]]
     tuple_str: Optional[Tuple[str]]
-    # tuple_pair: Optional[Tuple[bool, str, int]]
-    # tuple_arbitrary_len_bool: Optional[Tuple[bool, ...]]
-    # tuple_arbitrary_len_int: Optional[Tuple[int, ...]]
-    # tuple_arbitrary_len_str: Optional[Tuple[str, ...]]    
+    tuple_pair: Optional[Tuple[bool, str, int]]
+    tuple_arbitrary_len_bool: Optional[Tuple[bool, ...]]
+    tuple_arbitrary_len_int: Optional[Tuple[int, ...]]
+    tuple_arbitrary_len_str: Optional[Tuple[str, ...]]
 
 
 class NestedOptionalTypeTests(TestCase):
@@ -208,10 +208,10 @@ class NestedOptionalTypeTests(TestCase):
             '--tuple_bool', *stringify(tuple_bool),
             '--tuple_int', *stringify(tuple_int),
             '--tuple_str', *stringify(tuple_str),
-            # '--tuple_pair', *stringify(tuple_pair),
-            # '--tuple_arbitrary_len_bool', *stringify(tuple_arbitrary_len_bool), 
-            # '--tuple_arbitrary_len_int', *stringify(tuple_arbitrary_len_int),
-            # '--tuple_arbitrary_len_str', *stringify(tuple_arbitrary_len_str),
+            '--tuple_pair', *stringify(tuple_pair),
+            '--tuple_arbitrary_len_bool', *stringify(tuple_arbitrary_len_bool), 
+            '--tuple_arbitrary_len_int', *stringify(tuple_arbitrary_len_int),
+            '--tuple_arbitrary_len_str', *stringify(tuple_arbitrary_len_str),
         ])
 
         self.assertEqual(args.list_bool, list_bool)
@@ -225,10 +225,10 @@ class NestedOptionalTypeTests(TestCase):
         self.assertEqual(args.tuple_bool, tuple_bool)
         self.assertEqual(args.tuple_int, tuple_int)
         self.assertEqual(args.tuple_str, tuple_str)
-        # self.assertEqual(args.tuple_pair, tuple_pair)
-        # self.assertEqual(args.tuple_arbitrary_len_bool, tuple_arbitrary_len_bool)
-        # self.assertEqual(args.tuple_arbitrary_len_int, tuple_arbitrary_len_int)
-        # self.assertEqual(args.tuple_arbitrary_len_str, tuple_arbitrary_len_str)
+        self.assertEqual(args.tuple_pair, tuple_pair)
+        self.assertEqual(args.tuple_arbitrary_len_bool, tuple_arbitrary_len_bool)
+        self.assertEqual(args.tuple_arbitrary_len_int, tuple_arbitrary_len_int)
+        self.assertEqual(args.tuple_arbitrary_len_str, tuple_arbitrary_len_str)
 
 
 class ComplexTypeTap(Tap):
@@ -260,6 +260,7 @@ class ComplexTypeTests(TestCase):
         self.assertEqual(args.list_path, list_path)
         self.assertEqual(args.set_path, set_path)
         self.assertEqual(args.tuple_path, tuple_path)
+
 
 class Person:
     def __init__(self, name: str):
@@ -631,26 +632,32 @@ class AddArgumentTests(TestCase):
     def test_complex_type(self) -> None:
         class AddArgumentComplexTypeTap(IntegrationDefaultTap):
             arg_person: Person = Person('tap')
-            # arg_person_required: Person  # TODO
+            arg_person_required: Person
             arg_person_untyped = Person('tap untyped')
 
-            # TODO: assert a crash if any complex types are not explicitly added in add_argument
             def configure(self) -> None:
                 self.add_argument('--arg_person', type=Person)
-                # self.add_argument('--arg_person_required', type=Person)  # TODO
+                self.add_argument('--arg_person_required', type=Person)
                 self.add_argument('--arg_person_untyped', type=Person)
 
-        args = AddArgumentComplexTypeTap().parse_args([])
+        arg_person_required = Person("hello, it's me")
+
+        args = AddArgumentComplexTypeTap().parse_args([
+            '--arg_person_required', arg_person_required.name,
+        ])
         self.assertEqual(args.arg_person, Person('tap'))
+        self.assertEqual(args.arg_person_required, arg_person_required)
         self.assertEqual(args.arg_person_untyped, Person('tap untyped'))
 
         arg_person = Person('hi there')
         arg_person_untyped = Person('heyyyy')
         args = AddArgumentComplexTypeTap().parse_args([
             '--arg_person', arg_person.name,
+            '--arg_person_required', arg_person_required.name,
             '--arg_person_untyped', arg_person_untyped.name
         ])
         self.assertEqual(args.arg_person, arg_person)
+        self.assertEqual(args.arg_person_required, arg_person_required)
         self.assertEqual(args.arg_person_untyped, arg_person_untyped)
 
     def test_repeat_default(self) -> None:
