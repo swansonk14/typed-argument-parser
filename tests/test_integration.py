@@ -218,7 +218,7 @@ class NestedOptionalTypeTests(TestCase):
             '--tuple_int', *stringify(tuple_int),
             '--tuple_str', *stringify(tuple_str),
             '--tuple_pair', *stringify(tuple_pair),
-            '--tuple_arbitrary_len_bool', *stringify(tuple_arbitrary_len_bool), 
+            '--tuple_arbitrary_len_bool', *stringify(tuple_arbitrary_len_bool),
             '--tuple_arbitrary_len_int', *stringify(tuple_arbitrary_len_int),
             '--tuple_arbitrary_len_str', *stringify(tuple_arbitrary_len_str),
         ])
@@ -824,6 +824,23 @@ class DashedArgumentsTests(TestCase):
         self.assertEqual(args.arg, 11)
         self.assertEqual(args.arg_u_ment, 12)
         self.assertEqual(args.arg_you_mean_, 13)
+
+    def test_dashed_arguments_required_default(self) -> None:
+        class RequiredDashTap (Tap):
+            foo_arg: str = "foo_arg"
+            foo_arg_2: Optional[int] = None
+
+            def configure (self) -> None:
+                self.add_argument("-f", "--foo-arg")
+                self.add_argument("-f2", "--foo-arg-2")
+
+        args = RequiredDashTap(underscores_to_dashes=True).parse_args([ "-f", "foo" ])
+        self.assertEqual(args.foo_arg, "foo")
+        self.assertEqual(args.foo_arg_2, None)
+
+        args = RequiredDashTap(underscores_to_dashes=True).parse_args([ "-f2", "2" ])
+        self.assertEqual(args.foo_arg, "foo_arg")
+        self.assertEqual(args.foo_arg_2, 2)
 
     def test_mismatch_dash_underscore_config_vs_annotations(self) -> None:
         class MismatchTap(Tap):
