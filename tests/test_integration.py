@@ -827,19 +827,19 @@ class DashedArgumentsTests(TestCase):
 
     def test_dashed_arguments_required_default(self) -> None:
         class RequiredDashTap (Tap):
-            foo_arg: str = "foo_arg"
+            foo_arg: str = 'foo_arg'
             foo_arg_2: Optional[int] = None
 
             def configure (self) -> None:
-                self.add_argument("-f", "--foo-arg")
-                self.add_argument("-f2", "--foo-arg-2")
+                self.add_argument('-f', '--foo-arg')
+                self.add_argument('-f2', '--foo-arg-2')
 
-        args = RequiredDashTap(underscores_to_dashes=True).parse_args([ "-f", "foo" ])
-        self.assertEqual(args.foo_arg, "foo")
+        args = RequiredDashTap(underscores_to_dashes=True).parse_args([ '-f', 'foo' ])
+        self.assertEqual(args.foo_arg, 'foo')
         self.assertEqual(args.foo_arg_2, None)
 
-        args = RequiredDashTap(underscores_to_dashes=True).parse_args([ "-f2", "2" ])
-        self.assertEqual(args.foo_arg, "foo_arg")
+        args = RequiredDashTap(underscores_to_dashes=True).parse_args([ '-f2', '2' ])
+        self.assertEqual(args.foo_arg, 'foo_arg')
         self.assertEqual(args.foo_arg_2, 2)
 
     def test_mismatch_dash_underscore_config_vs_annotations(self) -> None:
