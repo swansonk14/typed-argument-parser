@@ -126,6 +126,9 @@ class Tap(ArgumentParser):
         # Get variable name
         variable = get_argument_name(*name_or_flags)
 
+        if self._underscores_to_dashes:
+            variable = variable.replace('-', '_')
+
         # Get default if not specified
         if hasattr(self, variable):
             kwargs['default'] = kwargs.get('default', getattr(self, variable))
