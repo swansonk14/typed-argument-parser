@@ -242,7 +242,9 @@ class Tap(ArgumentParser):
                     kwargs['type'] = var_type
 
         if self._underscores_to_dashes:
-            name_or_flags = [name_or_flag.replace('_', '-') for name_or_flag in name_or_flags]
+            # Replace "_" with "-" for arguments that aren't positional
+            name_or_flags = tuple(name_or_flag.replace('_', '-') if name_or_flag.startswith('-') else name_or_flag
+                                  for name_or_flag in name_or_flags)
 
         super(Tap, self).add_argument(*name_or_flags, **kwargs)
 

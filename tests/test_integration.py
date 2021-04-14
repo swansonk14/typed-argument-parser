@@ -1349,6 +1349,30 @@ class TestGetClassDict(TestCase):
         self.assertEqual(args._get_class_dict(), result)
 
 
+class TestPositionalArguments(TestCase):
+
+    def test_underscores_to_dashes_does_not_modify_positional(self):
+        class PositionalTap(Tap):
+            under_score: int
+
+            def configure(self):
+                self.add_argument('under_score')
+
+        args = PositionalTap(underscores_to_dashes=True).parse_args(['1'])
+
+        self.assertEqual(args.under_score, 1)
+
+    def test_positional_maintains_types(self):
+        class PositionalTap(Tap):
+            a: int
+
+            def configure(self) -> None:
+                self.add_argument('a')
+
+        args = PositionalTap().parse_args(['1'])
+
+        self.assertEqual(args.a, 1)
+
 """
 - crash if default type not supported
 - user specifying process_args
