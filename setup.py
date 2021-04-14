@@ -23,7 +23,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/swansonk14/typed-argument-parser',
-    download_url=f'https://github.com/swansonk14/typed-argument-parser/v_{__version__}.tar.gz',
+    download_url=f'https://github.com/swansonk14/typed-argument-parser/archive/refs/tags/v_{__version__}.tar.gz',
     license='MIT',
     packages=find_packages(),
     package_data={'tap': ['py.typed']},
