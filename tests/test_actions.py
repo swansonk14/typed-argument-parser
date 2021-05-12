@@ -1,5 +1,5 @@
 import sys
-from typing import List
+from typing import List, Literal
 import unittest
 from unittest import TestCase
 
@@ -98,6 +98,16 @@ class TestArgparseActions(TestCase):
 
         args = AppendListIntTap().parse_args('--arg 3 --arg 4'.split())
         self.assertEqual(args.arg, [1, 2, 3, 4])
+
+    def test_actions_append_list_literal(self):
+        class AppendListLiteralTap(Tap):
+            arg: List[Literal['what', 'is', 'up', 'today']] = ['what', 'is']
+
+            def configure(self):
+                self.add_argument('--arg', action='append')
+
+        args = AppendListLiteralTap().parse_args('--arg up --arg today'.split())
+        self.assertEqual(args.arg, 'what is up today'.split())
 
     def test_actions_append_untyped(self):
         class AppendListStrTap(Tap):
