@@ -1,5 +1,6 @@
 import sys
-from typing import List, Literal
+from typing import List
+from typing_extensions import Literal
 import unittest
 from unittest import TestCase
 
