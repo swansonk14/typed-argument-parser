@@ -191,7 +191,8 @@ class Tap(ArgumentParser):
                       and len(get_args(var_type)) > 0
                       and is_literal_type(get_args(var_type)[0])):
                     var_type, kwargs['choices'] = get_literals(get_args(var_type)[0], variable)
-                    kwargs['nargs'] = kwargs.get('nargs', '*')
+                    if kwargs.get('action') not in {'append', 'append_const'}:
+                        kwargs['nargs'] = kwargs.get('nargs', '*')
                 # Handle Tuple type (with type args) by extracting types of Tuple elements and enforcing them
                 elif get_origin(var_type) in (Tuple, tuple) and len(get_args(var_type)) > 0:
                     loop = False
