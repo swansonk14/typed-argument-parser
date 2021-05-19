@@ -3,6 +3,7 @@ from collections import OrderedDict
 from copy import deepcopy
 import json
 from pprint import pformat
+import re
 import sys
 import time
 from warnings import warn
@@ -350,8 +351,9 @@ class Tap(ArgumentParser):
 
         :return: A dictionary of reproducibility information.
         """
+        args = [f"'{arg}'" if re.search(r'\s', arg) else arg for arg in sys.argv]
         reproducibility = {
-            'command_line': f'python {" ".join(sys.argv)}',
+            'command_line': f'python {" ".join(args)}',
             'time': time.strftime('%c')
         }
 
