@@ -1,6 +1,7 @@
 from copy import deepcopy
 import os
 from pathlib import Path
+import pickle
 import sys
 from tempfile import TemporaryDirectory
 from typing import Any, Iterable, List, Optional, Set, Tuple
@@ -1372,6 +1373,15 @@ class TestPositionalArguments(TestCase):
         args = PositionalTap().parse_args(['1'])
 
         self.assertEqual(args.a, 1)
+
+
+class TestPickle(TestCase):
+    def test_pickle(self):
+        args = IntegrationDefaultTap().parse_args([])
+        pickle_str = pickle.dumps(args)
+        loaded_args: IntegrationDefaultTap = pickle.loads(pickle_str)
+        self.assertEqual(loaded_args.as_dict(), args.as_dict())
+
 
 """
 - crash if default type not supported

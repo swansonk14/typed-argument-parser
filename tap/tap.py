@@ -668,3 +668,16 @@ class Tap(ArgumentParser):
             copied.__dict__[k] = deepcopy(v, memo)
 
         return copied
+
+    def __getstate__(self) -> Dict[str, Any]:
+        """Gets the state of the object for pickling."""
+        return self.as_dict()
+
+    def __setstate__(self, d: Dict[str, Any]) -> None:
+        """
+        Initializes the object with the provided dictionary of arguments for unpickling.
+
+        :param d: A dictionary of arguments.
+        """
+        self.__init__()
+        self.from_dict(d)
