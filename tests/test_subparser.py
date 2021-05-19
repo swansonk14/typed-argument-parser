@@ -1,4 +1,5 @@
 import sys
+from typing import Union
 from typing_extensions import Literal
 import unittest
 from unittest import TestCase
@@ -194,6 +195,32 @@ class TestSubparser(TestCase):
 
         with self.assertRaises(SystemExit):
             Args().parse_args('b a'.split())
+
+    def test_subparser_underscores_to_dashes(self):
+        class AddProposal(Tap):
+            proposal_id: int
+
+        class Arguments(Tap):
+            def configure(self) -> None:
+                self.add_subparsers(dest="subparser_name")
+
+                self.add_subparser(
+                    "add-proposal",
+                    AddProposal,
+                    help="Add a new proposal",
+                )
+
+        args_underscores: Union[Arguments, AddProposal] = Arguments(underscores_to_dashes=False).parse_args('add-proposal --proposal_id 1'.split())
+        self.assertEqual(args_underscores.proposal_id, 1)
+
+        args_dashes: Union[Arguments, AddProposal] = Arguments(underscores_to_dashes=True).parse_args('add-proposal --proposal-id 1'.split())
+        self.assertEqual(args_dashes.proposal_id, 1)
+
+        with self.assertRaises(SystemExit):
+            Arguments(underscores_to_dashes=False).parse_args('add-proposal --proposal-id 1'.split())
+
+        with self.assertRaises(SystemExit):
+            Arguments(underscores_to_dashes=True).parse_args('add-proposal --proposal_id 1'.split())
 
 
 if __name__ == '__main__':

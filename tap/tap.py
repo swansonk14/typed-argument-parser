@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from collections import OrderedDict
 from copy import deepcopy
+from functools import partial
 import json
 from pprint import pformat
 import re
@@ -298,7 +299,7 @@ class Tap(ArgumentParser):
 
         # Load each subparser
         for flag, subparser_type, kwargs in self._subparser_buffer:
-            self._subparsers._parser_class = subparser_type
+            self._subparsers._parser_class = partial(subparser_type, underscores_to_dashes=self._underscores_to_dashes)
             self._subparsers.add_parser(flag, **kwargs)
 
     def add_subparsers(self, **kwargs) -> None:
