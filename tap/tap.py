@@ -4,13 +4,13 @@ from copy import deepcopy
 from functools import partial
 import json
 from pprint import pformat
-import re
+from shlex import quote
 import sys
 import time
-from warnings import warn
 from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
 from typing_inspect import is_literal_type, get_args
+from warnings import warn
 
 from tap.utils import (
     get_class_variables,
@@ -352,9 +352,8 @@ class Tap(ArgumentParser):
 
         :return: A dictionary of reproducibility information.
         """
-        args = [f"'{arg}'" if re.search(r'\s', arg) else arg for arg in sys.argv]
         reproducibility = {
-            'command_line': f'python {" ".join(args)}',
+            'command_line': f'python {" ".join(quote(arg) for arg in sys.argv)}',
             'time': time.strftime('%c')
         }
 
