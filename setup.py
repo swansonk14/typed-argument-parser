@@ -29,7 +29,7 @@ setup(
     package_data={'tap': ['py.typed']},
     install_requires=[
         'typing_extensions >= 3.7.4',
-        'typing-inspect >= 0.5'
+        'typing-inspect == 0.6.0'
     ],
     tests_require=['pytest'],
     classifiers=[
