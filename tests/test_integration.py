@@ -124,46 +124,46 @@ class RequiredClassVariableTests(TestCase):
 
 
 # TODO: need to implement list[str] etc.
-# class ParameterizedStandardCollectionTap(Tap):
-#     arg_list_str: list[str]
-#     arg_list_int: list[int]
-#     arg_list_int_default: list[int] = [1, 2, 5]
-#     arg_set_float: set[float]
-#     arg_set_str_default: set[str] = ['one', 'two', 'five']
-#     arg_tuple_int: tuple[int, ...]
-#     arg_tuple_float_default: tuple[float, float, float] = (1.0, 2.0, 5.0)
-#     arg_tuple_str_override: tuple[str, str] = ('hi', 'there')
-#     arg_optional_list_int: Optional[list[int]] = None
+class ParameterizedStandardCollectionTap(Tap):
+    arg_list_str: list[str]
+    arg_list_int: list[int]
+    arg_list_int_default: list[int] = [1, 2, 5]
+    arg_set_float: set[float]
+    arg_set_str_default: set[str] = {'one', 'two', 'five'}
+    arg_tuple_int: tuple[int, ...]
+    arg_tuple_float_default: tuple[float, float, float] = (1.0, 2.0, 5.0)
+    arg_tuple_str_override: tuple[str, str] = ('hi', 'there')
+    arg_optional_list_int: Optional[list[int]] = None
 
 
-# class ParameterizedStandardCollectionTests(TestCase):
-#     @unittest.skipIf(sys.version_info < (3, 9), 'Parameterized standard collections (e.g., list[int]) introduced in Python 3.9')
-#     def test_parameterized_standard_collection(self):
-#         arg_list_str = ['a', 'b', 'pi']
-#         arg_list_int = [-2, -5, 10]
-#         arg_set_float = {3.54, 2.235}
-#         arg_tuple_int = (-4, 5, 9, 103)
-#         arg_tuple_str_override = ('why', 'so', 'many', 'tests?')
-#         arg_optional_list_int = [5, 4, 3]
+class ParameterizedStandardCollectionTests(TestCase):
+    @unittest.skipIf(sys.version_info < (3, 9), 'Parameterized standard collections (e.g., list[int]) introduced in Python 3.9')
+    def test_parameterized_standard_collection(self):
+        arg_list_str = ['a', 'b', 'pi']
+        arg_list_int = [-2, -5, 10]
+        arg_set_float = {3.54, 2.235}
+        arg_tuple_int = (-4, 5, 9, 103)
+        arg_tuple_str_override = ('why', 'so')
+        arg_optional_list_int = [5, 4, 3]
 
-#         args = ParameterizedStandardCollectionTap().parse_args([
-#             '--arg_list_str', *arg_list_str,
-#             '--arg_list_int', *[str(var) for var in arg_list_int],
-#             '--arg_set_float', *[str(var) for var in arg_set_float],
-#             '--arg_tuple_int', *[str(var) for var in arg_tuple_int],
-#             '--arg_tuple_str_override', *arg_tuple_str_override,
-#             '--arg_optional_list_int', *[str(var) for var in arg_optional_list_int]
-#         ])
+        args = ParameterizedStandardCollectionTap().parse_args([
+            '--arg_list_str', *arg_list_str,
+            '--arg_list_int', *[str(var) for var in arg_list_int],
+            '--arg_set_float', *[str(var) for var in arg_set_float],
+            '--arg_tuple_int', *[str(var) for var in arg_tuple_int],
+            '--arg_tuple_str_override', *arg_tuple_str_override,
+            '--arg_optional_list_int', *[str(var) for var in arg_optional_list_int]
+        ])
 
-#         self.assertEqual(args.arg_list_str, arg_list_str)
-#         self.assertEqual(args.arg_list_int, arg_list_int)
-#         self.assertEqual(args.arg_list_int_default, ParameterizedStandardCollectionTap.arg_list_int_default)
-#         self.assertEqual(args.arg_set_float, arg_set_float)
-#         self.assertEqual(args.arg_set_str_default, ParameterizedStandardCollectionTap.arg_set_str_default)
-#         self.assertEqual(args.arg_tuple_int, arg_tuple_int)
-#         self.assertEqual(args.arg_tuple_float_default, ParameterizedStandardCollectionTap.arg_tuple_float_default)
-#         self.assertEqual(args.arg_tuple_str_override, arg_tuple_str_override)
-#         self.assertEqual(args.arg_optional_list_int, arg_optional_list_int)
+        self.assertEqual(args.arg_list_str, arg_list_str)
+        self.assertEqual(args.arg_list_int, arg_list_int)
+        self.assertEqual(args.arg_list_int_default, ParameterizedStandardCollectionTap.arg_list_int_default)
+        self.assertEqual(args.arg_set_float, arg_set_float)
+        self.assertEqual(args.arg_set_str_default, ParameterizedStandardCollectionTap.arg_set_str_default)
+        self.assertEqual(args.arg_tuple_int, arg_tuple_int)
+        self.assertEqual(args.arg_tuple_float_default, ParameterizedStandardCollectionTap.arg_tuple_float_default)
+        self.assertEqual(args.arg_tuple_str_override, arg_tuple_str_override)
+        self.assertEqual(args.arg_optional_list_int, arg_optional_list_int)
 
 
 class NestedOptionalTypesTap(Tap):

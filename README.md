@@ -213,6 +213,8 @@ Tuple, Tuple[Type1, Type2, etc.], Tuple[Type, ...]
 Literal
 ```
 
+If you're using Python 3.9+, then you can replace `List` with `list`, `Set` with `set`, and `Tuple` with `tuple`.
+
 #### `str`, `int`, and `float`
 
 Each is automatically parsed to their respective types, just like argparse.
@@ -241,7 +243,7 @@ Tuples can be used to specify a fixed number of arguments with specified types u
 
 #### `Literal`
 
-Literal is analagous to `argparse`'s [choices](https://docs.python.org/3/library/argparse.html#choices), which specifies the values that an argument can take. For example, if arg can only be one of 'H', 1, False, or 1.0078 then you would specify that `arg: Literal['H', 1, False, 1.0078]`. For instance, `--arg False` assigns arg to False and `--arg True` throws error. The `Literal` type was introduced in Python 3.8 ([PEP 586](https://www.python.org/dev/peps/pep-0586/)) and can be imported with `from typing_extensions import Literal`.
+Literal is analagous to argparse's [choices](https://docs.python.org/3/library/argparse.html#choices), which specifies the values that an argument can take. For example, if arg can only be one of 'H', 1, False, or 1.0078 then you would specify that `arg: Literal['H', 1, False, 1.0078]`. For instance, `--arg False` assigns arg to False and `--arg True` throws error. The `Literal` type was introduced in Python 3.8 ([PEP 586](https://www.python.org/dev/peps/pep-0586/)) and can be imported with `from typing_extensions import Literal`.
 
 #### Complex types
 
