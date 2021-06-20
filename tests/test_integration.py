@@ -122,23 +122,20 @@ class RequiredClassVariableTests(TestCase):
         self.assertEqual(args.arg_str_required, 'tappy')
         self.assertEqual(args.arg_list_str_required, ['hi', 'there'])
 
-
-# TODO: need to implement list[str] etc.
-class ParameterizedStandardCollectionTap(Tap):
-    arg_list_str: list[str]
-    arg_list_int: list[int]
-    arg_list_int_default: list[int] = [1, 2, 5]
-    arg_set_float: set[float]
-    arg_set_str_default: set[str] = {'one', 'two', 'five'}
-    arg_tuple_int: tuple[int, ...]
-    arg_tuple_float_default: tuple[float, float, float] = (1.0, 2.0, 5.0)
-    arg_tuple_str_override: tuple[str, str] = ('hi', 'there')
-    arg_optional_list_int: Optional[list[int]] = None
-
-
 class ParameterizedStandardCollectionTests(TestCase):
     @unittest.skipIf(sys.version_info < (3, 9), 'Parameterized standard collections (e.g., list[int]) introduced in Python 3.9')
     def test_parameterized_standard_collection(self):
+        class ParameterizedStandardCollectionTap(Tap):
+            arg_list_str: list[str]
+            arg_list_int: list[int]
+            arg_list_int_default: list[int] = [1, 2, 5]
+            arg_set_float: set[float]
+            arg_set_str_default: set[str] = {'one', 'two', 'five'}
+            arg_tuple_int: tuple[int, ...]
+            arg_tuple_float_default: tuple[float, float, float] = (1.0, 2.0, 5.0)
+            arg_tuple_str_override: tuple[str, str] = ('hi', 'there')
+            arg_optional_list_int: Optional[list[int]] = None
+
         arg_list_str = ['a', 'b', 'pi']
         arg_list_int = [-2, -5, 10]
         arg_set_float = {3.54, 2.235}
