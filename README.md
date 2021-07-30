@@ -215,6 +215,18 @@ Literal
 
 If you're using Python 3.9+, then you can replace `List` with `list`, `Set` with `set`, and `Tuple` with `tuple`.
 
+Additionally, any type that can be instantiated with a string argument can be used. For example, in
+```
+from pathlib import Path
+from tap import Tap
+
+class Args(Tap):
+   path: Path
+
+args = Args().parse_args()
+```
+`args.path` is a `Path` instance containing the string passed in through the command line.
+
 #### `str`, `int`, and `float`
 
 Each is automatically parsed to their respective types, just like argparse.
