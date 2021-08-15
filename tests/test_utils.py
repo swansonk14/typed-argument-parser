@@ -1,7 +1,6 @@
 from collections import OrderedDict
 import json
 import os
-import platform
 import subprocess
 from tempfile import TemporaryDirectory
 from typing import Any, Callable, List, Dict, Set, Tuple, Union
@@ -10,12 +9,9 @@ from unittest import TestCase
 from typing_extensions import Literal
 
 from tap.utils import (
-    has_git,
     get_class_column,
     get_class_variables,
-    get_git_root,
-    get_git_url,
-    has_uncommitted_changes,
+    GitInfo,
     type_to_str,
     get_literals,
     TupleTypeEnforcer,
@@ -37,6 +33,7 @@ class GitTests(TestCase):
         subprocess.check_output(['touch', 'README.md'])
         subprocess.check_output(['git', 'add', 'README.md'])
         subprocess.check_output(['git', 'commit', '-m', 'Initial commit'])
+        self.git_info = GitInfo(repo_path=self.temp_dir.name)
 
     def tearDown(self) -> None:
         os.chdir(self.prev_dir)
@@ -49,17 +46,19 @@ class GitTests(TestCase):
         self.temp_dir.cleanup()
 
     def test_has_git_true(self) -> None:
-        self.assertTrue(has_git())
+        self.assertTrue(self.git_info.has_git())
 
     def test_has_git_false(self) -> None:
         with TemporaryDirectory() as temp_dir_no_git:
             os.chdir(temp_dir_no_git)
-            self.assertFalse(has_git())
+            self.git_info.repo_path = temp_dir_no_git
+            self.assertFalse(self.git_info.has_git())
+            self.git_info.repo_path = self.temp_dir.name
             os.chdir(self.temp_dir.name)
 
     def test_get_git_root(self) -> None:
         # Ideally should be self.temp_dir.name == get_git_root() but the OS may add a prefix like /private
-        self.assertTrue(get_git_root().endswith(self.temp_dir.name.replace('\\', '/')))
+        self.assertTrue(self.git_info.get_git_root().endswith(self.temp_dir.name.replace('\\', '/')))
 
     def test_get_git_root_subdir(self) -> None:
         subdir = os.path.join(self.temp_dir.name, 'subdir')
@@ -67,54 +66,54 @@ class GitTests(TestCase):
         os.chdir(subdir)
 
         # Ideally should be self.temp_dir.name == get_git_root() but the OS may add a prefix like /private
-        self.assertTrue(get_git_root().endswith(self.temp_dir.name.replace('\\', '/')))
+        self.assertTrue(self.git_info.get_git_root().endswith(self.temp_dir.name.replace('\\', '/')))
 
         os.chdir(self.temp_dir.name)
 
     def test_get_git_url_https(self) -> None:
-        self.assertEqual(get_git_url(commit_hash=False), self.url)
+        self.assertEqual(self.git_info.get_git_url(commit_hash=False), self.url)
 
     def test_get_git_url_https_hash(self) -> None:
         url = f'{self.url}/tree/'
-        self.assertEqual(get_git_url(commit_hash=True)[:len(url)], url)
+        self.assertEqual(self.git_info.get_git_url(commit_hash=True)[:len(url)], url)
 
     def test_get_git_url_ssh(self) -> None:
         subprocess.run(['git', 'remote', 'set-url', 'origin', 'git@github.com:test_account/test_repo.git'])
-        self.assertEqual(get_git_url(commit_hash=False), self.url)
+        self.assertEqual(self.git_info.get_git_url(commit_hash=False), self.url)
 
     def test_get_git_url_ssh_hash(self) -> None:
         subprocess.run(['git', 'remote', 'set-url', 'origin', 'git@github.com:test_account/test_repo.git'])
         url = f'{self.url}/tree/'
-        self.assertEqual(get_git_url(commit_hash=True)[:len(url)], url)
+        self.assertEqual(self.git_info.get_git_url(commit_hash=True)[:len(url)], url)
 
     def test_get_git_url_https_enterprise(self) -> None:
         true_url = 'https://github.tap.com/test_account/test_repo'
         subprocess.run(['git', 'remote', 'set-url', 'origin', f'{true_url}.git'])
-        self.assertEqual(get_git_url(commit_hash=False), true_url)
+        self.assertEqual(self.git_info.get_git_url(commit_hash=False), true_url)
 
     def test_get_git_url_https_hash_enterprise(self) -> None:
         true_url = 'https://github.tap.com/test_account/test_repo'
         subprocess.run(['git', 'remote', 'set-url', 'origin', f'{true_url}.git'])
         url = f'{true_url}/tree/'
-        self.assertEqual(get_git_url(commit_hash=True)[:len(url)], url)
+        self.assertEqual(self.git_info.get_git_url(commit_hash=True)[:len(url)], url)
 
     def test_get_git_url_ssh_enterprise(self) -> None:
         true_url = 'https://github.tap.com/test_account/test_repo'
         subprocess.run(['git', 'remote', 'set-url', 'origin', 'git@github.tap.com:test_account/test_repo.git'])
-        self.assertEqual(get_git_url(commit_hash=False), true_url)
+        self.assertEqual(self.git_info.get_git_url(commit_hash=False), true_url)
 
     def test_get_git_url_ssh_hash_enterprise(self) -> None:
         true_url = 'https://github.tap.com/test_account/test_repo'
         subprocess.run(['git', 'remote', 'set-url', 'origin', 'git@github.tap.com:test_account/test_repo.git'])
         url = f'{true_url}/tree/'
-        self.assertEqual(get_git_url(commit_hash=True)[:len(url)], url)
+        self.assertEqual(self.git_info.get_git_url(commit_hash=True)[:len(url)], url)
 
     def test_has_uncommitted_changes_false(self) -> None:
-        self.assertFalse(has_uncommitted_changes())
+        self.assertFalse(self.git_info.has_uncommitted_changes())
 
     def test_has_uncommited_changes_true(self) -> None:
         subprocess.run(['touch', 'main.py'])
-        self.assertTrue(has_uncommitted_changes())
+        self.assertTrue(self.git_info.has_uncommitted_changes())
 
 
 class TypeToStrTests(TestCase):

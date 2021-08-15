@@ -3,6 +3,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from functools import partial
 import json
+from pathlib import Path
 from pprint import pformat
 from shlex import quote
 import sys
@@ -15,12 +16,9 @@ from warnings import warn
 from tap.utils import (
     get_class_variables,
     get_argument_name,
-    get_git_root,
     get_dest,
-    get_git_url,
     get_origin,
-    has_git,
-    has_uncommitted_changes,
+    GitInfo,
     is_option_arg,
     type_to_str,
     get_literals,
@@ -337,7 +335,7 @@ class Tap(ArgumentParser):
         pass
 
     @staticmethod
-    def get_reproducibility_info() -> Dict[str, str]:
+    def get_reproducibility_info(repo_path: Optional[str] = None) -> Dict[str, str]:
         """Gets a dictionary of reproducibility information.
 
         Reproducibility information always includes:
@@ -350,27 +348,37 @@ class Tap(ArgumentParser):
                    Ex. https://github.com/swansonk14/rationale-alignment/tree/<hash>
         - git_has_uncommitted_changes: Whether the current git repo has uncommitted changes.
 
+        :param repo_path: Path to the git repo to examine for reproducibility info.
+                          If None, uses the git repo of the Python file that is run.
         :return: A dictionary of reproducibility information.
         """
+        # Get the path to the Python file that is being run
+        if repo_path is None:
+            repo_path = (Path.cwd() / Path(sys.argv[0]).parent).resolve()
+
         reproducibility = {
             'command_line': f'python {" ".join(quote(arg) for arg in sys.argv)}',
             'time': time.strftime('%c')
         }
 
-        if has_git():
-            reproducibility['git_root'] = get_git_root()
-            reproducibility['git_url'] = get_git_url(commit_hash=True)
-            reproducibility['git_has_uncommitted_changes'] = has_uncommitted_changes()
+        git_info = GitInfo(repo_path=repo_path)
+
+        if git_info.has_git():
+            reproducibility['git_root'] = git_info.get_git_root()
+            reproducibility['git_url'] = git_info.get_git_url(commit_hash=True)
+            reproducibility['git_has_uncommitted_changes'] = git_info.has_uncommitted_changes()
 
         return reproducibility
 
-    def _log_all(self) -> Dict[str, Any]:
+    def _log_all(self, repo_path: Optional[str] = None) -> Dict[str, Any]:
         """Gets all arguments along with reproducibility information.
 
+        :param repo_path: Path to the git repo to examine for reproducibility info.
+                          If None, uses the git repo of the Python file that is run.
         :return: A dictionary containing all arguments along with reproducibility information.
         """
         arg_log = self.as_dict()
-        arg_log['reproducibility'] = self.get_reproducibility_info()
+        arg_log['reproducibility'] = self.get_reproducibility_info(repo_path=repo_path)
 
         return arg_log
 
@@ -590,12 +598,17 @@ class Tap(ArgumentParser):
 
         return self
 
-    def save(self, path: str, with_reproducibility: bool = True, skip_unpicklable: bool = False) -> None:
+    def save(self,
+             path: str, with_reproducibility: bool = True,
+             skip_unpicklable: bool = False,
+             repo_path: Optional[str] = None) -> None:
         """Saves the arguments and reproducibility information in JSON format, pickling what can't be encoded.
 
         :param path: Path to the JSON file where the arguments will be saved.
         :param with_reproducibility: If True, adds a "reproducibility" field with information (e.g. git hash)
                                      to the JSON file.
+        :param repo_path: Path to the git repo to examine for reproducibility info.
+                          If None, uses the git repo of the Python file that is run.
         :param skip_unpicklable: If True, does not save attributes whose values cannot be pickled.
         """
         with open(path, 'w') as f:
@@ -605,7 +618,8 @@ class Tap(ArgumentParser):
     def load(self,
              path: str,
              check_reproducibility: bool = False,
-             skip_unsettable: bool = False) -> TapType:
+             skip_unsettable: bool = False,
+             repo_path: Optional[str] = None) -> TapType:
         """Loads the arguments in JSON format. Note: Due to JSON, tuples are loaded as lists.
 
         :param path: Path to the JSON file where the arguments will be loaded from.
@@ -613,6 +627,8 @@ class Tap(ArgumentParser):
                                       information doesn't match the current reproducibility information.
         :param skip_unsettable: When True, skips attributes that cannot be set in the Tap object,
                                 e.g. properties without setters.
+        :param repo_path: Path to the git repo to examine for reproducibility info.
+                          If None, uses the git repo of the Python file that is run.
         :return: Returns self.
         """
         with open(path) as f:
@@ -621,7 +637,7 @@ class Tap(ArgumentParser):
         # Remove loaded reproducibility information since it is no longer valid
         saved_reproducibility_data = args_dict.pop('reproducibility', None)
         if check_reproducibility:
-            current_reproducibility_data = self.get_reproducibility_info()
+            current_reproducibility_data = self.get_reproducibility_info(repo_path=repo_path)
             enforce_reproducibility(saved_reproducibility_data, current_reproducibility_data, path)
 
         self.from_dict(args_dict, skip_unsettable=skip_unsettable)

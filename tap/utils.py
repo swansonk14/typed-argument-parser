@@ -31,7 +31,7 @@ NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
 PRIMITIVES = (str, int, float, bool)
 
 
-def check_output(command: List[str], suppress_stderr: bool = True) -> str:
+def check_output(command: List[str], suppress_stderr: bool = True, **kwargs) -> str:
     """Runs subprocess.check_output and returns the result as a string.
 
     :param command: A list of strings representing the command to run on the command line.
@@ -40,77 +40,79 @@ def check_output(command: List[str], suppress_stderr: bool = True) -> str:
     """
     with open(os.devnull, 'w') as devnull:
         devnull = devnull if suppress_stderr else None
-        output = subprocess.check_output(command, stderr=devnull).decode('utf-8').strip()
+        output = subprocess.check_output(command, stderr=devnull, **kwargs).decode('utf-8').strip()
     return output
 
 
-def has_git() -> bool:
-    """Returns whether git is installed.
+class GitInfo:
+    """Class with helper methods for extracting information about a git repo."""
 
-    :return: True if git is installed, False otherwise.
-    """
-    try:
-        output = check_output(['git', 'rev-parse', '--is-inside-work-tree'])
-        return output == 'true'
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        return False
+    def __init__(self, repo_path: str):
+        self.repo_path = repo_path
 
+    def has_git(self) -> bool:
+        """Returns whether git is installed.
 
-def get_git_root() -> str:
-    """Gets the root directory of the git repo where the command is run.
+        :return: True if git is installed, False otherwise.
+        """
+        try:
+            output = check_output(['git', 'rev-parse', '--is-inside-work-tree'], cwd=self.repo_path)
+            return output == 'true'
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            return False
 
-    :return: The root directory of the current git repo.
-    """
-    return check_output(['git', 'rev-parse', '--show-toplevel'])
+    def get_git_root(self) -> str:
+        """Gets the root directory of the git repo where the command is run.
 
+        :return: The root directory of the current git repo.
+        """
+        return check_output(['git', 'rev-parse', '--show-toplevel'], cwd=self.repo_path)
 
-def get_git_url(commit_hash: bool = True) -> str:
-    """Gets the https url of the git repo where the command is run.
+    def get_git_url(self, commit_hash: bool = True) -> str:
+        """Gets the https url of the git repo where the command is run.
 
-    :param commit_hash: If True, the url links to the latest local git commit hash.
-    If False, the url links to the general git url.
-    :return: The https url of the current git repo.
-    """
-    # Get git url (either https or ssh)
-    try:
-        url = check_output(['git', 'remote', 'get-url', 'origin'])
-    except subprocess.CalledProcessError:
-        # For git versions <2.0
-        url = check_output(['git', 'config', '--get', 'remote.origin.url'])
+        :param commit_hash: If True, the url links to the latest local git commit hash.
+        If False, the url links to the general git url.
+        :return: The https url of the current git repo.
+        """
+        # Get git url (either https or ssh)
+        try:
+            url = check_output(['git', 'remote', 'get-url', 'origin'], cwd=self.repo_path)
+        except subprocess.CalledProcessError:
+            # For git versions <2.0
+            url = check_output(['git', 'config', '--get', 'remote.origin.url'], cwd=self.repo_path)
 
-    # Remove .git at end
-    url = url[:-len('.git')]
+        # Remove .git at end
+        url = url[:-len('.git')]
 
-    # Convert ssh url to https url
-    m = re.search('git@(.+):', url)
-    if m is not None:
-        domain = m.group(1)
-        path = url[m.span()[1]:]
-        url = f'https://{domain}/{path}'
+        # Convert ssh url to https url
+        m = re.search('git@(.+):', url)
+        if m is not None:
+            domain = m.group(1)
+            path = url[m.span()[1]:]
+            url = f'https://{domain}/{path}'
 
-    if commit_hash:
-        # Add tree and hash of current commit
-        url = f'{url}/tree/{get_git_hash()}'
+        if commit_hash:
+            # Add tree and hash of current commit
+            url = f'{url}/tree/{self.get_git_hash()}'
 
-    return url
+        return url
 
+    def get_git_hash(self) -> str:
+        """Gets the git hash of HEAD of the git repo where the command is run.
 
-def get_git_hash() -> str:
-    """Gets the git hash of HEAD of the git repo where the command is run.
+        :return: The git hash of HEAD of the current git repo.
+        """
+        return check_output(['git', 'rev-parse', 'HEAD'], cwd=self.repo_path)
 
-    :return: The git hash of HEAD of the current git repo.
-    """
-    return check_output(['git', 'rev-parse', 'HEAD'])
+    def has_uncommitted_changes(self) -> bool:
+        """Returns whether there are uncommitted changes in the git repo where the command is run.
 
+        :return: True if there are uncommitted changes in the current git repo, False otherwise.
+        """
+        status = check_output(['git', 'status'], cwd=self.repo_path)
 
-def has_uncommitted_changes() -> bool:
-    """Returns whether there are uncommitted changes in the git repo where the command is run.
-
-    :return: True if there are uncommitted changes in the current git repo, False otherwise.
-    """
-    status = check_output(['git', 'status'])
-
-    return not status.endswith(NO_CHANGES_STATUS)
+        return not status.endswith(NO_CHANGES_STATUS)
 
 
 def type_to_str(type_annotation: Union[type, Any]) -> str:

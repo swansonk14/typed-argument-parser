@@ -373,12 +373,12 @@ Specifically, Tap has a method called `get_reproducibility_info` that returns a 
     - The time when the command was run
     - Ex. `Thu Aug 15 00:09:13 2019`
 - Git root
-    - The root of the git repo containing the code
+    - The root of the git repo containing the code that was run
     - Ex. `/Users/swansonk14/typed-argument-parser`
 - Git url
     - The url to the git repo, specifically pointing to the current git hash (i.e. the hash of HEAD in the local repo)
     - Ex. [https://github.com/swansonk14/typed-argument-parser/tree/446cf046631d6bdf7cab6daec93bf7a02ac00998](https://github.com/swansonk14/typed-argument-parser/tree/446cf046631d6bdf7cab6daec93bf7a02ac00998)
-- Uncommited changes
+- Uncommitted changes
     - Whether there are any uncommitted changes in the git repo (i.e. whether the code is different from the code at the above git hash)
     - Ex. `True` or `False`
 
