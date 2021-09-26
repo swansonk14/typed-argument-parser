@@ -482,3 +482,24 @@ class Args(Tap):
 
 args = Args(config_files=['my_config.txt']).parse_args()
 ```
+
+In addition, if `parse_config_files_with_shlex=True` is passed to `parse_args`, config files are passed using the python standard library `shlex.split` method, which supports shell-style string quoting, as well as comments with `#`.
+
+For example, if you have the config file `my_config_shlex.txt`
+```
+--arg1 21 # Important arg value
+
+# Multi-word quoted string
+--arg2 "two three four"
+```
+then you can write
+```python
+from tap import Tap
+
+class Args(Tap):
+    arg1: int
+    arg2: str
+
+rgs = Args(config_files=['my_config_shlex.txt']).parse_args(parse_config_files_with_shlex=True)
+```
+to get the resulting `args = {'arg1': 21, 'arg2': 'two three four'}`

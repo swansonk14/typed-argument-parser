@@ -5,7 +5,7 @@ from functools import partial
 import json
 from pathlib import Path
 from pprint import pformat
-from shlex import quote
+from shlex import quote, split
 import sys
 import time
 from types import MethodType
@@ -384,7 +384,8 @@ class Tap(ArgumentParser):
 
     def parse_args(self: TapType,
                    args: Optional[Sequence[str]] = None,
-                   known_only: bool = False) -> TapType:
+                   known_only: bool = False,
+                   parse_config_files_with_shlex = False) -> TapType:
         """Parses arguments, sets attributes of self equal to the parsed arguments, and processes arguments.
 
         :param args: List of strings to parse. The default is taken from `sys.argv`.
@@ -397,7 +398,13 @@ class Tap(ArgumentParser):
             raise ValueError('parse_args can only be called once.')
 
         # Collect arguments from all of the configs
-        config_args = [arg for args_from_config in self.args_from_configs for arg in args_from_config.split()]
+
+        if parse_config_files_with_shlex:
+            splitter = lambda arg_string: split(arg_string, comments=True)
+        else:
+            splitter = lambda arg_string: arg_string.split()
+
+        config_args = [arg for args_from_config in self.args_from_configs for arg in splitter(args_from_config)]
 
         # Add config args at lower precedence and extract args from the command line if they are not passed explicitly
         args = config_args + (sys.argv[1:] if args is None else list(args))
