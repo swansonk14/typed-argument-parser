@@ -135,6 +135,23 @@ class LoadConfigFilesTests(TestCase):
 
             JunkConfigTap(config_files=[fname]).parse_args()
 
+    def test_shlex_config(self) -> None:
+        class ShlexConfigTap(Tap):
+            a: int
+            b: str
+
+        with TemporaryDirectory() as temp_dir:
+            fname = os.path.join(temp_dir, 'config.txt')
+
+            with open(fname, 'w') as f:
+                f.write('--a 21 # Important arg value\n\n# Multi-word quoted string\n--b "two three four"')
+
+            args = ShlexConfigTap(config_files=[fname]).parse_args(parse_config_files_with_shlex=True)
+
+        self.assertEqual(args.a, 21)
+        self.assertEqual(args.b, 'two three four')
+
+
 
 if __name__ == '__main__':
     unittest.main()
