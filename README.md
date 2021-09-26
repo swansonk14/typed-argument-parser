@@ -500,6 +500,6 @@ class Args(Tap):
     arg1: int
     arg2: str
 
-rgs = Args(config_files=['my_config_shlex.txt']).parse_args(parse_config_files_with_shlex=True)
+args = Args(config_files=['my_config_shlex.txt']).parse_args(parse_config_files_with_shlex=True)
 ```
 to get the resulting `args = {'arg1': 21, 'arg2': 'two three four'}`
