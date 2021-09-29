@@ -385,12 +385,13 @@ class Tap(ArgumentParser):
     def parse_args(self: TapType,
                    args: Optional[Sequence[str]] = None,
                    known_only: bool = False,
-                   parse_config_files_with_shlex = False) -> TapType:
+                   legacy_config_parsing = False) -> TapType:
         """Parses arguments, sets attributes of self equal to the parsed arguments, and processes arguments.
 
         :param args: List of strings to parse. The default is taken from `sys.argv`.
         :param known_only: If true, ignores extra arguments and only parses known arguments.
         Unparsed arguments are saved to self.extra_args.
+        :legacy_config_parsing: If true, config files are parsed using `str.split` instead of `shlex.split`.
         :return: self, which is a Tap instance containing all of the parsed args.
         """
         # Prevent double parsing
@@ -399,10 +400,10 @@ class Tap(ArgumentParser):
 
         # Collect arguments from all of the configs
 
-        if parse_config_files_with_shlex:
-            splitter = lambda arg_string: split(arg_string, comments=True)
-        else:
+        if legacy_config_parsing:
             splitter = lambda arg_string: arg_string.split()
+        else:
+            splitter = lambda arg_string: split(arg_string, comments=True)
 
         config_args = [arg for args_from_config in self.args_from_configs for arg in splitter(args_from_config)]
 
