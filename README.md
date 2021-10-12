@@ -483,7 +483,7 @@ class Args(Tap):
 args = Args(config_files=['my_config.txt']).parse_args()
 ```
 
-In addition, if `parse_config_files_with_shlex=True` is passed to `parse_args`, config files are pre-processed using the python standard library `shlex.split` method, which supports shell-style string quoting, as well as comments with `#`.
+Config files are parsed using `shlex.split` from the python standard library, which supports shell-style string quoting, as well as line-end comments starting with `#`.
 
 For example, if you have the config file `my_config_shlex.txt`
 ```
@@ -500,6 +500,8 @@ class Args(Tap):
     arg1: int
     arg2: str
 
-args = Args(config_files=['my_config_shlex.txt']).parse_args(parse_config_files_with_shlex=True)
+args = Args(config_files=['my_config_shlex.txt']).parse_args()
 ```
 to get the resulting `args = {'arg1': 21, 'arg2': 'two three four'}`
+
+The legacy parsing behavior of using standard string split can be re-enabled by passing `legacy_config_parsing=True` to `parse_args`.
