@@ -12,6 +12,7 @@ import re
 import subprocess
 import sys
 import tokenize
+from types import UnionType
 from typing import (
     Any,
     Callable,
@@ -471,7 +472,7 @@ def enforce_reproducibility(saved_reproducibility_data: Optional[Dict[str, str]]
                          f'in current args.')
 
 
-# TODO: remove this once typing_inspect.get_origin is fixed for Python 3.8 and 3.9
+# TODO: remove this once typing_inspect.get_origin is fixed for Python 3.8, 3.9, and 3.10
 # https://github.com/ilevkivskyi/typing_inspect/issues/64
 # https://github.com/ilevkivskyi/typing_inspect/issues/65
 def get_origin(tp: Any) -> Any:
@@ -480,5 +481,8 @@ def get_origin(tp: Any) -> Any:
 
     if origin is None:
         origin = tp
+
+    if isinstance(origin, UnionType):
+        origin = UnionType
 
     return origin
