@@ -133,7 +133,7 @@ class LoadConfigFilesTests(TestCase):
             with open(fname, 'w') as f:
                 f.write('is not a file that can reasonably be parsed')
 
-            JunkConfigTap(config_files=[fname]).parse_args()
+            JunkConfigTap(config_files=[fname]).parse_args([])
 
     def test_shlex_config(self) -> None:
         class ShlexConfigTap(Tap):
