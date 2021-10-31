@@ -146,7 +146,7 @@ class LoadConfigFilesTests(TestCase):
             with open(fname, 'w') as f:
                 f.write('--a 21 # Important arg value\n\n# Multi-word quoted string\n--b "two three four"')
 
-            args = ShlexConfigTap(config_files=[fname]).parse_args()
+            args = ShlexConfigTap(config_files=[fname]).parse_args([])
 
         self.assertEqual(args.a, 21)
         self.assertEqual(args.b, 'two three four')
