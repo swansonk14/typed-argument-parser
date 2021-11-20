@@ -18,7 +18,8 @@ from tap.utils import (
     _nested_replace_type,
     define_python_object_encoder,
     UnpicklableObject,
-    as_python_object
+    as_python_object,
+    enforce_reproducibility,
 )
 
 
@@ -452,6 +453,33 @@ class PythonObjectEncoderTests(TestCase):
         dumps = json.dumps(obj, indent=4, sort_keys=True, cls=define_python_object_encoder(True))
         recreated_obj = json.loads(dumps, object_hook=as_python_object)
         self.assertEqual(recreated_obj, expected_obj)
+
+
+class EnforceReproducibilityTests(TestCase):
+
+    def test_saved_reproducibility_data_is_none(self):
+        with self.assertRaises(ValueError):
+            enforce_reproducibility(None, {}, 'here')
+
+    def test_git_url_not_in_saved_reproducibility_data(self):
+        with self.assertRaises(ValueError):
+            enforce_reproducibility({}, {}, 'here')
+
+    def test_git_url_not_in_current_reproducibility_data(self):
+        with self.assertRaises(ValueError):
+            enforce_reproducibility({'git_url': 'none'}, {}, 'here')
+
+    def test_git_urls_disagree(self):
+        with self.assertRaises(ValueError):
+            enforce_reproducibility({'git_url': 'none'}, {'git_url': 'some'}, 'here')
+
+    def test_throw_error_for_saved_uncommitted_changes(self):
+        with self.assertRaises(ValueError):
+            enforce_reproducibility({'git_url': 'none', 'git_has_uncommitted_changes': True}, {'git_url': 'some'}, 'here')
+
+    def test_throw_error_for_uncommitted_changes(self):
+        with self.assertRaises(ValueError):
+            enforce_reproducibility({'git_url': 'none', 'git_has_uncommitted_changes': False}, {'git_url': 'some', 'git_has_uncommitted_changes': True}, 'here')
 
 
 if __name__ == '__main__':
