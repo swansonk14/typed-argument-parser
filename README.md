@@ -7,8 +7,8 @@
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/typed-argument-parser)](https://badge.fury.io/py/typed-argument-parser)
 [![PyPI version](https://badge.fury.io/py/typed-argument-parser.svg)](https://badge.fury.io/py/typed-argument-parser)
 [![Build Status](https://github.com/swansonk14/typed-argument-parser/workflows/tests/badge.svg)](https://github.com/swansonk14/typed-argument-parser)
-[![codecov](https://codecov.io/gh/swansonk14/typed-argument-parser/branch/master/graph/badge.svg)](https://codecov.io/gh/swansonk14/typed-argument-parser)
-[![license](https://img.shields.io/github/license/swansonk14/typed-argument-parser.svg)](https://github.com/swansonk14/typed-argument-parser/blob/master/LICENSE.txt)
+[![codecov](https://codecov.io/gh/swansonk14/typed-argument-parser/branch/main/graph/badge.svg)](https://codecov.io/gh/swansonk14/typed-argument-parser)
+[![license](https://img.shields.io/github/license/swansonk14/typed-argument-parser.svg)](https://github.com/swansonk14/typed-argument-parser/blob/main/LICENSE.txt)
 
 Tap is a typed modernization of Python's [argparse](https://docs.python.org/3/library/argparse.html) library.
 
@@ -17,7 +17,7 @@ Tap provides the following benefits:
 - Code completion
 - Source code navigation (e.g. go to definition and go to implementation)
 
-![Tap](https://github.com/swansonk14/typed-argument-parser/raw/master/images/tap.png)
+![Tap](https://github.com/swansonk14/typed-argument-parser/raw/main/images/tap.png)
 
 See [this poster](https://docs.google.com/presentation/d/1AirN6gpiq4P1L8K003EsXmobVxP3A4AVEIR2KOEQN7Y/edit?usp=sharing), which we presented at [PyCon 2020](https://us.pycon.org/2020/), for a presentation of some of the relevant concepts we used to guide the development of Tap. 
 
