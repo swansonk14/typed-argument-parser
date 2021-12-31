@@ -10,11 +10,12 @@ import sys
 import time
 from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
-from typing_inspect import is_literal_type, get_args
+from typing_inspect import is_literal_type
 from warnings import warn
 
 from tap.utils import (
     get_class_variables,
+    get_args,
     get_argument_name,
     get_dest,
     get_origin,
@@ -37,7 +38,8 @@ if sys.version_info >= (3, 10):
 # Constants
 EMPTY_TYPE = get_args(List)[0] if len(get_args(List)) > 0 else tuple()
 BOXED_COLLECTION_TYPES = {List, list, Set, set, Tuple, tuple}
-OPTIONAL_TYPES = {Optional, Union} | ({UnionType} if sys.version_info >= (3, 10) else set())
+UNION_TYPES = {Union} | ({UnionType} if sys.version_info >= (3, 10) else set())
+OPTIONAL_TYPES = {Optional} | UNION_TYPES
 BOXED_TYPES = BOXED_COLLECTION_TYPES | OPTIONAL_TYPES
 
 
@@ -172,10 +174,25 @@ class Tap(ArgumentParser):
 
             # If type is not explicitly provided, set it if it's one of our supported default types
             if 'type' not in kwargs:
-
                 # Unbox Union[type] (Optional[type]) and set var_type = type
                 if get_origin(var_type) in OPTIONAL_TYPES:
                     var_args = get_args(var_type)
+
+                    # If type is Union or Optional without inner types, set type to equivalent of Optional[str]
+                    if len(var_args) == 0:
+                        var_args = (str, type(None))
+
+                    # Raise error if type function is not explicitly provided for Union types (not including Optionals)
+                    if get_origin(var_type) in UNION_TYPES and not (len(var_args) == 2 and var_args[1] == type(None)):
+                        raise ArgumentTypeError(
+                            'For Union types, you must include an explicit type function in the configure method. '
+                            'For example,\n\n'
+                            'class Args(Tap):\n'
+                            '    arg: Union[int, float]\n'
+                            '\n'
+                            '    def configure(self) -> None:\n'
+                            '        self.add_argument("--arg", type=lambda x: float(x) if "." in x else int(x))'
+                        )
 
                     if len(var_args) > 0:
                         var_type = var_args[0]
@@ -242,7 +259,7 @@ class Tap(ArgumentParser):
                         kwargs['type'] = boolean_type
                         kwargs['choices'] = [True, False]  # this makes the help message more helpful
                     else:
-                        action_cond = "true" if kwargs.get("required", False) or not kwargs["default"] else "false"
+                        action_cond = 'true' if kwargs.get('required', False) or not kwargs['default'] else 'false'
                         kwargs['action'] = kwargs.get('action', f'store_{action_cond}')
                 elif kwargs.get('action') not in {'count', 'append_const'}:
                     kwargs['type'] = var_type

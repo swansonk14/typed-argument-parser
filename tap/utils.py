@@ -24,7 +24,7 @@ from typing import (
     Union,
 )
 from typing_extensions import Literal
-from typing_inspect import get_args, get_origin as typing_inspect_get_origin
+from typing_inspect import get_args as typing_inspect_get_args, get_origin as typing_inspect_get_origin
 
 if sys.version_info >= (3, 10):
     from types import UnionType
@@ -487,3 +487,12 @@ def get_origin(tp: Any) -> Any:
         origin = UnionType
 
     return origin
+
+
+# TODO: remove this once typing_insepct.get_args is fixed for Python 3.10 union types
+def get_args(tp: Any) -> Tuple[type, ...]:
+    """Same as typing_inspect.get_args but fixes Python 3.10 union types."""
+    if sys.version_info >= (3, 10) and isinstance(tp, UnionType):
+        return tp.__args__
+
+    return typing_inspect_get_args(tp)
