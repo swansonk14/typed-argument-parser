@@ -187,11 +187,13 @@ class Tap(ArgumentParser):
                         raise ArgumentTypeError(
                             'For Union types, you must include an explicit type function in the configure method. '
                             'For example,\n\n'
+                            'def to_number(string: str) -> Union[float, int]:\n'
+                            '    return float(string) if \'.\' in string else int(string)\n\n'
                             'class Args(Tap):\n'
-                            '    arg: Union[int, float]\n'
+                            '    arg: Union[float, int]\n'
                             '\n'
                             '    def configure(self) -> None:\n'
-                            '        self.add_argument("--arg", type=lambda x: float(x) if "." in x else int(x))'
+                            '        self.add_argument(\'--arg\', type=to_number)'
                         )
 
                     if len(var_args) > 0:

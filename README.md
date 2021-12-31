@@ -262,11 +262,11 @@ Literal is analagous to argparse's [choices](https://docs.python.org/3/library/a
 More complex types _must_ be specified with the `type` keyword argument in `add_argument`, as in the example below.
 
 ```python
-def to_number(string: str):
+def to_number(string: str) -> Union[float, int]:
     return float(string) if '.' in string else int(string)
 
 class MyTap(Tap):
-    number: Union[int, float]
+    number: Union[float, int]
 
     def configure(self):
         self.add_argument('--number', type=to_number)
