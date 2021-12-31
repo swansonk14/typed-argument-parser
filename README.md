@@ -41,25 +41,38 @@ pip install -e .
 ## Table of Contents
 
 * [Installation](#installation)
+* [Table of Contents](#table-of-contents)
 * [Tap is Python-native](#tap-is-python-native)
 * [Tap features](#tap-features)
-    + [Arguments](#arguments)
-    + [Help string](#help-string)
-    + [Flexibility of `configure`](#flexibility-of-configure)
-    + [Types](#types)
-    + [Argument processing with `process_args`](#argument-processing-with-process_args)
-    + [Processing known args](#processing-known-args)
-    + [Subclassing](#subclassing)
-    + [Printing](#printing)
-    + [Reproducibility](#reproducibility)
-      - [Reproducibility info](#reproducibility-info)
-    + [Saving and loading arguments](#saving-and-loading-arguments)
-      - [Save](#save)
-      - [Load](#load)
-      - [Load from dict](#load-from-dict)
-    + [Loading from configuration files](#loading-from-configuration-files)
+  + [Arguments](#arguments)
+  + [Help string](#help-string)
+  + [Flexibility of `configure`](#flexibility-of--configure-)
+    - [Adding special argument behavior](#adding-special-argument-behavior)
+    - [Adding subparsers](#adding-subparsers)
+  + [Types](#types)
+    - [`str`, `int`, and `float`](#-str----int---and--float-)
+    - [`bool`](#-bool-)
+    - [`Optional`](#-optional-)
+    - [`List`](#-list-)
+    - [`Set`](#-set-)
+    - [`Tuple`](#-tuple-)
+    - [`Literal`](#-literal-)
+    - [`Union`](#-union-)
+    - [Complex Types](#complex-types)
+  + [Argument processing with `process_args`](#argument-processing-with--process-args-)
+  + [Processing known args](#processing-known-args)
+  + [Subclassing](#subclassing)
+  + [Printing](#printing)
+  + [Reproducibility](#reproducibility)
+    - [Reproducibility info](#reproducibility-info)
+  + [Saving and loading arguments](#saving-and-loading-arguments)
+    - [Save](#save)
+    - [Load](#load)
+    - [Load from dict](#load-from-dict)
+  + [Loading from configuration files](#loading-from-configuration-files)
 
 ## Tap is Python-native
+
 To see this, let's look at an example:
 
 ```python
@@ -202,7 +215,7 @@ class Args(Tap):
 
 ### Types
 
-Tap automatically handles all of the following types:
+Tap automatically handles all the following types:
 
 ```python
 str, int, float, bool
@@ -215,8 +228,10 @@ Literal
 
 If you're using Python 3.9+, then you can replace `List` with `list`, `Set` with `set`, and `Tuple` with `tuple`.
 
+Tap also supports `Union`, but this requires additional specification (see [Union](#-union-) section below).
+
 Additionally, any type that can be instantiated with a string argument can be used. For example, in
-```
+```python
 from pathlib import Path
 from tap import Tap
 
@@ -257,9 +272,9 @@ Tuples can be used to specify a fixed number of arguments with specified types u
 
 Literal is analagous to argparse's [choices](https://docs.python.org/3/library/argparse.html#choices), which specifies the values that an argument can take. For example, if arg can only be one of 'H', 1, False, or 1.0078 then you would specify that `arg: Literal['H', 1, False, 1.0078]`. For instance, `--arg False` assigns arg to False and `--arg True` throws error. The `Literal` type was introduced in Python 3.8 ([PEP 586](https://www.python.org/dev/peps/pep-0586/)) and can be imported with `from typing_extensions import Literal`.
 
-#### Complex types
+#### `Union`
 
-More complex types _must_ be specified with the `type` keyword argument in `add_argument`, as in the example below.
+Union types must include the `type` keyword argument in `add_argument` in order to specify which type to use, as in the example below.
 
 ```python
 def to_number(string: str) -> Union[float, int]:
@@ -271,6 +286,47 @@ class MyTap(Tap):
     def configure(self):
         self.add_argument('--number', type=to_number)
 ```
+
+In Python 3.10+, `Union[Type1, Type2, etc.]` can be replaced with `Type1 | Type2 | etc.`, but the `type` keyword argument must still be provided in `add_argument`.
+
+#### Complex Types
+
+Tap can also support more complex types than the ones specified above. If the desired type is constructed with a single string as input, then the type can be specified directly without additional modifications. For example,
+
+```python
+class Person:
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+class Args(Tap):
+    person: Person
+
+args = Args().parse_args('--person Tapper'.split())
+print(args.person.name)  # Tapper
+```
+
+If the desired type has a more complex constructor, then the `type` keyword argument must be provided in `add_argument`. For example,
+
+```python
+class AgedPerson:
+    def __init__(self, name: str, age: int) -> None:
+        self.name = name
+        self.age = age
+
+def to_aged_person(string: str) -> AgedPerson:
+    name, age = string.split(',')
+    return AgedPerson(name=name, age=int(age))
+
+class Args(Tap):
+    aged_person: AgedPerson
+
+    def configure(self) -> None:
+        self.add_argument('--aged_person', type=to_aged_person)
+
+args = Args().parse_args('--aged_person Tapper,27'.split())
+print(f'{args.aged_person.name} is {args.aged_person.age}')  # Tapper is 27
+```
+
 
 ### Argument processing with `process_args`
 
