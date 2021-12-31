@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 from collections import OrderedDict
 from copy import deepcopy
 from functools import partial
@@ -8,7 +8,7 @@ from pprint import pformat
 from shlex import quote, split
 import sys
 import time
-from types import MethodType, UnionType
+from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
 from typing_inspect import is_literal_type, get_args
 from warnings import warn
@@ -30,11 +30,14 @@ from tap.utils import (
     enforce_reproducibility,
 )
 
+if sys.version_info >= (3, 10):
+    from types import UnionType
+
 
 # Constants
 EMPTY_TYPE = get_args(List)[0] if len(get_args(List)) > 0 else tuple()
 BOXED_COLLECTION_TYPES = {List, list, Set, set, Tuple, tuple}
-OPTIONAL_TYPES = {Optional, Union, UnionType}
+OPTIONAL_TYPES = {Optional, Union} | ({UnionType} if sys.version_info >= (3, 10) else set())
 BOXED_TYPES = BOXED_COLLECTION_TYPES | OPTIONAL_TYPES
 
 
@@ -202,8 +205,8 @@ class Tap(ArgumentParser):
 
                     # Don't allow Tuple[()]
                     if len(types) == 1 and types[0] == tuple():
-                        raise ValueError('Empty Tuples (i.e. Tuple[()]) are not a valid Tap type '
-                                         'because they have no arguments.')
+                        raise ArgumentTypeError('Empty Tuples (i.e. Tuple[()]) are not a valid Tap type '
+                                                'because they have no arguments.')
 
                     # Handle Tuple[type, ...]
                     if len(types) == 2 and types[1] == Ellipsis:

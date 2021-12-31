@@ -12,7 +12,6 @@ import re
 import subprocess
 import sys
 import tokenize
-from types import UnionType
 from typing import (
     Any,
     Callable,
@@ -27,6 +26,8 @@ from typing import (
 from typing_extensions import Literal
 from typing_inspect import get_args, get_origin as typing_inspect_get_origin
 
+if sys.version_info >= (3, 10):
+    from types import UnionType
 
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
 PRIMITIVES = (str, int, float, bool)
@@ -256,7 +257,7 @@ def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any],
     literals = list(get_args(literal))
 
     if not all(isinstance(literal, PRIMITIVES) for literal in literals):
-        raise ValueError(
+        raise ArgumentTypeError(
             f'The type for variable "{variable}" contains a literal'
             f'of a non-primitive type e.g. (str, int, float, bool).\n'
             f'Currently only primitive-typed literals are supported.'
@@ -265,7 +266,7 @@ def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any],
     str_to_literal = {str(literal): literal for literal in literals}
 
     if len(literals) != len(str_to_literal):
-        raise ValueError('All literals must have unique string representations')
+        raise ArgumentTypeError('All literals must have unique string representations')
 
     def var_type(arg: str) -> Any:
         return str_to_literal.get(arg, arg)
@@ -404,7 +405,7 @@ def as_python_object(dct: Any) -> Any:
             return UnpicklableObject()
 
         else:
-            raise ValueError(f'Special type "{_type}" not supported for JSON loading.')
+            raise ArgumentTypeError(f'Special type "{_type}" not supported for JSON loading.')
 
     return dct
 
@@ -482,7 +483,7 @@ def get_origin(tp: Any) -> Any:
     if origin is None:
         origin = tp
 
-    if isinstance(origin, UnionType):
+    if sys.version_info >= (3, 10) and isinstance(origin, UnionType):
         origin = UnionType
 
     return origin
