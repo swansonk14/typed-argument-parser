@@ -1,10 +1,11 @@
+from argparse import ArgumentTypeError
 from copy import deepcopy
 import os
 from pathlib import Path
 import pickle
 import sys
 from tempfile import TemporaryDirectory
-from typing import Any, Iterable, List, Optional, Set, Tuple
+from typing import Any, Iterable, List, Optional, Set, Tuple, Union
 from typing_extensions import Literal
 import unittest
 from unittest import TestCase
@@ -556,6 +557,186 @@ class LiteralCrashTests(TestCase):
             LiteralCrashTap().parse_args(['--arg_lit', '123'])
 
 
+def convert_str_or_int(str_or_int: str) -> Union[str, int]:
+    try:
+        return int(str_or_int)
+    except ValueError:
+        return str_or_int
+
+
+def convert_person_or_str(person_or_str: str) -> Union[Person, str]:
+    if person_or_str == person_or_str.title():
+        return Person(person_or_str)
+
+    return person_or_str
+
+
+def convert_many_types(input_str: str) -> Union[int, float, Person, str]:
+    try:
+        return int(input_str)
+    except ValueError:
+        try:
+            return float(input_str)
+        except ValueError:
+            if input_str == input_str.title():
+                return Person(input_str)
+
+            return input_str
+
+
+# TODO: test crash if not specifying type function
+class UnionTypeTap(Tap):
+    union_zero_required_arg: Union
+    union_zero_default_arg: Union = 'hi'
+    union_one_required_arg: Union[str]
+    union_one_default_arg: Union[str] = 'there'
+    union_two_required_arg: Union[str, int]
+    union_two_default_int_arg: Union[str, int] = 5
+    union_two_default_str_arg: Union[str, int] = 'year old'
+    union_custom_required_arg: Union[Person, str]
+    union_custom_required_flip_arg: Union[str, Person]
+    union_custom_default_arg: Union[Person, str] = Person('Jesse')
+    union_custom_default_flip_arg: Union[str, Person] = 'I want'
+    union_none_required_arg: Union[int, None]
+    union_none_required_flip_arg: Union[None, int]
+    union_many_required_arg: Union[int, float, Person, str]
+    union_many_default_arg: Union[int, float, Person, str] = 3.14
+
+    def configure(self) -> None:
+        self.add_argument('--union_two_required_arg', type=convert_str_or_int)
+        self.add_argument('--union_two_default_int_arg', type=convert_str_or_int)
+        self.add_argument('--union_two_default_str_arg', type=convert_str_or_int)
+        self.add_argument('--union_custom_required_arg', type=convert_person_or_str)
+        self.add_argument('--union_custom_required_flip_arg', type=convert_person_or_str)
+        self.add_argument('--union_custom_default_arg', type=convert_person_or_str)
+        self.add_argument('--union_custom_default_flip_arg', type=convert_person_or_str)
+        self.add_argument('--union_none_required_flip_arg', type=int)
+        self.add_argument('--union_many_required_arg', type=convert_many_types)
+        self.add_argument('--union_many_default_arg', type=convert_many_types)
+
+
+if sys.version_info >= (3, 10):
+    class UnionType310Tap(Tap):
+        union_two_required_arg: str | int
+        union_two_default_int_arg: str | int = 10
+        union_two_default_str_arg: str | int = 'pieces of pie for'
+        union_custom_required_arg: Person | str
+        union_custom_required_flip_arg: str | Person
+        union_custom_default_arg: Person | str = Person('Kyle')
+        union_custom_default_flip_arg: str | Person = 'making'
+        union_none_required_arg: int | None
+        union_none_required_flip_arg: None | int
+        union_many_required_arg: int | float | Person | str
+        union_many_default_arg: int | float | Person | str = 3.14 * 10 / 8
+
+        def configure(self) -> None:
+            self.add_argument('--union_two_required_arg', type=convert_str_or_int)
+            self.add_argument('--union_two_default_int_arg', type=convert_str_or_int)
+            self.add_argument('--union_two_default_str_arg', type=convert_str_or_int)
+            self.add_argument('--union_custom_required_arg', type=convert_person_or_str)
+            self.add_argument('--union_custom_required_flip_arg', type=convert_person_or_str)
+            self.add_argument('--union_custom_default_arg', type=convert_person_or_str)
+            self.add_argument('--union_custom_default_flip_arg', type=convert_person_or_str)
+            self.add_argument('--union_none_required_flip_arg', type=int)
+            self.add_argument('--union_many_required_arg', type=convert_many_types)
+            self.add_argument('--union_many_default_arg', type=convert_many_types)
+
+
+class UnionTypeTests(TestCase):
+    def test_union_types(self):
+        union_zero_required_arg = 'Kyle'
+        union_one_required_arg = 'ate'
+        union_two_required_arg = '2'
+        union_custom_required_arg = 'many'
+        union_custom_required_flip_arg = 'Jesse'
+        union_none_required_arg = '1'
+        union_none_required_flip_arg = '5'
+        union_many_required_arg = 'still hungry'
+
+        args = UnionTypeTap().parse_args([
+            '--union_zero_required_arg', union_zero_required_arg,
+            '--union_one_required_arg', union_one_required_arg,
+            '--union_two_required_arg', union_two_required_arg,
+            '--union_custom_required_arg', union_custom_required_arg,
+            '--union_custom_required_flip_arg', union_custom_required_flip_arg,
+            '--union_none_required_arg', union_none_required_arg,
+            '--union_none_required_flip_arg', union_none_required_flip_arg,
+            '--union_many_required_arg', union_many_required_arg
+        ])
+
+        union_two_required_arg = int(union_two_required_arg)
+        union_custom_required_flip_arg = Person(union_custom_required_flip_arg)
+        union_none_required_arg = int(union_none_required_arg)
+        union_none_required_flip_arg = int(union_none_required_flip_arg)
+
+        self.assertEqual(args.union_zero_required_arg, union_zero_required_arg)
+        self.assertEqual(args.union_zero_default_arg, UnionTypeTap.union_zero_default_arg)
+        self.assertEqual(args.union_one_required_arg, union_one_required_arg)
+        self.assertEqual(args.union_one_default_arg, UnionTypeTap.union_one_default_arg)
+        self.assertEqual(args.union_two_required_arg, union_two_required_arg)
+        self.assertEqual(args.union_two_default_int_arg, UnionTypeTap.union_two_default_int_arg)
+        self.assertEqual(args.union_two_default_str_arg, UnionTypeTap.union_two_default_str_arg)
+        self.assertEqual(args.union_custom_required_arg, union_custom_required_arg)
+        self.assertEqual(args.union_custom_required_flip_arg, union_custom_required_flip_arg)
+        self.assertEqual(args.union_custom_default_arg, UnionTypeTap.union_custom_default_arg)
+        self.assertEqual(args.union_custom_default_flip_arg, UnionTypeTap.union_custom_default_flip_arg)
+        self.assertEqual(args.union_none_required_arg, union_none_required_arg)
+        self.assertEqual(args.union_none_required_flip_arg, union_none_required_flip_arg)
+        self.assertEqual(args.union_many_required_arg, union_many_required_arg)
+        self.assertEqual(args.union_many_default_arg, UnionTypeTap.union_many_default_arg)
+
+    def test_union_missing_type_function(self):
+        class UnionMissingTypeFunctionTap(Tap):
+            arg: Union[int, float]
+
+        with self.assertRaises(ArgumentTypeError):
+            UnionMissingTypeFunctionTap()
+
+    @unittest.skipIf(sys.version_info < (3, 10), 'Union type operator "|" introduced in Python 3.10')
+    def test_union_types_310(self):
+        union_two_required_arg = '1'  # int
+        union_custom_required_arg = 'hungry'  # str
+        union_custom_required_flip_arg = 'Loser'  # Person
+        union_none_required_arg = '8'  # int
+        union_none_required_flip_arg = '100'  # int
+        union_many_required_arg = '3.14'  # float
+
+        args = UnionType310Tap().parse_args([
+            '--union_two_required_arg', union_two_required_arg,
+            '--union_custom_required_arg', union_custom_required_arg,
+            '--union_custom_required_flip_arg', union_custom_required_flip_arg,
+            '--union_none_required_arg', union_none_required_arg,
+            '--union_none_required_flip_arg', union_none_required_flip_arg,
+            '--union_many_required_arg', union_many_required_arg
+        ])
+
+        union_two_required_arg = int(union_two_required_arg)
+        union_custom_required_flip_arg = Person(union_custom_required_flip_arg)
+        union_none_required_arg = int(union_none_required_arg)
+        union_none_required_flip_arg = int(union_none_required_flip_arg)
+        union_many_required_arg = float(union_many_required_arg)
+
+        self.assertEqual(args.union_two_required_arg, union_two_required_arg)
+        self.assertEqual(args.union_two_default_int_arg, UnionType310Tap.union_two_default_int_arg)
+        self.assertEqual(args.union_two_default_str_arg, UnionType310Tap.union_two_default_str_arg)
+        self.assertEqual(args.union_custom_required_arg, union_custom_required_arg)
+        self.assertEqual(args.union_custom_required_flip_arg, union_custom_required_flip_arg)
+        self.assertEqual(args.union_custom_default_arg, UnionType310Tap.union_custom_default_arg)
+        self.assertEqual(args.union_custom_default_flip_arg, UnionType310Tap.union_custom_default_flip_arg)
+        self.assertEqual(args.union_none_required_arg, union_none_required_arg)
+        self.assertEqual(args.union_none_required_flip_arg, union_none_required_flip_arg)
+        self.assertEqual(args.union_many_required_arg, union_many_required_arg)
+        self.assertEqual(args.union_many_default_arg, UnionType310Tap.union_many_default_arg)
+
+    @unittest.skipIf(sys.version_info < (3, 10), 'Union type operator "|" introduced in Python 3.10')
+    def test_union_missing_type_function_310(self):
+        class UnionMissingTypeFunctionTap(Tap):
+            arg: int | float
+
+        with self.assertRaises(ArgumentTypeError):
+            UnionMissingTypeFunctionTap()
+
+
 class AddArgumentTests(TestCase):
     def setUp(self) -> None:
         # Suppress prints from SystemExit
@@ -1044,7 +1225,7 @@ class TupleTests(TestCase):
         class EmptyTupleTap(Tap):
             tup: Tuple[()]
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ArgumentTypeError):
             EmptyTupleTap().parse_args([])
 
     def test_tuple_non_tuple_default(self):
@@ -1378,15 +1559,6 @@ class TestPickle(TestCase):
         pickle_str = pickle.dumps(args)
         loaded_args: IntegrationDefaultTap = pickle.loads(pickle_str)
         self.assertEqual(loaded_args.as_dict(), args.as_dict())
-
-
-"""
-- crash if default type not supported
-- user specifying process_args
-- test get reproducibility info
-- test str?
-- test comments
-"""
 
 
 if __name__ == '__main__':

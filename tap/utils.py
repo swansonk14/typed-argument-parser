@@ -24,8 +24,10 @@ from typing import (
     Union,
 )
 from typing_extensions import Literal
-from typing_inspect import get_args, get_origin as typing_inspect_get_origin
+from typing_inspect import get_args as typing_inspect_get_args, get_origin as typing_inspect_get_origin
 
+if sys.version_info >= (3, 10):
+    from types import UnionType
 
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
 PRIMITIVES = (str, int, float, bool)
@@ -255,7 +257,7 @@ def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any],
     literals = list(get_args(literal))
 
     if not all(isinstance(literal, PRIMITIVES) for literal in literals):
-        raise ValueError(
+        raise ArgumentTypeError(
             f'The type for variable "{variable}" contains a literal'
             f'of a non-primitive type e.g. (str, int, float, bool).\n'
             f'Currently only primitive-typed literals are supported.'
@@ -264,7 +266,7 @@ def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any],
     str_to_literal = {str(literal): literal for literal in literals}
 
     if len(literals) != len(str_to_literal):
-        raise ValueError('All literals must have unique string representations')
+        raise ArgumentTypeError('All literals must have unique string representations')
 
     def var_type(arg: str) -> Any:
         return str_to_literal.get(arg, arg)
@@ -403,7 +405,7 @@ def as_python_object(dct: Any) -> Any:
             return UnpicklableObject()
 
         else:
-            raise ValueError(f'Special type "{_type}" not supported for JSON loading.')
+            raise ArgumentTypeError(f'Special type "{_type}" not supported for JSON loading.')
 
     return dct
 
@@ -471,7 +473,7 @@ def enforce_reproducibility(saved_reproducibility_data: Optional[Dict[str, str]]
                          f'in current args.')
 
 
-# TODO: remove this once typing_inspect.get_origin is fixed for Python 3.8 and 3.9
+# TODO: remove this once typing_inspect.get_origin is fixed for Python 3.8, 3.9, and 3.10
 # https://github.com/ilevkivskyi/typing_inspect/issues/64
 # https://github.com/ilevkivskyi/typing_inspect/issues/65
 def get_origin(tp: Any) -> Any:
@@ -481,4 +483,16 @@ def get_origin(tp: Any) -> Any:
     if origin is None:
         origin = tp
 
+    if sys.version_info >= (3, 10) and isinstance(origin, UnionType):
+        origin = UnionType
+
     return origin
+
+
+# TODO: remove this once typing_insepct.get_args is fixed for Python 3.10 union types
+def get_args(tp: Any) -> Tuple[type, ...]:
+    """Same as typing_inspect.get_args but fixes Python 3.10 union types."""
+    if sys.version_info >= (3, 10) and isinstance(tp, UnionType):
+        return tp.__args__
+
+    return typing_inspect_get_args(tp)

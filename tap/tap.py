@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 from collections import OrderedDict
 from copy import deepcopy
 from functools import partial
@@ -10,11 +10,12 @@ import sys
 import time
 from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
-from typing_inspect import is_literal_type, get_args
+from typing_inspect import is_literal_type
 from warnings import warn
 
 from tap.utils import (
     get_class_variables,
+    get_args,
     get_argument_name,
     get_dest,
     get_origin,
@@ -30,11 +31,15 @@ from tap.utils import (
     enforce_reproducibility,
 )
 
+if sys.version_info >= (3, 10):
+    from types import UnionType
+
 
 # Constants
 EMPTY_TYPE = get_args(List)[0] if len(get_args(List)) > 0 else tuple()
 BOXED_COLLECTION_TYPES = {List, list, Set, set, Tuple, tuple}
-OPTIONAL_TYPES = {Optional, Union}
+UNION_TYPES = {Union} | ({UnionType} if sys.version_info >= (3, 10) else set())
+OPTIONAL_TYPES = {Optional} | UNION_TYPES
 BOXED_TYPES = BOXED_COLLECTION_TYPES | OPTIONAL_TYPES
 
 
@@ -169,13 +174,30 @@ class Tap(ArgumentParser):
 
             # If type is not explicitly provided, set it if it's one of our supported default types
             if 'type' not in kwargs:
-
-                # Unbox Optional[type] and set var_type = type
+                # Unbox Union[type] (Optional[type]) and set var_type = type
                 if get_origin(var_type) in OPTIONAL_TYPES:
                     var_args = get_args(var_type)
 
+                    # If type is Union or Optional without inner types, set type to equivalent of Optional[str]
+                    if len(var_args) == 0:
+                        var_args = (str, type(None))
+
+                    # Raise error if type function is not explicitly provided for Union types (not including Optionals)
+                    if get_origin(var_type) in UNION_TYPES and not (len(var_args) == 2 and var_args[1] == type(None)):
+                        raise ArgumentTypeError(
+                            'For Union types, you must include an explicit type function in the configure method. '
+                            'For example,\n\n'
+                            'def to_number(string: str) -> Union[float, int]:\n'
+                            '    return float(string) if \'.\' in string else int(string)\n\n'
+                            'class Args(Tap):\n'
+                            '    arg: Union[float, int]\n'
+                            '\n'
+                            '    def configure(self) -> None:\n'
+                            '        self.add_argument(\'--arg\', type=to_number)'
+                        )
+
                     if len(var_args) > 0:
-                        var_type = get_args(var_type)[0]
+                        var_type = var_args[0]
 
                         # If var_type is tuple as in Python 3.6, change to a typing type
                         # (e.g., (typing.List, <class 'bool'>) ==> typing.List[bool])
@@ -187,12 +209,14 @@ class Tap(ArgumentParser):
                 # First check whether it is a literal type or a boxed literal type
                 if is_literal_type(var_type):
                     var_type, kwargs['choices'] = get_literals(var_type, variable)
+
                 elif (get_origin(var_type) in (List, list, Set, set)
                       and len(get_args(var_type)) > 0
                       and is_literal_type(get_args(var_type)[0])):
                     var_type, kwargs['choices'] = get_literals(get_args(var_type)[0], variable)
                     if kwargs.get('action') not in {'append', 'append_const'}:
                         kwargs['nargs'] = kwargs.get('nargs', '*')
+
                 # Handle Tuple type (with type args) by extracting types of Tuple elements and enforcing them
                 elif get_origin(var_type) in (Tuple, tuple) and len(get_args(var_type)) > 0:
                     loop = False
@@ -200,8 +224,8 @@ class Tap(ArgumentParser):
 
                     # Don't allow Tuple[()]
                     if len(types) == 1 and types[0] == tuple():
-                        raise ValueError('Empty Tuples (i.e. Tuple[()]) are not a valid Tap type '
-                                         'because they have no arguments.')
+                        raise ArgumentTypeError('Empty Tuples (i.e. Tuple[()]) are not a valid Tap type '
+                                                'because they have no arguments.')
 
                     # Handle Tuple[type, ...]
                     if len(types) == 2 and types[1] == Ellipsis:
@@ -237,7 +261,7 @@ class Tap(ArgumentParser):
                         kwargs['type'] = boolean_type
                         kwargs['choices'] = [True, False]  # this makes the help message more helpful
                     else:
-                        action_cond = "true" if kwargs.get("required", False) or not kwargs["default"] else "false"
+                        action_cond = 'true' if kwargs.get('required', False) or not kwargs['default'] else 'false'
                         kwargs['action'] = kwargs.get('action', f'store_{action_cond}')
                 elif kwargs.get('action') not in {'count', 'append_const'}:
                     kwargs['type'] = var_type

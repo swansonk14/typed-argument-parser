@@ -1,3 +1,4 @@
+from argparse import ArgumentTypeError
 from collections import OrderedDict
 import json
 import os
@@ -297,7 +298,7 @@ class GetLiteralsTests(TestCase):
         self.assertEqual([literal_f(str(p)) for p in prims], literals)
 
     def test_get_literals_uniqueness(self) -> None:
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ArgumentTypeError):
             get_literals(Literal['two', 2, '2'], 'number')
 
     def test_get_literals_empty(self) -> None:
