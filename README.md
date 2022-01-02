@@ -6,6 +6,7 @@
 
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/typed-argument-parser)](https://badge.fury.io/py/typed-argument-parser)
 [![PyPI version](https://badge.fury.io/py/typed-argument-parser.svg)](https://badge.fury.io/py/typed-argument-parser)
+[![Downloads](https://pepy.tech/badge/typed-argument-parser)](https://pepy.tech/project/typed-argument-parser)
 [![Build Status](https://github.com/swansonk14/typed-argument-parser/workflows/tests/badge.svg)](https://github.com/swansonk14/typed-argument-parser)
 [![codecov](https://codecov.io/gh/swansonk14/typed-argument-parser/branch/main/graph/badge.svg)](https://codecov.io/gh/swansonk14/typed-argument-parser)
 [![license](https://img.shields.io/github/license/swansonk14/typed-argument-parser.svg)](https://github.com/swansonk14/typed-argument-parser/blob/main/LICENSE.txt)
