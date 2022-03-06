@@ -3,6 +3,7 @@ from copy import deepcopy
 import os
 from pathlib import Path
 import pickle
+from re import L
 import sys
 from tempfile import TemporaryDirectory
 from typing import Any, Iterable, List, Optional, Set, Tuple, Union
@@ -1560,6 +1561,34 @@ class TestPickle(TestCase):
         loaded_args: IntegrationDefaultTap = pickle.loads(pickle_str)
         self.assertEqual(loaded_args.as_dict(), args.as_dict())
 
+
+class TestParserDescription(TestCase):
+    def test_root_parser_description(self):
+        class RootParser(Tap):
+            """<Root Parser>"""
+            field: str = '1'
+        
+        root_parser = RootParser()
+        help_info = root_parser.format_help()
+        self.assertIn('<Root Parser>', help_info)
+
+    def test_sub_parser_description(self):
+
+        class SubParser(Tap):
+            """<Sub Parser>"""
+            sub_field: str = '2'
+        
+        class RootParser(Tap):
+            """<Root Parser>"""
+            field: str = '1'
+
+            def configure(self):
+                self.add_subparsers(help='All sub parser')
+                self.add_subparser('sub', SubParser)
+        
+        help_desc = RootParser().format_help()
+        self.assertIn('<Sub Parser>', help_desc)
+        self.assertIn('<Root Parser>', help_desc)
 
 if __name__ == '__main__':
     unittest.main()
