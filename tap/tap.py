@@ -110,6 +110,8 @@ class Tap(ArgumentParser):
         # Indicate that initialization is complete
         self._initialized = True
 
+        self.description = self.__doc__ or ''
+
     def _add_argument(self, *name_or_flags, **kwargs) -> None:
         """Adds an argument to self (i.e. the super class ArgumentParser).
 
@@ -311,6 +313,9 @@ class Tap(ArgumentParser):
 
     def add_subparser(self, flag: str, subparser_type: type, **kwargs) -> None:
         """Add a subparser to the collection of subparsers"""
+        help_desc = kwargs.get('help', subparser_type.__doc__)
+        kwargs['help'] = help_desc
+        
         self._subparser_buffer.append((flag, subparser_type, kwargs))
 
     def _add_subparsers(self) -> None:
