@@ -95,6 +95,9 @@ class Tap(ArgumentParser):
         # Get annotations from self and all super classes up through tap
         self._annotations = self._get_annotations()
 
+        # Set the default description to be the docstring
+        kwargs.setdefault('description', self.__doc__)
+
         # Initialize the super class, i.e. ArgumentParser
         super(Tap, self).__init__(*args, **kwargs)
 
@@ -109,8 +112,6 @@ class Tap(ArgumentParser):
 
         # Indicate that initialization is complete
         self._initialized = True
-
-        self.description = self.__doc__ or ''
 
     def _add_argument(self, *name_or_flags, **kwargs) -> None:
         """Adds an argument to self (i.e. the super class ArgumentParser).

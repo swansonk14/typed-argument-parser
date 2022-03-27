@@ -1590,5 +1590,36 @@ class TestParserDescription(TestCase):
         self.assertIn('<Sub Parser>', help_desc)
         self.assertIn('<Root Parser>', help_desc)
 
+    def test_empty_docstring_should_be_empty(self):
+        class NoDesc(Tap):
+            field: str = 'a'
+
+        root_parser = NoDesc()
+        help_info = root_parser.format_help()
+        help_flag = '[-h]'
+        desc_start = help_info.index(help_flag) + len(help_flag)
+        desc_end = help_info.index('options:')
+        desc = help_info[desc_start: desc_end].strip()
+        self.assertEqual(desc, '')
+
+    def test_manual_description_still_works(self):
+        class NoDesc(Tap):
+            field: str = 'a'
+
+        expected_help_desc = 'I exist'
+        help_desc = NoDesc(description=expected_help_desc).format_help()
+        self.assertIn(expected_help_desc, help_desc)
+
+    def test_manual_description_overwrites_docstring(self):
+        class Desc(Tap):
+            """I do not exist"""
+            field: str = 'a'
+
+        expected_help_desc = 'I exist'
+        help_desc = Desc(description=expected_help_desc).format_help()
+        self.assertIn(expected_help_desc, help_desc)
+        self.assertNotIn("I do not exist", help_desc)
+
+
 if __name__ == '__main__':
     unittest.main()
