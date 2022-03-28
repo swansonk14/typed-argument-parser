@@ -1,5 +1,6 @@
 from argparse import ArgumentTypeError
 from collections import OrderedDict
+from dataclasses import dataclass
 import json
 import os
 import subprocess
@@ -167,6 +168,23 @@ class ClassColumnTests(TestCase):
 
         self.assertEqual(get_class_column(FuncColumn), 12)
 
+    def test_dataclass(self):
+        @dataclass
+        class DataclassColumn:
+            arg: int = 5
+        self.assertEqual(get_class_column(DataclassColumn), 12)
+
+    def test_dataclass_method(self):
+        def wrapper(f):
+            pass
+
+        @dataclass
+        class DataclassColumn:
+            @wrapper
+            def func(self):
+                pass
+        self.assertEqual(get_class_column(DataclassColumn), 12)
+
 
 class ClassVariableTests(TestCase):
     def test_no_variables(self):
@@ -281,6 +299,14 @@ T
         class_variables = OrderedDict()
         class_variables['i'] = {'comment': ''}
         self.assertEqual(get_class_variables(FunctionsWithDocs), class_variables)
+
+    def test_dataclass(self):
+        @dataclass
+        class DataclassColumn:
+            arg: int = 5
+        class_variables = OrderedDict()
+        class_variables['arg'] = {'comment': ''}
+        self.assertEqual(get_class_variables(DataclassColumn), class_variables)
 
 
 class GetLiteralsTests(TestCase):
