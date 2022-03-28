@@ -479,6 +479,9 @@ After running `python main.py --package Tap`, the file `args.json` will contain:
 Note: More complex types will be encoded in JSON as a pickle string.
 
 #### Load
+> :exclamation: :warning:<br/>
+> Never call `args.load('args.json')` on untrusted files. Argument loading uses the `pickle` module to decode complex types automatically. Unpickling of untrusted data is a security risk and can lead to arbitrary code execution. See [the warning in the pickle docs](https://docs.python.org/3/library/pickle.html)<br/>
+> :exclamation: :warning:
 
 Arguments can be loaded from a JSON file rather than parsed from the command line.
 
