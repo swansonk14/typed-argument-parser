@@ -211,6 +211,17 @@ class TestArgparseActions(TestCase):
         args = ExtendListIntTap().parse_args('--arg 1 2 --arg 3 --arg 4 5'.split())
         self.assertEqual(args.arg, [0, 1, 2, 3, 4, 5])
 
+    def test_positional_default(self):
+        class PositionalDefault(Tap):
+            arg: str
+
+            def configure(self):
+                self.add_argument('arg')
+
+        help_regex = r'.*positional arguments:\n.*arg\s*\(str, required\).*'
+        help_text = PositionalDefault().format_help()
+        self.assertRegexpMatches(help_text, help_regex)
+
 
 if __name__ == '__main__':
     unittest.main()
