@@ -171,6 +171,15 @@ def is_option_arg(*name_or_flags) -> bool:
     return any(name_or_flag.startswith('-') for name_or_flag in name_or_flags)
 
 
+def is_positional_arg(*name_or_flags) -> bool:
+    """Returns whether the argument is a positional arg (as opposed to an optional arg).
+
+    :param name_or_flags: Either a name or a list of option strings, e.g. foo or -f, --foo.
+    :return: True if the argument is a positional arg, False otherwise.
+    """
+    return not is_option_arg(*name_or_flags)
+
+
 def tokenize_source(obj: object) -> Generator:
     """Returns a generator for the tokens of the object's source code."""
     source = inspect.getsource(obj)
