@@ -21,6 +21,7 @@ from tap.utils import (
     get_origin,
     GitInfo,
     is_option_arg,
+    is_positional_arg,
     type_to_str,
     get_literals,
     boolean_type,
@@ -159,7 +160,7 @@ class Tap(ArgumentParser):
                 kwargs['help'] += type_to_str(self._annotations[variable]) + ', '
 
             # Required/default
-            if kwargs.get('required', False):
+            if kwargs.get('required', False) or is_positional_arg(*name_or_flags):
                 kwargs['help'] += 'required'
             else:
                 kwargs['help'] += f'default={kwargs.get("default", None)}'
