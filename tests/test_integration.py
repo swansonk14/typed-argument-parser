@@ -1598,7 +1598,7 @@ class TestParserDescription(TestCase):
         help_info = root_parser.format_help()
         help_flag = '[-h]'
         desc_start = help_info.index(help_flag) + len(help_flag)
-        desc_end = help_info.index('options:')
+        desc_end = help_info.index('option')
         desc = help_info[desc_start: desc_end].strip()
         self.assertEqual(desc, '')
 
