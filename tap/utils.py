@@ -190,8 +190,11 @@ def tokenize_source(obj: object) -> Generator:
 
 def get_class_column(obj: type) -> int:
     """Determines the column number for class variables in a class."""
+    first_line = 1
     for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(obj):
-        if start_line == 1 or token.strip() == '':
+        if token.strip() == '@':
+            first_line += 1
+        if start_line <= first_line or token.strip() == '':
             continue
 
         return start_column

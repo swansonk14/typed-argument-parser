@@ -137,6 +137,10 @@ class TypeToStrTests(TestCase):
         self.assertEqual(type_to_str(Union[List[int], Dict[float, bool]]), 'Union[List[int], Dict[float, bool]]')
 
 
+def class_decorator(cls):
+    return cls
+
+
 class ClassColumnTests(TestCase):
     def test_column_simple(self):
         class SimpleColumn:
@@ -166,6 +170,23 @@ class ClassColumnTests(TestCase):
                 pass
 
         self.assertEqual(get_class_column(FuncColumn), 12)
+
+    def test_dataclass(self):
+        @class_decorator
+        class DataclassColumn:
+            arg: int = 5
+        self.assertEqual(get_class_column(DataclassColumn), 12)
+
+    def test_dataclass_method(self):
+        def wrapper(f):
+            pass
+
+        @class_decorator
+        class DataclassColumn:
+            @wrapper
+            def func(self):
+                pass
+        self.assertEqual(get_class_column(DataclassColumn), 12)
 
 
 class ClassVariableTests(TestCase):
@@ -281,6 +302,14 @@ T
         class_variables = OrderedDict()
         class_variables['i'] = {'comment': ''}
         self.assertEqual(get_class_variables(FunctionsWithDocs), class_variables)
+
+    def test_dataclass(self):
+        @class_decorator
+        class DataclassColumn:
+            arg: int = 5
+        class_variables = OrderedDict()
+        class_variables['arg'] = {'comment': ''}
+        self.assertEqual(get_class_variables(DataclassColumn), class_variables)
 
 
 class GetLiteralsTests(TestCase):
