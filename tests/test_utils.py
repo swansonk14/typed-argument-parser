@@ -1,6 +1,5 @@
 from argparse import ArgumentTypeError
 from collections import OrderedDict
-from dataclasses import dataclass
 import json
 import os
 import subprocess
@@ -138,6 +137,10 @@ class TypeToStrTests(TestCase):
         self.assertEqual(type_to_str(Union[List[int], Dict[float, bool]]), 'Union[List[int], Dict[float, bool]]')
 
 
+def class_decorator(cls):
+    return cls
+
+
 class ClassColumnTests(TestCase):
     def test_column_simple(self):
         class SimpleColumn:
@@ -169,7 +172,7 @@ class ClassColumnTests(TestCase):
         self.assertEqual(get_class_column(FuncColumn), 12)
 
     def test_dataclass(self):
-        @dataclass
+        @class_decorator
         class DataclassColumn:
             arg: int = 5
         self.assertEqual(get_class_column(DataclassColumn), 12)
@@ -178,7 +181,7 @@ class ClassColumnTests(TestCase):
         def wrapper(f):
             pass
 
-        @dataclass
+        @class_decorator
         class DataclassColumn:
             @wrapper
             def func(self):
@@ -301,7 +304,7 @@ T
         self.assertEqual(get_class_variables(FunctionsWithDocs), class_variables)
 
     def test_dataclass(self):
-        @dataclass
+        @class_decorator
         class DataclassColumn:
             arg: int = 5
         class_variables = OrderedDict()
