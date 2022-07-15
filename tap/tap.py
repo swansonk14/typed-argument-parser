@@ -1,7 +1,9 @@
 from argparse import ArgumentParser, ArgumentTypeError
 from collections import OrderedDict
 from copy import deepcopy
+from enum import Enum
 from functools import partial
+from inspect import isclass
 import json
 from pathlib import Path
 from pprint import pformat
@@ -156,7 +158,7 @@ class Tap(ArgumentParser):
             kwargs['help'] = '('
 
             # Type
-            if variable in self._annotations:
+            if variable in self._annotations and not self._inherit_enum(variable):
                 kwargs['help'] += type_to_str(self._annotations[variable]) + ', '
 
             # Required/default
@@ -269,6 +271,10 @@ class Tap(ArgumentParser):
                         kwargs['action'] = kwargs.get('action', f'store_{action_cond}')
                 elif kwargs.get('action') not in {'count', 'append_const'}:
                     kwargs['type'] = var_type
+
+                # If inherited from Enum
+                if self._inherit_enum(variable):
+                    kwargs['choices'] = [enum.value for enum in var_type]
 
         if self._underscores_to_dashes:
             # Replace "_" with "-" for arguments that aren't positional
@@ -701,6 +707,17 @@ class Tap(ArgumentParser):
                     args_from_config.append(f.read().strip())
 
         return args_from_config
+
+    def _inherit_enum(self, variable: str) -> bool:
+        """Return if the variable inherit from an Enum or not
+
+        :param variable: The name of the argument
+        :return: True if it inherit Enum, False otherwise"""
+        if variable not in self._annotations:
+            return False
+
+        var_type = self._annotations[variable]
+        return isclass(var_type) and issubclass(var_type, Enum)
 
     def __str__(self) -> str:
         """Returns a string representation of self.
