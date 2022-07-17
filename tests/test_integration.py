@@ -6,7 +6,7 @@ import pickle
 from re import L
 import sys
 from tempfile import TemporaryDirectory
-from typing import Any, Iterable, List, Optional, Set, Tuple, Union
+from typing import Any, ClassVar, Iterable, List, Optional, Set, Tuple, Union
 from typing_extensions import Literal
 import unittest
 from unittest import TestCase
@@ -328,6 +328,8 @@ class IntegrationDefaultTap(Tap):
     # TODO: move these elsewhere since we don't support them as defaults
     # arg_other_type_required: Person
     # arg_other_type_default: Person = Person('tap')
+    arg_classvar: ClassVar[str]
+    arg_ignore: str  # tap: ignore
 
 
 class SubclassTests(TestCase):
@@ -400,6 +402,9 @@ class DefaultClassVariableTests(TestCase):
         self.assertEqual(args.arg_tuple_float, (3.14, 6.28))
         self.assertEqual(args.arg_tuple_bool, (True, True, True, False))
         self.assertEqual(args.arg_tuple_multi, (1.2, 1, 'hi', True, 1.3))
+
+        self.assertEqual(hasattr(args, 'arg_classvar'), False)
+        self.assertEqual(hasattr(args, 'arg_ignore'), False)
 
     def test_set_default_args(self) -> None:
         arg_untyped = 'yes'

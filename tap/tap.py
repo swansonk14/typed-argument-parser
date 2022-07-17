@@ -9,7 +9,7 @@ from shlex import quote, split
 import sys
 import time
 from types import MethodType
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
 from typing_inspect import is_literal_type
 from warnings import warn
 
@@ -169,12 +169,20 @@ class Tap(ArgumentParser):
 
             # Description
             if variable in self.class_variables:
-                kwargs['help'] += ' ' + self.class_variables[variable]['comment']
+                comment = self.class_variables[variable]['comment']
+                # Ignore attributes with comment starting with "tap: ignore"
+                if comment.startswith('tap: ignore'):
+                    return
+                kwargs['help'] += ' ' + comment
 
         # Set other kwargs where not provided
         if variable in self._annotations:
             # Get type annotation
             var_type = self._annotations[variable]
+
+            # Ignore attributes with type ClassVar
+            if get_origin(var_type) == ClassVar:
+                return
 
             # If type is not explicitly provided, set it if it's one of our supported default types
             if 'type' not in kwargs:

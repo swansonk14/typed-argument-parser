@@ -15,6 +15,7 @@ import tokenize
 from typing import (
     Any,
     Callable,
+    ClassVar,
     Dict,
     Generator,
     Iterator,
@@ -494,6 +495,10 @@ def get_origin(tp: Any) -> Any:
 
     if origin is None:
         origin = tp
+
+    # fix typing_inspect not supporting ClassVar
+    if hasattr(tp, '__origin__') and tp.__origin__ == ClassVar:
+        origin = ClassVar
 
     if sys.version_info >= (3, 10) and isinstance(origin, UnionType):
         origin = UnionType
