@@ -1,13 +1,14 @@
+import json
+import sys
+import time
 from argparse import ArgumentParser, ArgumentTypeError
 from collections import OrderedDict
 from copy import deepcopy
 from functools import partial
-import json
+from inspect import Parameter, signature
 from pathlib import Path
 from pprint import pformat
 from shlex import quote, split
-import sys
-import time
 from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
 from typing_inspect import is_literal_type
@@ -736,3 +737,31 @@ class Tap(ArgumentParser):
         """
         self.__init__()
         self.from_dict(d)
+
+
+def tapify(function: Callable) -> Any:
+    """Runs a function by parsing arguments for the function from the command line."""
+    # Get signature from function
+    sig = signature(function)
+
+    # Create a Tap object with the arguments of the function
+    # TODO: get the help string from the function annotation
+    tap = Tap()
+    for param_name, param in sig.parameters.items():
+        kwargs = {}
+
+        if param.annotation != Parameter.empty:
+            tap._annotations[param.name] = param.annotation
+
+        if param.default != Parameter.empty:
+            kwargs['default'] = param.default
+        else:
+            kwargs['required'] = True
+
+        tap._add_argument(f'--{param_name}', **kwargs)
+
+    # Parse command line arguments
+    args = tap.parse_args()
+
+    # Run the function with the parsed arguments
+    return function(**args.as_dict())
