@@ -2,6 +2,7 @@ import os
 import sys
 from tempfile import TemporaryDirectory
 import unittest
+from typing import List
 from unittest import TestCase
 
 from tap import Tap
@@ -38,6 +39,29 @@ class LoadConfigFilesTests(TestCase):
         self.assertEqual(args.a, 1)
         self.assertEqual(args.b, 'b')
 
+    def test_json_config(self) -> None:
+        class SimpleTap(Tap):
+            a: float
+            b: str
+            c: str = 'c'
+            d: int
+            e: List[int]
+
+        with TemporaryDirectory() as temp_dir:
+            fname = os.path.join(temp_dir, 'config.json')
+
+            with open(fname, 'w') as f:
+                # note: numeric args can be quoted or not in json
+                f.write('{"a": "1.1", "b": "value for b", "d": 4, "e": [7, 8, 9]}')
+
+            args = SimpleTap(config_files=[fname]).parse_args([])
+
+        self.assertEqual(args.a, 1.1)
+        self.assertEqual(args.b, 'value for b')
+        self.assertEqual(args.c, 'c')
+        self.assertEqual(args.d, 4)
+        self.assertEqual(args.e, [7, 8, 9])
+
     def test_single_config_overwriting(self) -> None:
         class SimpleOverwritingTap(Tap):
             a: int
@@ -53,6 +77,22 @@ class LoadConfigFilesTests(TestCase):
 
         self.assertEqual(args.a, 2)
         self.assertEqual(args.b, 'two')
+
+    def test_single_json_config_overwriting(self) -> None:
+        class SimpleOverwritingTap(Tap):
+            a: int
+            b: str = 'b'
+
+        with TemporaryDirectory() as temp_dir:
+            fname = os.path.join(temp_dir, 'config.json')
+
+            with open(fname, 'w') as f:
+                f.write('{"a": 1, "b": "b two"}')
+
+            args = SimpleOverwritingTap(config_files=[fname]).parse_args('--a 2'.split())
+
+        self.assertEqual(args.a, 2)
+        self.assertEqual(args.b, 'b two')
 
     def test_single_config_known_only(self) -> None:
         class KnownOnlyTap(Tap):

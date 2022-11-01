@@ -698,7 +698,12 @@ class Tap(ArgumentParser):
             # Read arguments from all configs from the lowest precedence config to the highest
             for file in config_files:
                 with open(file) as f:
-                    args_from_config.append(f.read().strip())
+                    if file.lower().endswith(".json"):
+                        arg_d = json.load(f)
+                        args = "\n".join([f'--{arg} "{arg_d[arg]}"' for arg in arg_d])
+                    else:
+                        args = f.read().strip()
+                args_from_config.append(args)
 
         return args_from_config
 
