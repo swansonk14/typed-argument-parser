@@ -1,3 +1,4 @@
+import copy
 from argparse import ArgumentParser, ArgumentTypeError
 from collections import OrderedDict
 from copy import deepcopy
@@ -10,9 +11,12 @@ import sys
 import time
 from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
+
+from attr import has
 from typing_inspect import is_literal_type
 from warnings import warn
 
+from tap.tap_config import TapConfig
 from tap.utils import (
     get_class_variables,
     get_args,
@@ -416,7 +420,8 @@ class Tap(ArgumentParser):
     def parse_args(self: TapType,
                    args: Optional[Sequence[str]] = None,
                    known_only: bool = False,
-                   legacy_config_parsing = False) -> TapType:
+                   legacy_config_parsing = False,
+                   parse_structured_config: bool = True) -> TapType:
         """Parses arguments, sets attributes of self equal to the parsed arguments, and processes arguments.
 
         :param args: List of strings to parse. The default is taken from `sys.argv`.
@@ -428,6 +433,20 @@ class Tap(ArgumentParser):
         # Prevent double parsing
         if self._parsed:
             raise ValueError('parse_args can only be called once.')
+
+        if parse_structured_config:
+            tap_config_parser = TapConfigParser(self)
+            config_namespace = tap_config_parser.parse_args(args, known_only=True,
+                                                               parse_structured_config=False)
+            # Copy parsed arguments to self
+            for variable, value in vars(config_namespace).items():
+                # Conversion from list to set or tuple
+                if variable in self._annotations:
+                    if type(value) == TapConfig:
+                        config_path = value.config_path
+                        with open(config_path) as f:
+                            config_dict = json.load(f, object_hook=as_python_object)
+                            self.from_dict(config_dict, check_required=False)
 
         # Collect arguments from all of the configs
 
@@ -606,22 +625,25 @@ class Tap(ArgumentParser):
 
         return stored_dict
 
-    def from_dict(self, args_dict: Dict[str, Any], skip_unsettable: bool = False) -> TapType:
-        """Loads arguments from a dictionary, ensuring all required arguments are set.
+    def from_dict(self, args_dict: Dict[str, Any], skip_unsettable: bool = False,
+                  check_required: bool = True) -> TapType:
+        """Loads arguments from a dictionary.
 
         :param args_dict: A dictionary from argument names to the values of the arguments.
         :param skip_unsettable: When True, skips attributes that cannot be set in the Tap object,
                                 e.g. properties without setters.
+        :param check_required: When True, throws an error unless if all required arguments aren't set
         :return: Returns self.
         """
-        # All of the required arguments must be provided or already set
-        required_args = {a.dest for a in self._actions if a.required}
-        unprovided_required_args = required_args - args_dict.keys()
-        missing_required_args = [arg for arg in unprovided_required_args if not hasattr(self, arg)]
+        if check_required:
+            # All of the required arguments must be provided or already set
+            required_args = {a.dest for a in self._actions if a.required}
+            unprovided_required_args = required_args - args_dict.keys()
+            missing_required_args = [arg for arg in unprovided_required_args if not hasattr(self, arg)]
 
-        if len(missing_required_args) > 0:
-            raise ValueError(f'Input dictionary "{args_dict}" does not include '
-                             f'all unset required arguments: "{missing_required_args}".')
+            if len(missing_required_args) > 0:
+                raise ValueError(f'Input dictionary "{args_dict}" does not include '
+                                 f'all unset required arguments: "{missing_required_args}".')
 
         # Load all arguments
         for key, value in args_dict.items():
@@ -683,7 +705,7 @@ class Tap(ArgumentParser):
 
         return self
 
-    def _load_from_config_files(self, config_files: Optional[List[str]]) -> List[str]:
+    def _load_from_config_files(self, config_files: Optional[List[str]]) -> (List[str], List[dict]):
         """Loads arguments from a list of configuration files containing command line arguments.
 
         :param config_files: A list of paths to configuration files containing the command line arguments
@@ -691,6 +713,9 @@ class Tap(ArgumentParser):
                              overwrite arguments from the configuration files. Arguments in configuration files
                              that appear later in the list overwrite the arguments in previous configuration files.
         :return: A list of the contents of each config file in order of increasing precedence (highest last).
+        file contents are represented as:
+        - for text files, the full file contents
+        - for json files, the parsed object
         """
         args_from_config = []
 
@@ -698,12 +723,7 @@ class Tap(ArgumentParser):
             # Read arguments from all configs from the lowest precedence config to the highest
             for file in config_files:
                 with open(file) as f:
-                    if file.lower().endswith(".json"):
-                        arg_d = json.load(f)
-                        args = "\n".join([f'--{arg} "{arg_d[arg]}"' for arg in arg_d])
-                    else:
-                        args = f.read().strip()
-                args_from_config.append(args)
+                    args_from_config.append(f.read().strip())
 
         return args_from_config
 
@@ -741,3 +761,15 @@ class Tap(ArgumentParser):
         """
         self.__init__()
         self.from_dict(d)
+
+
+class TapConfigParser(Tap):
+    def __init__(self, tap: Tap):
+        self.tap = tap
+        super().__init__()
+
+    def configure(self):
+        for a in self.tap._actions:
+            if a.type == TapConfig:
+                self.add_argument(*a.option_strings, type=TapConfig, required=a.required,
+                                  help=a.help, default=a.default)
