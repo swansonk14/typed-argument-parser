@@ -6,7 +6,7 @@ from typing import List
 from unittest import TestCase
 
 from tap import Tap
-from tap.runtime_config_file import RuntimeConfigFile
+from tap.config_file import ConfigFile
 
 
 class LoadConfigFilesTests(TestCase):
@@ -24,7 +24,7 @@ class LoadConfigFilesTests(TestCase):
             class SimpleTap(Tap):
                 a: float
                 b: str = 'b'
-                conf: RuntimeConfigFile = None
+                conf: ConfigFile = None
 
             with open(fname, 'w') as f:
                 f.write('{"a": 1.1}')
@@ -39,7 +39,7 @@ class LoadConfigFilesTests(TestCase):
             a: List[int]
             b: List[str]
             c: List[float]
-            conf: RuntimeConfigFile = None
+            conf: ConfigFile = None
 
         with TemporaryDirectory() as temp_dir:
             fname = os.path.join(temp_dir, 'config.json')
@@ -58,7 +58,7 @@ class LoadConfigFilesTests(TestCase):
             a: int
             b: str
             c: str = 'c'
-            conf: RuntimeConfigFile = None
+            conf: ConfigFile = None
 
         with TemporaryDirectory() as temp_dir:
             fname = os.path.join(temp_dir, 'config.json')
@@ -76,7 +76,7 @@ class LoadConfigFilesTests(TestCase):
         class SimpleOverwritingTap(Tap):
             a: int
             b: str = 'b'
-            conf: RuntimeConfigFile = None
+            conf: ConfigFile = None
 
         with TemporaryDirectory() as temp_dir:
             fname = os.path.join(temp_dir, 'config.json')
@@ -93,7 +93,7 @@ class LoadConfigFilesTests(TestCase):
         class KnownOnlyTap(Tap):
             a: int
             b: str = 'b'
-            conf: RuntimeConfigFile = None
+            conf: ConfigFile = None
 
         with TemporaryDirectory() as temp_dir:
             fname = os.path.join(temp_dir, 'config.json')
@@ -113,7 +113,7 @@ class LoadConfigFilesTests(TestCase):
         class KnownOnlyTap(Tap):
             a: int
             b: str = 'b'
-            conf: RuntimeConfigFile = None
+            conf: ConfigFile = None
 
         with TemporaryDirectory() as temp_dir, self.assertRaises(SystemExit):
             sys.stderr = self.dev_null
@@ -128,7 +128,7 @@ class LoadConfigFilesTests(TestCase):
         class MultipleTap(Tap):
             a: List[int]
             b: str = 'b'
-            conf: List[RuntimeConfigFile] = []
+            conf: List[ConfigFile] = []
 
         with TemporaryDirectory() as temp_dir:
             fname1, fname2 = os.path.join(temp_dir, 'config1.json'), os.path.join(temp_dir, 'config2.json')
@@ -147,7 +147,7 @@ class LoadConfigFilesTests(TestCase):
             a: int
             b: str = 'b'
             c: str = 'c'
-            conf: List[RuntimeConfigFile] = []
+            conf: List[ConfigFile] = []
 
         with TemporaryDirectory() as temp_dir:
             fname1, fname2 = os.path.join(temp_dir, 'config1.json'), os.path.join(temp_dir, 'config2.json')
@@ -167,7 +167,7 @@ class LoadConfigFilesTests(TestCase):
             a: int
             b: str = 'b'
             c: str = 'c'
-            conf: List[RuntimeConfigFile] = []
+            conf: List[ConfigFile] = []
 
         with TemporaryDirectory() as temp_dir:
             fname1, fname2 = os.path.join(temp_dir, 'config1.json'), os.path.join(temp_dir, 'config2.txt')

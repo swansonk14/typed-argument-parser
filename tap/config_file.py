@@ -7,13 +7,13 @@ from tap.utils import as_python_object
 import logging
 
 
-class RuntimeConfigFile:
+class ConfigFile:
     """
     Arg type that instructs tap to load arguments from the file specified.
     This represents a "runtime" config file in the sense that the filename
     is specified by the user on the cli (e.g. --conf testing.json),
     as opposed to by the developer in source code (via the config_files
-    argument to the Tap constructor).
+    parameter to the Tap constructor).
     """
     def __init__(self, config_path: str):
         self.config_path = config_path
