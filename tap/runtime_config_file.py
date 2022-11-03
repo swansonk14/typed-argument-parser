@@ -10,9 +10,10 @@ import logging
 class RuntimeConfigFile:
     """
     Arg type that instructs tap to load arguments from the file specified.
-    Args of this type are "runtime" in the sense that they are specified on the
-    cli by the user of the program (e.g. --conf testing.json) as opposed to
-    in source code via the config_files argument to the Tap constructor.
+    This represents a "runtime" config file in the sense that the filename
+    is specified by the user on the cli (e.g. --conf testing.json),
+    as opposed to by the developer in source code (via the config_files
+    argument to the Tap constructor).
     """
     def __init__(self, config_path: str):
         self.config_path = config_path
