@@ -6,7 +6,7 @@ from typing import List
 from unittest import TestCase
 
 from tap import Tap
-from tap.tap_config import TapConfig
+from tap.runtime_config_file import RuntimeConfigFile
 
 
 class LoadConfigFilesTests(TestCase):
@@ -17,14 +17,14 @@ class LoadConfigFilesTests(TestCase):
                 pass
         self.dev_null = DevNull()
 
-    def test_single_config(self) -> None:
+    def test_simple(self) -> None:
         with TemporaryDirectory() as temp_dir:
             fname = os.path.join(temp_dir, 'config.json')
 
             class SimpleTap(Tap):
-                a: int
+                a: float
                 b: str = 'b'
-                conf: TapConfig = None
+                conf: RuntimeConfigFile = None
 
             with open(fname, 'w') as f:
                 f.write('{"a": 1.1}')
@@ -34,49 +34,49 @@ class LoadConfigFilesTests(TestCase):
         self.assertEqual(args.a, 1.1)
         self.assertEqual(args.b, 'b')
 
-    def test_json_config(self) -> None:
+    def test_lists(self) -> None:
         class SimpleTap(Tap):
-            a: float
-            b: str
-            c: str = 'c'
-            d: int
-            e: List[int]
+            a: List[int]
+            b: List[str]
+            c: List[float]
+            conf: RuntimeConfigFile = None
 
         with TemporaryDirectory() as temp_dir:
             fname = os.path.join(temp_dir, 'config.json')
 
             with open(fname, 'w') as f:
-                # note: numeric args can be quoted or not in json
-                f.write('{"a": "1.1", "b": "value for b", "d": 4, "e": [7, 8, 9]}')
+                f.write('{"a": [7, 8, 9], "b": ["foo", "bar"], "c": [2.34, 5.67]}')
 
-            args = SimpleTap(config_files=[fname]).parse_args([])
+            args = SimpleTap().parse_args(f'--conf {fname}'.split(' '))
 
-        self.assertEqual(args.a, 1.1)
+        self.assertEqual(args.a, [7, 8, 9])
+        self.assertEqual(args.b, ["foo", "bar"])
+        self.assertEqual(args.c, [2.34, 5.67])
+
+    def test_strings_with_spaces(self) -> None:
+        class SimpleTap(Tap):
+            a: int
+            b: str
+            c: str = 'c'
+            conf: RuntimeConfigFile = None
+
+        with TemporaryDirectory() as temp_dir:
+            fname = os.path.join(temp_dir, 'config.json')
+
+            with open(fname, 'w') as f:
+                f.write('{"a": 1, "b": "value for b"}')
+
+            args = SimpleTap().parse_args(f'--conf {fname}'.split(' '))
+
+        self.assertEqual(args.a, 1)
         self.assertEqual(args.b, 'value for b')
         self.assertEqual(args.c, 'c')
-        self.assertEqual(args.d, 4)
-        self.assertEqual(args.e, [7, 8, 9])
 
     def test_single_config_overwriting(self) -> None:
         class SimpleOverwritingTap(Tap):
             a: int
             b: str = 'b'
-
-        with TemporaryDirectory() as temp_dir:
-            fname = os.path.join(temp_dir, 'config.txt')
-
-            with open(fname, 'w') as f:
-                f.write('--a 1 --b two')
-
-            args = SimpleOverwritingTap(config_files=[fname]).parse_args('--a 2'.split())
-
-        self.assertEqual(args.a, 2)
-        self.assertEqual(args.b, 'two')
-
-    def test_single_json_config_overwriting(self) -> None:
-        class SimpleOverwritingTap(Tap):
-            a: int
-            b: str = 'b'
+            conf: RuntimeConfigFile = None
 
         with TemporaryDirectory() as temp_dir:
             fname = os.path.join(temp_dir, 'config.json')
@@ -84,7 +84,7 @@ class LoadConfigFilesTests(TestCase):
             with open(fname, 'w') as f:
                 f.write('{"a": 1, "b": "b two"}')
 
-            args = SimpleOverwritingTap(config_files=[fname]).parse_args('--a 2'.split())
+            args = SimpleOverwritingTap().parse_args(f'--conf {fname} --a 2'.split())
 
         self.assertEqual(args.a, 2)
         self.assertEqual(args.b, 'b two')
@@ -93,14 +93,17 @@ class LoadConfigFilesTests(TestCase):
         class KnownOnlyTap(Tap):
             a: int
             b: str = 'b'
+            conf: RuntimeConfigFile = None
 
         with TemporaryDirectory() as temp_dir:
-            fname = os.path.join(temp_dir, 'config.txt')
+            fname = os.path.join(temp_dir, 'config.json')
 
             with open(fname, 'w') as f:
-                f.write('--a 1 --c seeNothing')
+                f.write('{"a": 1, "c": "seeNothing"}')
 
-            args = KnownOnlyTap(config_files=[fname]).parse_args([], known_only=True)
+            # in this case allow_abbrev=False stops "--c" being interpreted
+            # as an abbreviation for "--conf"
+            args = KnownOnlyTap(allow_abbrev=False).parse_args(f'--conf {fname}'.split(), known_only=True)
 
         self.assertEqual(args.a, 1)
         self.assertEqual(args.b, 'b')
@@ -110,31 +113,33 @@ class LoadConfigFilesTests(TestCase):
         class KnownOnlyTap(Tap):
             a: int
             b: str = 'b'
+            conf: RuntimeConfigFile = None
 
         with TemporaryDirectory() as temp_dir, self.assertRaises(SystemExit):
             sys.stderr = self.dev_null
-            fname = os.path.join(temp_dir, 'config.txt')
+            fname = os.path.join(temp_dir, 'config.json')
 
             with open(fname, 'w') as f:
-                f.write('--b fore')
+                f.write('{"b": "fore"}')
 
-            KnownOnlyTap(config_files=[fname]).parse_args([])
+            KnownOnlyTap().parse_args(f'--conf {fname}'.split()).parse_args([])
 
     def test_multiple_configs(self) -> None:
         class MultipleTap(Tap):
-            a: int
+            a: List[int]
             b: str = 'b'
+            conf: List[RuntimeConfigFile] = []
 
         with TemporaryDirectory() as temp_dir:
-            fname1, fname2 = os.path.join(temp_dir, 'config1.txt'), os.path.join(temp_dir, 'config2.txt')
+            fname1, fname2 = os.path.join(temp_dir, 'config1.json'), os.path.join(temp_dir, 'config2.json')
 
             with open(fname1, 'w') as f1, open(fname2, 'w') as f2:
-                f1.write('--b two')
-                f2.write('--a 1')
+                f1.write('{"b": "two"}')
+                f2.write('{"a": [1, 2]}')
 
-            args = MultipleTap(config_files=[fname1, fname2]).parse_args([])
+            args = MultipleTap().parse_args(f"--conf {fname1} {fname2}".split())
 
-        self.assertEqual(args.a, 1)
+        self.assertEqual(args.a, [1, 2])
         self.assertEqual(args.b, 'two')
 
     def test_multiple_configs_overwriting(self) -> None:
@@ -142,15 +147,36 @@ class LoadConfigFilesTests(TestCase):
             a: int
             b: str = 'b'
             c: str = 'c'
+            conf: List[RuntimeConfigFile] = []
 
         with TemporaryDirectory() as temp_dir:
-            fname1, fname2 = os.path.join(temp_dir, 'config1.txt'), os.path.join(temp_dir, 'config2.txt')
+            fname1, fname2 = os.path.join(temp_dir, 'config1.json'), os.path.join(temp_dir, 'config2.json')
 
             with open(fname1, 'w') as f1, open(fname2, 'w') as f2:
-                f1.write('--a 1 --b two')
+                f1.write('{"a": 1, "b": "two"}')
+                f2.write('{"a": 2, "c": "see"}')
+
+            args = MultipleOverwritingTap().parse_args(f"--conf {fname1} {fname2} --b four".split())
+
+        self.assertEqual(args.a, 2)
+        self.assertEqual(args.b, 'four')
+        self.assertEqual(args.c, 'see')
+
+    def test_json_and_text_configs_overwriting(self) -> None:
+        class MultipleOverwritingTap(Tap):
+            a: int
+            b: str = 'b'
+            c: str = 'c'
+            conf: List[RuntimeConfigFile] = []
+
+        with TemporaryDirectory() as temp_dir:
+            fname1, fname2 = os.path.join(temp_dir, 'config1.json'), os.path.join(temp_dir, 'config2.txt')
+
+            with open(fname1, 'w') as f1, open(fname2, 'w') as f2:
+                f1.write('{"a": 1, "b": "two"}')
                 f2.write('--a 2 --c see')
 
-            args = MultipleOverwritingTap(config_files=[fname1, fname2]).parse_args('--b four'.split())
+            args = MultipleOverwritingTap().parse_args(f"--conf {fname1} {fname2} --b four".split())
 
         self.assertEqual(args.a, 2)
         self.assertEqual(args.b, 'four')
@@ -163,29 +189,12 @@ class LoadConfigFilesTests(TestCase):
 
         with TemporaryDirectory() as temp_dir, self.assertRaises(SystemExit):
             sys.stderr = self.dev_null
-            fname = os.path.join(temp_dir, 'config.txt')
+            fname = os.path.join(temp_dir, 'config.json')
 
             with open(fname, 'w') as f:
                 f.write('is not a file that can reasonably be parsed')
 
-            JunkConfigTap(config_files=[fname]).parse_args([])
-
-    def test_shlex_config(self) -> None:
-        class ShlexConfigTap(Tap):
-            a: int
-            b: str
-
-        with TemporaryDirectory() as temp_dir:
-            fname = os.path.join(temp_dir, 'config.txt')
-
-            with open(fname, 'w') as f:
-                f.write('--a 21 # Important arg value\n\n# Multi-word quoted string\n--b "two three four"')
-
-            args = ShlexConfigTap(config_files=[fname]).parse_args([])
-
-        self.assertEqual(args.a, 21)
-        self.assertEqual(args.b, 'two three four')
-
+            JunkConfigTap().parse_args(f'--conf {fname}'.split()).parse_args([])
 
 
 if __name__ == '__main__':

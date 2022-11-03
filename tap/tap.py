@@ -1,4 +1,3 @@
-import copy
 from argparse import ArgumentParser, ArgumentTypeError
 from collections import OrderedDict
 from copy import deepcopy
@@ -11,12 +10,10 @@ import sys
 import time
 from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
-
-from attr import has
 from typing_inspect import is_literal_type
 from warnings import warn
 
-from tap.tap_config import TapConfig
+from tap.runtime_config_file import RuntimeConfigFile
 from tap.utils import (
     get_class_variables,
     get_args,
@@ -421,32 +418,33 @@ class Tap(ArgumentParser):
                    args: Optional[Sequence[str]] = None,
                    known_only: bool = False,
                    legacy_config_parsing = False,
-                   parse_structured_config: bool = True) -> TapType:
+                   parse_runtime_config_files: bool = True) -> TapType:
         """Parses arguments, sets attributes of self equal to the parsed arguments, and processes arguments.
 
         :param args: List of strings to parse. The default is taken from `sys.argv`.
         :param known_only: If true, ignores extra arguments and only parses known arguments.
         Unparsed arguments are saved to self.extra_args.
         :legacy_config_parsing: If true, config files are parsed using `str.split` instead of `shlex.split`.
+        :parse_config_files: If true, look for args of type RuntimeConfigFile and parse those files' contents as args
         :return: self, which is a Tap instance containing all of the parsed args.
         """
         # Prevent double parsing
         if self._parsed:
             raise ValueError('parse_args can only be called once.')
 
-        if parse_structured_config:
-            tap_config_parser = TapConfigParser(self)
-            config_namespace = tap_config_parser.parse_args(args, known_only=True,
-                                                               parse_structured_config=False)
-            # Copy parsed arguments to self
+        config_file_args = []
+        if parse_runtime_config_files:
+            # collect arguments from config files specified at runtime via RuntimeConfigFile args
+            runtime_config_parser = RuntimeConfigFileParser(self)
+            config_namespace = runtime_config_parser.parse_args(args, known_only=True,
+                                                                parse_runtime_config_files=False)
             for variable, value in vars(config_namespace).items():
-                # Conversion from list to set or tuple
                 if variable in self._annotations:
-                    if type(value) == TapConfig:
-                        config_path = value.config_path
-                        with open(config_path) as f:
-                            config_dict = json.load(f, object_hook=as_python_object)
-                            self.from_dict(config_dict, check_required=False)
+                    if type(value) == RuntimeConfigFile:
+                        config_file_args += value.extract_args()
+                    elif type(value) == list:
+                        for config_file in value:
+                            config_file_args += config_file.extract_args()
 
         # Collect arguments from all of the configs
 
@@ -457,8 +455,9 @@ class Tap(ArgumentParser):
 
         config_args = [arg for args_from_config in self.args_from_configs for arg in splitter(args_from_config)]
 
-        # Add config args at lower precedence and extract args from the command line if they are not passed explicitly
-        args = config_args + (sys.argv[1:] if args is None else list(args))
+        # Add config args at lower precedence, then add args from RuntimeConfigFiles,
+        # then extract args from the command line if they are not passed explicitly
+        args = config_args + config_file_args + (sys.argv[1:] if args is None else list(args))
 
         # Parse args using super class ArgumentParser's parse_args or parse_known_args function
         if known_only:
@@ -625,25 +624,22 @@ class Tap(ArgumentParser):
 
         return stored_dict
 
-    def from_dict(self, args_dict: Dict[str, Any], skip_unsettable: bool = False,
-                  check_required: bool = True) -> TapType:
-        """Loads arguments from a dictionary.
+    def from_dict(self, args_dict: Dict[str, Any], skip_unsettable: bool = False) -> TapType:
+        """Loads arguments from a dictionary, ensuring all required arguments are set.
 
         :param args_dict: A dictionary from argument names to the values of the arguments.
         :param skip_unsettable: When True, skips attributes that cannot be set in the Tap object,
                                 e.g. properties without setters.
-        :param check_required: When True, throws an error unless if all required arguments aren't set
         :return: Returns self.
         """
-        if check_required:
-            # All of the required arguments must be provided or already set
-            required_args = {a.dest for a in self._actions if a.required}
-            unprovided_required_args = required_args - args_dict.keys()
-            missing_required_args = [arg for arg in unprovided_required_args if not hasattr(self, arg)]
+        # All of the required arguments must be provided or already set
+        required_args = {a.dest for a in self._actions if a.required}
+        unprovided_required_args = required_args - args_dict.keys()
+        missing_required_args = [arg for arg in unprovided_required_args if not hasattr(self, arg)]
 
-            if len(missing_required_args) > 0:
-                raise ValueError(f'Input dictionary "{args_dict}" does not include '
-                                 f'all unset required arguments: "{missing_required_args}".')
+        if len(missing_required_args) > 0:
+            raise ValueError(f'Input dictionary "{args_dict}" does not include '
+                             f'all unset required arguments: "{missing_required_args}".')
 
         # Load all arguments
         for key, value in args_dict.items():
@@ -705,7 +701,7 @@ class Tap(ArgumentParser):
 
         return self
 
-    def _load_from_config_files(self, config_files: Optional[List[str]]) -> (List[str], List[dict]):
+    def _load_from_config_files(self, config_files: Optional[List[str]]) -> List[str]:
         """Loads arguments from a list of configuration files containing command line arguments.
 
         :param config_files: A list of paths to configuration files containing the command line arguments
@@ -713,9 +709,6 @@ class Tap(ArgumentParser):
                              overwrite arguments from the configuration files. Arguments in configuration files
                              that appear later in the list overwrite the arguments in previous configuration files.
         :return: A list of the contents of each config file in order of increasing precedence (highest last).
-        file contents are represented as:
-        - for text files, the full file contents
-        - for json files, the parsed object
         """
         args_from_config = []
 
@@ -763,13 +756,22 @@ class Tap(ArgumentParser):
         self.from_dict(d)
 
 
-class TapConfigParser(Tap):
+class RuntimeConfigFileParser(Tap):
+    """
+    Parser that copies just args of type RuntimeConfigFile from another parser
+    """
     def __init__(self, tap: Tap):
+        """
+        :param tap: parser that may contain RuntimeConfigFile arguments
+        """
         self.tap = tap
         super().__init__()
 
     def configure(self):
+        """
+        add RuntimeConfigFile arguments from self.tap
+        """
         for a in self.tap._actions:
-            if a.type == TapConfig:
-                self.add_argument(*a.option_strings, type=TapConfig, required=a.required,
-                                  help=a.help, default=a.default)
+            if a.type == RuntimeConfigFile:
+                self.add_argument(*a.option_strings, type=RuntimeConfigFile, required=a.required,
+                                  help=a.help, default=a.default, nargs=a.nargs)
