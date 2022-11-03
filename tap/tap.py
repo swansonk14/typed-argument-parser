@@ -432,7 +432,7 @@ class Tap(ArgumentParser):
         if self._parsed:
             raise ValueError('parse_args can only be called once.')
 
-        config_file_args = []
+        runtime_config_args = []
         if parse_runtime_config_files:
             # collect arguments from config files specified at runtime via RuntimeConfigFile args
             runtime_config_parser = RuntimeConfigFileParser(self)
@@ -441,10 +441,10 @@ class Tap(ArgumentParser):
             for variable, value in vars(config_namespace).items():
                 if variable in self._annotations:
                     if type(value) == RuntimeConfigFile:
-                        config_file_args += value.extract_args()
+                        runtime_config_args += value.extract_args()
                     elif type(value) == list:
                         for config_file in value:
-                            config_file_args += config_file.extract_args()
+                            runtime_config_args += config_file.extract_args()
 
         # Collect arguments from all of the configs
 
@@ -457,7 +457,7 @@ class Tap(ArgumentParser):
 
         # Add config args at lower precedence, then add args from RuntimeConfigFiles,
         # then extract args from the command line if they are not passed explicitly
-        args = config_args + config_file_args + (sys.argv[1:] if args is None else list(args))
+        args = config_args + runtime_config_args + (sys.argv[1:] if args is None else list(args))
 
         # Parse args using super class ArgumentParser's parse_args or parse_known_args function
         if known_only:
