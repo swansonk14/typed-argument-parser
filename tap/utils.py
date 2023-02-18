@@ -184,7 +184,6 @@ def tokenize_source(obj: object) -> Generator:
     """Returns a generator for the tokens of the object's source code."""
     source = inspect.getsource(obj)
     token_generator = tokenize.generate_tokens(StringIO(source).readline)
-
     return token_generator
 
 
@@ -206,7 +205,7 @@ def source_line_to_tokens(obj: object) -> Dict[int, List[Dict[str, Union[str, in
     for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(obj):
         line_to_tokens.setdefault(start_line, []).append({
             'token_type': token_type,
-            'token': token,
+            'token': bytes(token, encoding='ascii').decode('unicode-escape'),
             'start_line': start_line,
             'start_column': start_column,
             'end_line': end_line,
