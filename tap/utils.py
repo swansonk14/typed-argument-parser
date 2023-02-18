@@ -235,21 +235,13 @@ def get_class_variables(cls: type) -> OrderedDict:
             if token['token'].strip() == '':
                 continue
 
-            # Extract multiline comments in triple quote
-            if (class_variable is not None
-                    and token['token_type'] == tokenize.STRING
-                    and token['token'][:3] in {'"""', "'''"}):
-                sep = ' ' if variable_to_comment[class_variable]['comment'] else ''
-                variable_to_comment[class_variable]['comment'] += sep + token['token'][3:-3].strip()
-                continue
-
-            # Extract multiline comments in single quote
+            # Extract multiline comments
             if (class_variable is not None
                     and token['token_type'] == tokenize.STRING
                     and token['token'][:1] in {'"', "'"}):
                 sep = ' ' if variable_to_comment[class_variable]['comment'] else ''
-                variable_to_comment[class_variable]['comment'] += sep + token['token'][1:-1].strip()
-                continue
+                quote_char = token['token'][:1]
+                variable_to_comment[class_variable]['comment'] += sep + token['token'].strip(quote_char).strip()
 
             # Match class variable
             class_variable = None
