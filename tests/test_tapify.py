@@ -8,6 +8,15 @@ from unittest import TestCase
 from tap import tapify
 
 
+# Suppress prints from SystemExit
+class DevNull:
+    def write(self, msg):
+        pass
+
+
+sys.stderr = DevNull()
+
+
 class Person:
     def __init__(self, name: str):
         self.name = name
@@ -26,13 +35,6 @@ class Problems:
 
 
 class TapifyTests(TestCase):
-    def setUp(self) -> None:
-        # Suppress prints from SystemExit
-        class DevNull:
-            def write(self, msg):
-                pass
-        self.dev_null = DevNull()
-
     def test_tapify_empty(self):
         def pie() -> float:
             return 3.14
@@ -100,8 +102,6 @@ class TapifyTests(TestCase):
             return f'{so} {many} {args}'
 
         with self.assertRaises(SystemExit):
-            sys.stderr = self.dev_null
-
             tapify(concat, args=[
                 '--so', '23',
                 '--many', '9.3'
@@ -112,8 +112,6 @@ class TapifyTests(TestCase):
             return f'{so} {few}'
 
         with self.assertRaises(SystemExit):
-            sys.stderr = self.dev_null
-
             tapify(concat, args=[
                 '--so', '23',
                 '--few', '9.3',
@@ -150,8 +148,6 @@ class TapifyTests(TestCase):
             return f'{i} {like} {k} {w} {args} {always}'
 
         with self.assertRaises(ValueError):
-            sys.stderr = self.dev_null
-
             tapify(concat, args=[
                 '--i', '23',
                 '--args', 'wow',
@@ -167,8 +163,6 @@ class TapifyTests(TestCase):
         self.assertEqual(output, 'Problems(oh, no!)')
 
         with self.assertRaises(SystemExit):
-            sys.stderr = self.dev_null
-
             tapify(concat, args=['--problems', '1', '2'])
 
     def test_tapify_untyped(self):
@@ -191,14 +185,9 @@ class TapifyTests(TestCase):
             """Concatenate three numbers."""
             return f'{a} {b} {c}'
 
-        sys.stderr = self.dev_null
-        sys.stdout = self.dev_null
-
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             with self.assertRaises(SystemExit):
-                sys.stderr = self.dev_null
-
                 tapify(concat, args=['-h'])
 
         self.assertIn('Concatenate three numbers.', f.getvalue())

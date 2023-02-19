@@ -495,7 +495,7 @@ class PythonObjectEncoderTests(TestCase):
         obj = [1, CannotPickleThis()]
         expected_obj = [1, UnpicklableObject()]
         with self.assertRaises(ValueError):
-            dumps = json.dumps(obj, indent=4, sort_keys=True, cls=define_python_object_encoder())
+            json.dumps(obj, indent=4, sort_keys=True, cls=define_python_object_encoder())
 
         dumps = json.dumps(obj, indent=4, sort_keys=True, cls=define_python_object_encoder(True))
         recreated_obj = json.loads(dumps, object_hook=as_python_object)

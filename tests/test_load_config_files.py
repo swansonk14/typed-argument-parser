@@ -7,14 +7,16 @@ from unittest import TestCase
 from tap import Tap
 
 
+# Suppress prints from SystemExit
+class DevNull:
+    def write(self, msg):
+        pass
+
+
+sys.stderr = DevNull()
+
+
 class LoadConfigFilesTests(TestCase):
-
-    def setUp(self) -> None:
-        class DevNull:
-            def write(self, msg):
-                pass
-        self.dev_null = DevNull()
-
     def test_file_does_not_exist(self) -> None:
         class EmptyTap(Tap):
             pass
@@ -77,7 +79,6 @@ class LoadConfigFilesTests(TestCase):
             b: str = 'b'
 
         with TemporaryDirectory() as temp_dir, self.assertRaises(SystemExit):
-            sys.stderr = self.dev_null
             fname = os.path.join(temp_dir, 'config.txt')
 
             with open(fname, 'w') as f:
@@ -127,7 +128,6 @@ class LoadConfigFilesTests(TestCase):
             b: str = 'b'
 
         with TemporaryDirectory() as temp_dir, self.assertRaises(SystemExit):
-            sys.stderr = self.dev_null
             fname = os.path.join(temp_dir, 'config.txt')
 
             with open(fname, 'w') as f:
