@@ -1,5 +1,7 @@
+import contextlib
+import io
 import sys
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 import unittest
 from unittest import TestCase
 
@@ -184,16 +186,33 @@ class TapifyTests(TestCase):
 
         self.assertEqual(output, 'why not type? 1 5 typing is great! bye False')
 
-# Supported argument types
-# Unsupported types
-# Too many arguments
-# Not enough arguments
-# Some from command line and some from code providing it to the function
-# All arguments from code providing it to the function (just enough, too many, too few)
-# With and without defaults
-# Untyped
+    def test_tapify_help(self):
+        def concat(a: int, b: int, c: int) -> str:
+            """Concatenate three numbers."""
+            return f'{a} {b} {c}'
 
-# Help string
+        sys.stderr = self.dev_null
+        sys.stdout = self.dev_null
+
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            with self.assertRaises(SystemExit):
+                sys.stderr = self.dev_null
+
+                tapify(concat, args=['-h'])
+
+        self.assertIn('Concatenate three numbers.', f.getvalue())
+
+    def test_double_tapify(self):
+        def concat(a: int, b: int, c: int) -> str:
+            """Concatenate three numbers."""
+            return f'{a} {b} {c}'
+
+        output_1 = tapify(concat, args=['--a', '1', '--b', '2', '--c', '3'])
+        output_2 = tapify(concat, args=['--a', '4', '--b', '5', '--c', '6'])
+
+        self.assertEqual(output_1, '1 2 3')
+        self.assertEqual(output_2, '4 5 6')
 
 
 if __name__ == '__main__':

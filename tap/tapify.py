@@ -23,8 +23,7 @@ def tapify(function: Callable,
     sig = signature(function)
 
     # Create a Tap object with the arguments of the function
-    # TODO: get the help string from the function annotation
-    tap = Tap()
+    tap = Tap(description=function.__doc__)
     for param_name, param in sig.parameters.items():
         tap_kwargs = {}
 
