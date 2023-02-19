@@ -3,7 +3,6 @@ from copy import deepcopy
 import os
 from pathlib import Path
 import pickle
-from re import L
 import sys
 from tempfile import TemporaryDirectory
 from typing import Any, Iterable, List, Optional, Set, Tuple, Union
@@ -24,7 +23,8 @@ def stringify(arg_list: Iterable[Any]) -> List[str]:
 
 
 class EdgeCaseTests(TestCase):
-    def test_empty(self) -> None:
+    @staticmethod
+    def test_empty() -> None:
         class EmptyTap(Tap):
             pass
 
@@ -124,8 +124,10 @@ class RequiredClassVariableTests(TestCase):
         self.assertEqual(args.arg_str_required, 'tappy')
         self.assertEqual(args.arg_list_str_required, ['hi', 'there'])
 
+
 class ParameterizedStandardCollectionTests(TestCase):
-    @unittest.skipIf(sys.version_info < (3, 9), 'Parameterized standard collections (e.g., list[int]) introduced in Python 3.9')
+    @unittest.skipIf(sys.version_info < (3, 9),
+                     'Parameterized standard collections (e.g., list[int]) introduced in Python 3.9')
     def test_parameterized_standard_collection(self):
         class ParameterizedStandardCollectionTap(Tap):
             arg_list_str: list[str]

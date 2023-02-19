@@ -5,7 +5,6 @@ from argparse import ArgumentParser, ArgumentTypeError
 from collections import OrderedDict
 from copy import deepcopy
 from functools import partial
-from inspect import Parameter, signature
 from pathlib import Path
 from pprint import pformat
 from shlex import quote, split
@@ -423,8 +422,8 @@ class Tap(ArgumentParser):
 
         :param args: List of strings to parse. The default is taken from `sys.argv`.
         :param known_only: If true, ignores extra arguments and only parses known arguments.
-        Unparsed arguments are saved to self.extra_args.
-        :legacy_config_parsing: If true, config files are parsed using `str.split` instead of `shlex.split`.
+                           Unparsed arguments are saved to self.extra_args.
+        :param legacy_config_parsing: If true, config files are parsed using `str.split` instead of `shlex.split`.
         :return: self, which is a Tap instance containing all of the parsed args.
         """
         # Prevent double parsing
@@ -738,32 +737,3 @@ class Tap(ArgumentParser):
         """
         self.__init__()
         self.from_dict(d)
-
-
-def tapify(function: Callable) -> Any:
-    """Runs a function by parsing arguments for the function from the command line."""
-    # Get signature from function
-    sig = signature(function)
-
-    # Create a Tap object with the arguments of the function
-    # TODO: get the help string from the function annotation
-    # TODO: give a reasonable error message for types that are not supported
-    tap = Tap()
-    for param_name, param in sig.parameters.items():
-        kwargs = {}
-
-        if param.annotation != Parameter.empty:
-            tap._annotations[param.name] = param.annotation
-
-        if param.default != Parameter.empty:
-            kwargs['default'] = param.default
-        else:
-            kwargs['required'] = True
-
-        tap._add_argument(f'--{param_name}', **kwargs)
-
-    # Parse command line arguments
-    args = tap.parse_args()
-
-    # Run the function with the parsed arguments
-    return function(**args.as_dict())
