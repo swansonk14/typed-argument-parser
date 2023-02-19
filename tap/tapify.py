@@ -12,9 +12,8 @@ def tapify(function: Callable,
     """Runs a function by parsing arguments for the function from the command line.
 
     :param function: The function to run with the provided arguments.
-    :param args: Arguments to parse. If None, the arguments are parsed from the command line.
+    :param args: Arguments to parse. If None, arguments are parsed from the command line.
     :param known_only: If true, ignores extra arguments and only parses known arguments.
-                       Unparsed arguments are saved to self.extra_args.
     :param func_kwargs: Additional keyword arguments for the function. These act as default values when
                         parsing the command line arguments and overwrite the function defaults but
                         are overwritten by the parsed command line arguments.
