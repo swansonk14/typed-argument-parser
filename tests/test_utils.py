@@ -281,13 +281,30 @@ T
         class_variables['foo'] = {'comment': comment}
         self.assertEqual(get_class_variables(TrickyMultiline), class_variables)
 
-    def test_single_quote_multiline(self):
-        class SingleQuoteMultiline:
+    def test_triple_quote_multiline(self):
+        class TripleQuoteMultiline:
             bar: int = 0
             '''biz baz'''
 
+            hi: str
+            """Hello there"""
+
         class_variables = OrderedDict()
         class_variables['bar'] = {'comment': 'biz baz'}
+        class_variables['hi'] = {'comment': 'Hello there'}
+        self.assertEqual(get_class_variables(TripleQuoteMultiline), class_variables)
+
+    def test_single_quote_multiline(self):
+        class SingleQuoteMultiline:
+            bar: int = 0
+            'biz baz'
+
+            hi: str
+            "Hello there"
+
+        class_variables = OrderedDict()
+        class_variables['bar'] = {'comment': 'biz baz'}
+        class_variables['hi'] = {'comment': 'Hello there'}
         self.assertEqual(get_class_variables(SingleQuoteMultiline), class_variables)
 
     def test_functions_with_docs_multiline(self):
