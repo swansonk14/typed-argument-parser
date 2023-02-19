@@ -1,7 +1,7 @@
 import contextlib
 import io
 import sys
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 import unittest
 from unittest import TestCase
 
@@ -70,7 +70,7 @@ class TapifyTests(TestCase):
         self.assertEqual(output, '1 simple 3.14 -0.3 True wee')
 
     def test_tapify_complex_types(self):
-        def concat(complexity: list[str], requires: tuple[int, int], intelligence: Person) -> str:
+        def concat(complexity: List[str], requires: Tuple[int, int], intelligence: Person) -> str:
             return f'{" ".join(complexity)} {requires[0]} {requires[1]} {intelligence}'
 
         output = tapify(concat, args=[
@@ -81,8 +81,22 @@ class TapifyTests(TestCase):
 
         self.assertEqual(output, 'complex things require 1 0 Person(jesse)')
 
+    @unittest.skipIf(sys.version_info < (3, 9),
+                     'Parameterized standard collections (e.g., list[int]) introduced in Python 3.9')
+    def test_tapify_complex_types_parameterized_standard(self):
+        def concat(complexity: list[int], requires: tuple[int, int], intelligence: Person) -> str:
+            return f'{" ".join(map(str, complexity))} {requires[0]} {requires[1]} {intelligence}'
+
+        output = tapify(concat, args=[
+            '--complexity', '1', '2', '3',
+            '--requires', '1', '0',
+            '--intelligence', 'jesse',
+        ])
+
+        self.assertEqual(output, '1 2 3 1 0 Person(jesse)')
+
     def test_tapify_complex_types_defaults(self):
-        def concat(complexity: list[str],
+        def concat(complexity: List[str],
                    requires: Tuple[int, int] = (2, 5),
                    intelligence: Person = Person('kyle'),
                    maybe: Optional[str] = None,

@@ -1,12 +1,12 @@
 """Tapify module, which can run a function by parsing arguments for the function from the command line."""
 from inspect import signature, Parameter
-from typing import Any, Callable, Optional
+from typing import Any, Callable, List, Optional
 
 from tap import Tap
 
 
 def tapify(function: Callable,
-           args: Optional[list[str]] = None,
+           args: Optional[List[str]] = None,
            known_only: bool = False,
            **func_kwargs) -> Any:
     """Runs a function by parsing arguments for the function from the command line.
