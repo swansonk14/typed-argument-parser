@@ -1224,10 +1224,15 @@ class TupleTests(TestCase):
 
     def test_empty_tuple_fails(self):
         class EmptyTupleTap(Tap):
-            tup: Tuple[()]
+            tup_str: Tuple[()]
 
-        with self.assertRaises(ArgumentTypeError):
-            EmptyTupleTap().parse_args([])
+        arg_str = ('hi there', 'hello hi bye')
+
+        args = EmptyTupleTap().parse_args([
+            '--tup_str', *arg_str,
+        ])
+
+        self.assertEqual(args.tup_str, arg_str)
 
     def test_tuple_non_tuple_default(self):
         class TupleNonTupleTap(Tap):

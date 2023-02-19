@@ -227,14 +227,14 @@ class Tap(ArgumentParser):
                     loop = False
                     types = get_args(var_type)
 
-                    # Don't allow Tuple[()]
-                    if len(types) == 1 and types[0] == tuple():
-                        raise ArgumentTypeError('Empty Tuples (i.e. Tuple[()]) are not a valid Tap type '
-                                                'because they have no arguments.')
-
                     # Handle Tuple[type, ...]
                     if len(types) == 2 and types[1] == Ellipsis:
                         types = types[0:1]
+                        loop = True
+                        kwargs['nargs'] = '*'
+                    # Handle Tuple[()]
+                    elif len(types) == 1 and types[0] == tuple():
+                        types = [str]
                         loop = True
                         kwargs['nargs'] = '*'
                     else:
@@ -243,7 +243,7 @@ class Tap(ArgumentParser):
                     var_type = TupleTypeEnforcer(types=types, loop=loop)
 
                 if get_origin(var_type) in BOXED_TYPES:
-                    # If List or Set type, set nargs
+                    # If List or Set or Tuple type, set nargs
                     if (get_origin(var_type) in BOXED_COLLECTION_TYPES
                             and kwargs.get('action') not in {'append', 'append_const'}):
                         kwargs['nargs'] = kwargs.get('nargs', '*')
@@ -260,6 +260,7 @@ class Tap(ArgumentParser):
                     # Handle the cases of List[bool], Set[bool], Tuple[bool]
                     if var_type == bool:
                         var_type = boolean_type
+
                 # If bool then set action, otherwise set type
                 if var_type == bool:
                     if explicit_bool:
@@ -746,6 +747,7 @@ def tapify(function: Callable) -> Any:
 
     # Create a Tap object with the arguments of the function
     # TODO: get the help string from the function annotation
+    # TODO: give a reasonable error message for types that are not supported
     tap = Tap()
     for param_name, param in sig.parameters.items():
         kwargs = {}

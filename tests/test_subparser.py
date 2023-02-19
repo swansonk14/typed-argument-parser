@@ -1,3 +1,4 @@
+from argparse import ArgumentError
 import sys
 from typing import Union
 from typing_extensions import Literal
@@ -111,14 +112,19 @@ class TestSubparser(TestCase):
                 self.add_subparser('a', SubparserB)
                 self.add_subparser('a', SubparserA)
 
-        args = Args().parse_args('a --bar 2'.split())
-        self.assertFalse(args.foo)
-        self.assertEqual(args.bar, 2)
-        self.assertFalse(hasattr(args, 'baz'))
-
         sys.stderr = self.dev_null
-        with self.assertRaises(SystemExit):
-            Args().parse_args('a --baz 2'.split())
+
+        if sys.version_info >= (3, 11):
+            with self.assertRaises(ArgumentError):
+                Args().parse_args([])
+        else:
+            args = Args().parse_args('a --bar 2'.split())
+            self.assertFalse(args.foo)
+            self.assertEqual(args.bar, 2)
+            self.assertFalse(hasattr(args, 'baz'))
+
+            with self.assertRaises(SystemExit):
+                Args().parse_args('a --baz 2'.split())
 
     def test_add_subparsers_twice(self):
         class SubparserA(Tap):
