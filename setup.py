@@ -29,7 +29,8 @@ setup(
     package_data={'tap': ['py.typed']},
     install_requires=[
         'typing_extensions >= 3.7.4',
-        'typing-inspect >= 0.7.1'
+        'typing-inspect >= 0.7.1',
+        'docstring-parser >= 0.15'
     ],
     tests_require=['pytest'],
     classifiers=[

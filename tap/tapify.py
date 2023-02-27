@@ -1,34 +1,58 @@
-"""Tapify module, which can run a function by parsing arguments for the function from the command line."""
+"""Tapify module, which can initialize a class or run a function by parsing arguments from the command line."""
 from inspect import signature, Parameter
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, TypeVar, Union
+
+from docstring_parser import parse
 
 from tap import Tap
 
+InputType = TypeVar('InputType')
+OutputType = TypeVar('OutputType')
 
-def tapify(function: Callable,
+
+def tapify(class_or_function: Union[Callable[[InputType], OutputType], OutputType],
            args: Optional[List[str]] = None,
            known_only: bool = False,
-           **func_kwargs) -> Any:
-    """Runs a function by parsing arguments for the function from the command line.
+           **func_kwargs) -> OutputType:
+    """Tapify initializes a class or runs a function by parsing arguments from the command line.
 
-    :param function: The function to run with the provided arguments.
+    :param class_or_function: The class or function to run with the provided arguments.
     :param args: Arguments to parse. If None, arguments are parsed from the command line.
     :param known_only: If true, ignores extra arguments and only parses known arguments.
     :param func_kwargs: Additional keyword arguments for the function. These act as default values when
                         parsing the command line arguments and overwrite the function defaults but
                         are overwritten by the parsed command line arguments.
     """
-    # Get signature from function
-    sig = signature(function)
+    # Get signature from class or function
+    sig = signature(class_or_function)
 
-    # Create a Tap object with the arguments of the function
-    tap = Tap(description=function.__doc__)
+    # Parse class or function docstring in one line
+    if isinstance(class_or_function, type) and class_or_function.__init__.__doc__ is not None:
+        doc = class_or_function.__init__.__doc__
+    else:
+        doc = class_or_function.__doc__
+
+    # Parse docstring
+    docstring = parse(doc)
+
+    # Get the description of each argument in the class init or function
+    param_to_description = {param.arg_name: param.description for param in docstring.params}
+
+    # Create a Tap object
+    tap = Tap(description=f'{docstring.short_description}\n{docstring.long_description}')
+
+    # Add arguments of class init or function to the Tap object
     for param_name, param in sig.parameters.items():
         tap_kwargs = {}
 
         # Get type of the argument
         if param.annotation != Parameter.empty:
-            tap._annotations[param.name] = param.annotation
+            # Any type defaults to str (needed for dataclasses where all non-default attributes must have a type)
+            if param.annotation is Any:
+                tap._annotations[param.name] = str
+            # Otherwise, get the type of the argument
+            else:
+                tap._annotations[param.name] = param.annotation
 
         # Get the default or required of the argument
         if param.name in func_kwargs:
@@ -38,6 +62,10 @@ def tapify(function: Callable,
             tap_kwargs['default'] = param.default
         else:
             tap_kwargs['required'] = True
+
+        # Get the help string of the argument
+        if param.name in param_to_description:
+            tap.class_variables[param.name] = {'comment': param_to_description[param.name]}
 
         # Add the argument to the Tap object
         tap._add_argument(f'--{param_name}', **tap_kwargs)
@@ -52,5 +80,5 @@ def tapify(function: Callable,
         known_only=known_only
     )
 
-    # Run the function with the parsed arguments
-    return function(**args.as_dict())
+    # Initialize the class or run the function with the parsed arguments
+    return class_or_function(**args.as_dict())
