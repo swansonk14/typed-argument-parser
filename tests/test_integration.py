@@ -3,7 +3,6 @@ from copy import deepcopy
 import os
 from pathlib import Path
 import pickle
-from re import L
 import sys
 from tempfile import TemporaryDirectory
 from typing import Any, Iterable, List, Optional, Set, Tuple, Union
@@ -12,6 +11,15 @@ import unittest
 from unittest import TestCase
 
 from tap import Tap
+
+
+# Suppress prints from SystemExit
+class DevNull:
+    def write(self, msg):
+        pass
+
+
+sys.stderr = DevNull()
 
 
 def stringify(arg_list: Iterable[Any]) -> List[str]:
@@ -24,7 +32,8 @@ def stringify(arg_list: Iterable[Any]) -> List[str]:
 
 
 class EdgeCaseTests(TestCase):
-    def test_empty(self) -> None:
+    @staticmethod
+    def test_empty() -> None:
         class EmptyTap(Tap):
             pass
 
@@ -96,22 +105,14 @@ class RequiredClassVariableTests(TestCase):
 
         self.tap = RequiredArgumentsParser()
 
-        # Suppress prints from SystemExit
-        class DevNull:
-            def write(self, msg):
-                pass
-        self.dev_null = DevNull()
-
     def test_arg_str_required(self):
         with self.assertRaises(SystemExit):
-            sys.stderr = self.dev_null
             self.tap.parse_args([
                 '--arg_str_required', 'tappy',
             ])
 
     def test_arg_list_str_required(self):
         with self.assertRaises(SystemExit):
-            sys.stderr = self.dev_null
             self.tap.parse_args([
                 '--arg_list_str_required', 'hi', 'there',
             ])
@@ -124,8 +125,10 @@ class RequiredClassVariableTests(TestCase):
         self.assertEqual(args.arg_str_required, 'tappy')
         self.assertEqual(args.arg_list_str_required, ['hi', 'there'])
 
+
 class ParameterizedStandardCollectionTests(TestCase):
-    @unittest.skipIf(sys.version_info < (3, 9), 'Parameterized standard collections (e.g., list[int]) introduced in Python 3.9')
+    @unittest.skipIf(sys.version_info < (3, 9),
+                     'Parameterized standard collections (e.g., list[int]) introduced in Python 3.9')
     def test_parameterized_standard_collection(self):
         class ParameterizedStandardCollectionTap(Tap):
             arg_list_str: list[str]
@@ -551,10 +554,8 @@ class LiteralCrashTests(TestCase):
         class DevNull:
             def write(self, msg):
                 pass
-        self.dev_null = DevNull()
 
         with self.assertRaises(SystemExit):
-            sys.stderr = self.dev_null
             LiteralCrashTap().parse_args(['--arg_lit', '123'])
 
 
@@ -739,13 +740,6 @@ class UnionTypeTests(TestCase):
 
 
 class AddArgumentTests(TestCase):
-    def setUp(self) -> None:
-        # Suppress prints from SystemExit
-        class DevNull:
-            def write(self, msg):
-                pass
-        self.dev_null = DevNull()
-
     def test_positional(self) -> None:
         class AddArgumentPositionalTap(IntegrationDefaultTap):
             def configure(self) -> None:
@@ -926,7 +920,6 @@ class AddArgumentTests(TestCase):
         arg_list_str = ['hi', 'there', 'person', '123']
 
         with self.assertRaises(SystemExit):
-            sys.stderr = self.dev_null
             AddArgumentConflictingNargsTap().parse_args(['--arg_list_str', *arg_list_str])
 
     def test_repeat_action(self) -> None:
@@ -1047,22 +1040,14 @@ class ParseExplicitBoolArgsTests(TestCase):
 
         self.test_bool_cases = test_bool_cases
 
-        # Suppress prints from SystemExit
-        class DevNull:
-            def write(self, msg):
-                pass
-        self.dev_null = DevNull()
-
     def test_explicit_bool(self):
         class ExplicitBoolTap(Tap):
             is_gpu: bool
 
         with self.assertRaises(SystemExit):
-            sys.stderr = self.dev_null
             ExplicitBoolTap(explicit_bool=True).parse_args(['--is_gpu'])
 
         with self.assertRaises(SystemExit):
-            sys.stderr = self.dev_null
             ExplicitBoolTap(explicit_bool=True).parse_args([])
 
         self.test_bool_cases(ExplicitBoolTap)
@@ -1092,12 +1077,6 @@ class SetTests(TestCase):
 
 
 class TupleTests(TestCase):
-    def setUp(self) -> None:
-        class DevNull:
-            def write(self, msg):
-                pass
-        self.dev_null = DevNull()
-
     def test_tuple_empty(self):
         tup_arg = ('three', 'four', 'ten')
         tup_default_arg = (1, 2, '5')
@@ -1203,7 +1182,6 @@ class TupleTests(TestCase):
             tup: Tuple[int]
 
         with self.assertRaises(SystemExit):
-            sys.stderr = self.dev_null
             TupleTapTypeFails().parse_args(['--tup', 'tomato'])
 
     def test_tuple_wrong_num_args_fails(self):
@@ -1211,7 +1189,6 @@ class TupleTests(TestCase):
             tup: Tuple[int]
 
         with self.assertRaises(SystemExit):
-            sys.stderr = self.dev_null
             TupleTapArgsFails().parse_args(['--tup', '1', '1'])
 
     def test_tuple_wrong_order_fails(self):
@@ -1219,15 +1196,19 @@ class TupleTests(TestCase):
             tup: Tuple[int, str]
 
         with self.assertRaises(SystemExit):
-            sys.stderr = self.dev_null
             TupleTapOrderFails().parse_args(['--tup', 'seven', '1'])
 
     def test_empty_tuple_fails(self):
         class EmptyTupleTap(Tap):
-            tup: Tuple[()]
+            tup_str: Tuple[()]
 
-        with self.assertRaises(ArgumentTypeError):
-            EmptyTupleTap().parse_args([])
+        arg_str = ('hi there', 'hello hi bye')
+
+        args = EmptyTupleTap().parse_args([
+            '--tup_str', *arg_str,
+        ])
+
+        self.assertEqual(args.tup_str, arg_str)
 
     def test_tuple_non_tuple_default(self):
         class TupleNonTupleTap(Tap):

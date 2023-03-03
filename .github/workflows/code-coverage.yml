@@ -6,13 +6,13 @@ jobs:
   run:
     runs-on: ubuntu-latest
     env:
-      PYTHON: '3.10'
+      PYTHON: '3.11'
     steps:
     - uses: actions/checkout@main
     - name: Setup Python
       uses: actions/setup-python@main
       with:
-        python-version: '3.10'
+        python-version: '3.11'
     - name: Generate coverage report
       run: |
         git config --global user.email "you@example.com"
@@ -24,7 +24,7 @@ jobs:
         python -m pip install pytest-cov
         pytest --cov=tap --cov-report=xml
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage.xml

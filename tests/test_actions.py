@@ -220,7 +220,7 @@ class TestArgparseActions(TestCase):
 
         help_regex = r'.*positional arguments:\n.*arg\s*\(str, required\).*'
         help_text = PositionalDefault().format_help()
-        self.assertRegexpMatches(help_text, help_regex)
+        self.assertRegex(help_text, help_regex)
 
 
 if __name__ == '__main__':

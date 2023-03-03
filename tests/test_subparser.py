@@ -1,3 +1,4 @@
+from argparse import ArgumentError
 import sys
 from typing import Union
 from typing_extensions import Literal
@@ -7,15 +8,16 @@ from unittest import TestCase
 from tap import Tap
 
 
+# Suppress prints from SystemExit
+class DevNull:
+    def write(self, msg):
+        pass
+
+
+sys.stderr = DevNull()
+
+
 class TestSubparser(TestCase):
-
-    def setUp(self) -> None:
-        # Suppress prints from SystemExit
-        class DevNull:
-            def write(self, msg):
-                pass
-        self.dev_null = DevNull()
-
     def test_subparser_documentation_example(self):
         class SubparserA(Tap):
             bar: int  # bar help
@@ -50,8 +52,6 @@ class TestSubparser(TestCase):
         self.assertTrue(args.foo)
         self.assertFalse(hasattr(args, 'bar'))
         self.assertEqual(args.baz, 'X')
-
-        sys.stderr = self.dev_null
 
         with self.assertRaises(SystemExit):
             Args().parse_args('--baz X --foo b'.split())
@@ -111,14 +111,17 @@ class TestSubparser(TestCase):
                 self.add_subparser('a', SubparserB)
                 self.add_subparser('a', SubparserA)
 
-        args = Args().parse_args('a --bar 2'.split())
-        self.assertFalse(args.foo)
-        self.assertEqual(args.bar, 2)
-        self.assertFalse(hasattr(args, 'baz'))
+        if sys.version_info >= (3, 11):
+            with self.assertRaises(ArgumentError):
+                Args().parse_args([])
+        else:
+            args = Args().parse_args('a --bar 2'.split())
+            self.assertFalse(args.foo)
+            self.assertEqual(args.bar, 2)
+            self.assertFalse(hasattr(args, 'baz'))
 
-        sys.stderr = self.dev_null
-        with self.assertRaises(SystemExit):
-            Args().parse_args('a --baz 2'.split())
+            with self.assertRaises(SystemExit):
+                Args().parse_args('a --baz 2'.split())
 
     def test_add_subparsers_twice(self):
         class SubparserA(Tap):
@@ -132,7 +135,6 @@ class TestSubparser(TestCase):
                 self.add_subparsers(help='sub-command1 help')
                 self.add_subparsers(help='sub-command2 help')
 
-        sys.stderr = self.dev_null
         with self.assertRaises(SystemExit):
             Args().parse_args([])
 

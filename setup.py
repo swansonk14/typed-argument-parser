@@ -29,7 +29,8 @@ setup(
     package_data={'tap': ['py.typed']},
     install_requires=[
         'typing_extensions >= 3.7.4',
-        'typing-inspect >= 0.7.1'
+        'typing-inspect >= 0.7.1',
+        'docstring-parser >= 0.15'
     ],
     tests_require=['pytest'],
     classifiers=[
@@ -38,6 +39,7 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         "Typing :: Typed"

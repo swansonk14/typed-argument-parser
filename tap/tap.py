@@ -1,13 +1,13 @@
+import json
+import sys
+import time
 from argparse import ArgumentParser, ArgumentTypeError
 from collections import OrderedDict
 from copy import deepcopy
 from functools import partial
-import json
 from pathlib import Path
 from pprint import pformat
 from shlex import quote, split
-import sys
-import time
 from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
 from typing_inspect import is_literal_type
@@ -226,14 +226,14 @@ class Tap(ArgumentParser):
                     loop = False
                     types = get_args(var_type)
 
-                    # Don't allow Tuple[()]
-                    if len(types) == 1 and types[0] == tuple():
-                        raise ArgumentTypeError('Empty Tuples (i.e. Tuple[()]) are not a valid Tap type '
-                                                'because they have no arguments.')
-
                     # Handle Tuple[type, ...]
                     if len(types) == 2 and types[1] == Ellipsis:
                         types = types[0:1]
+                        loop = True
+                        kwargs['nargs'] = '*'
+                    # Handle Tuple[()]
+                    elif len(types) == 1 and types[0] == tuple():
+                        types = [str]
                         loop = True
                         kwargs['nargs'] = '*'
                     else:
@@ -242,7 +242,7 @@ class Tap(ArgumentParser):
                     var_type = TupleTypeEnforcer(types=types, loop=loop)
 
                 if get_origin(var_type) in BOXED_TYPES:
-                    # If List or Set type, set nargs
+                    # If List or Set or Tuple type, set nargs
                     if (get_origin(var_type) in BOXED_COLLECTION_TYPES
                             and kwargs.get('action') not in {'append', 'append_const'}):
                         kwargs['nargs'] = kwargs.get('nargs', '*')
@@ -259,6 +259,7 @@ class Tap(ArgumentParser):
                     # Handle the cases of List[bool], Set[bool], Tuple[bool]
                     if var_type == bool:
                         var_type = boolean_type
+
                 # If bool then set action, otherwise set type
                 if var_type == bool:
                     if explicit_bool:
@@ -421,8 +422,8 @@ class Tap(ArgumentParser):
 
         :param args: List of strings to parse. The default is taken from `sys.argv`.
         :param known_only: If true, ignores extra arguments and only parses known arguments.
-        Unparsed arguments are saved to self.extra_args.
-        :legacy_config_parsing: If true, config files are parsed using `str.split` instead of `shlex.split`.
+                           Unparsed arguments are saved to self.extra_args.
+        :param legacy_config_parsing: If true, config files are parsed using `str.split` instead of `shlex.split`.
         :return: self, which is a Tap instance containing all of the parsed args.
         """
         # Prevent double parsing
