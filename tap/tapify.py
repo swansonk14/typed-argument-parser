@@ -39,7 +39,7 @@ def tapify(class_or_function: Union[Callable[[InputType], OutputType], OutputTyp
     param_to_description = {param.arg_name: param.description for param in docstring.params}
 
     # Create a Tap object
-    tap = Tap(description="\n".join(filter(None, (docstring.short_description, docstring.long_description))))
+    tap = Tap(description='\n'.join(filter(None, (docstring.short_description, docstring.long_description))))
 
     # Add arguments of class init or function to the Tap object
     for param_name, param in sig.parameters.items():
