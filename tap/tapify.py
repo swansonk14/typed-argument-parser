@@ -11,14 +11,15 @@ OutputType = TypeVar('OutputType')
 
 
 def tapify(class_or_function: Union[Callable[[InputType], OutputType], OutputType],
-           args: Optional[List[str]] = None,
            known_only: bool = False,
+           command_line_args: Optional[List[str]] = None,
            **func_kwargs) -> OutputType:
     """Tapify initializes a class or runs a function by parsing arguments from the command line.
 
     :param class_or_function: The class or function to run with the provided arguments.
-    :param args: Arguments to parse. If None, arguments are parsed from the command line.
     :param known_only: If true, ignores extra arguments and only parses known arguments.
+    :param command_line_args: A list of command line style arguments to parse (e.g., ['--arg', 'value']).
+                              If None, arguments are parsed from the command line (default behavior).
     :param func_kwargs: Additional keyword arguments for the function. These act as default values when
                         parsing the command line arguments and overwrite the function defaults but
                         are overwritten by the parsed command line arguments.
@@ -38,7 +39,7 @@ def tapify(class_or_function: Union[Callable[[InputType], OutputType], OutputTyp
     # Get the description of each argument in the class init or function
     param_to_description = {param.arg_name: param.description for param in docstring.params}
 
-    # Create a Tap object
+    # Create a Tap object with a description from the docstring of the function or class
     tap = Tap(description='\n'.join(filter(None, (docstring.short_description, docstring.long_description))))
 
     # Add arguments of class init or function to the Tap object
@@ -75,10 +76,10 @@ def tapify(class_or_function: Union[Callable[[InputType], OutputType], OutputTyp
         raise ValueError(f'Unknown keyword arguments: {func_kwargs}')
 
     # Parse command line arguments
-    args = tap.parse_args(
-        args=args,
+    command_line_args = tap.parse_args(
+        args=command_line_args,
         known_only=known_only
     )
 
     # Initialize the class or run the function with the parsed arguments
-    return class_or_function(**args.as_dict())
+    return class_or_function(**command_line_args.as_dict())
