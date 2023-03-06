@@ -1,11 +1,9 @@
-import os
+from pathlib import Path
 from setuptools import find_packages, setup
 
 # Load version number
-__version__ = None
-
-src_dir = os.path.abspath(os.path.dirname(__file__))
-version_file = os.path.join(src_dir, 'tap', '_version.py')
+__version__ = ''
+version_file = Path(__file__).parent.absolute() / 'tap' / '_version.py'
 
 with open(version_file) as fd:
     exec(fd.read())
@@ -33,6 +31,7 @@ setup(
         'docstring-parser >= 0.15'
     ],
     tests_require=['pytest'],
+    python_requires='>=3.7',
     classifiers=[
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.7',

@@ -303,13 +303,6 @@ class Tap(ArgumentParser):
             if variable not in self.class_variables:
                 self._add_argument(*name_or_flags, **kwargs)
 
-    def add_arguments(self) -> None:
-        """Deprecated and will be removed by January 1st, 2021.
-
-        Explicitly add arguments to the argument buffer if not using default settings.
-        """
-        pass
-
     def process_args(self) -> None:
         """Perform additional argument processing and/or validation."""
         pass
