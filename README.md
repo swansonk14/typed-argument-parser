@@ -22,7 +22,7 @@ Tap provides the following benefits:
 
 See [this poster](https://docs.google.com/presentation/d/1AirN6gpiq4P1L8K003EsXmobVxP3A4AVEIR2KOEQN7Y/edit?usp=sharing), which we presented at [PyCon 2020](https://us.pycon.org/2020/), for a presentation of some of the relevant concepts we used to guide the development of Tap. 
 
-As of version 1.8.0, Tap now includes `tapify`, which runs functions or initializes classes with arguments parsed from the command line. We show an example below.
+As of version 1.8.0, Tap includes `tapify`, which runs functions or initializes classes with arguments parsed from the command line. We show an example below.
 
 ```python
 # square.py
