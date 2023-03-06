@@ -333,12 +333,6 @@ class Tap(ArgumentParser):
         # Call the user-defined configuration
         self.configure()
 
-        # Support the previous add_arguments interface with a deprecation warning
-        if self.__class__.add_arguments != Tap.add_arguments:
-            warn('add_arguments is deprecated and will be removed on January 1st, 2021'
-                 ' please override "configure" instead and call add_argument there. ')
-            self.add_arguments()
-
         # Add arguments to self
         self._add_arguments()
 
