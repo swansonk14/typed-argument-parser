@@ -50,7 +50,7 @@ class TapifyTests(TestCase):
                 return other == pie()
 
         for class_or_function in [pie, Pie, PieDataclass]:
-            self.assertEqual(tapify(class_or_function, args=[]), 3.14)
+            self.assertEqual(tapify(class_or_function, command_line_args=[]), 3.14)
 
     def test_tapify_simple_types(self):
         def concat(a: int, simple: str, test: float, of: float, types: bool) -> str:
@@ -75,7 +75,7 @@ class TapifyTests(TestCase):
                 return other == concat(self.a, self.simple, self.test, self.of, self.types)
 
         for class_or_function in [concat, Concat, ConcatDataclass]:
-            output = tapify(class_or_function, args=[
+            output = tapify(class_or_function, command_line_args=[
                 '--a', '1',
                 '--simple', 'simple',
                 '--test', '3.14',
@@ -109,7 +109,7 @@ class TapifyTests(TestCase):
                 return other == concat(self.a, self.simple, self.test, self.of, self.types, self.wow)
 
         for class_or_function in [concat, Concat, ConcatDataclass]:
-            output = tapify(class_or_function, args=[
+            output = tapify(class_or_function, command_line_args=[
                 '--a', '1',
                 '--simple', 'simple',
                 '--test', '3.14',
@@ -140,7 +140,7 @@ class TapifyTests(TestCase):
                 return other == concat(self.complexity, self.requires, self.intelligence)
 
         for class_or_function in [concat, Concat, ConcatDataclass]:
-            output = tapify(class_or_function, args=[
+            output = tapify(class_or_function, command_line_args=[
                 '--complexity', 'complex', 'things', 'require',
                 '--requires', '1', '0',
                 '--intelligence', 'jesse',
@@ -171,7 +171,7 @@ class TapifyTests(TestCase):
                 return other == concat(self.complexity, self.requires, self.intelligence)
 
         for class_or_function in [concat, Concat, ConcatDataclass]:
-            output = tapify(class_or_function, args=[
+            output = tapify(class_or_function, command_line_args=[
                 '--complexity', '1', '2', '3',
                 '--requires', '1', '0',
                 '--intelligence', 'jesse',
@@ -211,7 +211,7 @@ class TapifyTests(TestCase):
                 return other == concat(self.complexity, self.requires, self.intelligence, self.maybe, self.possibly)
 
         for class_or_function in [concat, Concat, ConcatDataclass]:
-            output = tapify(class_or_function, args=[
+            output = tapify(class_or_function, command_line_args=[
                 '--complexity', 'complex', 'things', 'require',
                 '--requires', '-3', '12',
                 '--possibly', 'huh?'
@@ -241,7 +241,7 @@ class TapifyTests(TestCase):
 
         for class_or_function in [concat, Concat, ConcatDataclass]:
             with self.assertRaises(SystemExit):
-                tapify(class_or_function, args=[
+                tapify(class_or_function, command_line_args=[
                     '--so', '23',
                     '--many', '9.3'
                 ])
@@ -267,7 +267,7 @@ class TapifyTests(TestCase):
 
         for class_or_function in [concat, Concat, ConcatDataclass]:
             with self.assertRaises(SystemExit):
-                tapify(class_or_function, args=[
+                tapify(class_or_function, command_line_args=[
                     '--so', '23',
                     '--few', '9.3',
                     '--args', 'wow'
@@ -293,7 +293,7 @@ class TapifyTests(TestCase):
                 return other == concat(self.so, self.few)
 
         for class_or_function in [concat, Concat, ConcatDataclass]:
-            output = tapify(class_or_function, args=[
+            output = tapify(class_or_function, command_line_args=[
                 '--so', '23',
                 '--few', '9.3',
                 '--args', 'wow'
@@ -325,7 +325,7 @@ class TapifyTests(TestCase):
                 return other == concat(self.i, self.like, self.k, self.w, self.args, self.always)
 
         for class_or_function in [concat, Concat, ConcatDataclass]:
-            output = tapify(class_or_function, args=[
+            output = tapify(class_or_function, command_line_args=[
                 '--i', '23',
                 '--args', 'wow',
                 '--like', '3.03',
@@ -358,7 +358,7 @@ class TapifyTests(TestCase):
 
         for class_or_function in [concat, Concat, ConcatDataclass]:
             with self.assertRaises(ValueError):
-                tapify(class_or_function, args=[
+                tapify(class_or_function, command_line_args=[
                     '--i', '23',
                     '--args', 'wow',
                     '--like', '3.03',
@@ -383,12 +383,12 @@ class TapifyTests(TestCase):
                 return other == concat(self.problems)
 
         for class_or_function in [concat, Concat, ConcatDataclass]:
-            output = tapify(class_or_function, args=[], problems=Problems('oh', 'no!'))
+            output = tapify(class_or_function, command_line_args=[], problems=Problems('oh', 'no!'))
 
             self.assertEqual(output, 'Problems(oh, no!)')
 
             with self.assertRaises(SystemExit):
-                tapify(class_or_function, args=['--problems', '1', '2'])
+                tapify(class_or_function, command_line_args=['--problems', '1', '2'])
 
     def test_tapify_untyped(self):
         def concat(untyped_1, typed_1: int,
@@ -422,7 +422,7 @@ class TapifyTests(TestCase):
                                        self.untyped_3, self.typed_3)
 
         for class_or_function in [concat, Concat, ConcatDataclass]:
-            output = tapify(class_or_function, args=[
+            output = tapify(class_or_function, command_line_args=[
                 '--untyped_1', 'why not type?',
                 '--typed_1', '1',
                 '--typed_2', 'typing is great!',
@@ -458,8 +458,8 @@ class TapifyTests(TestCase):
                 return other == concat(self.a, self.b, self.c)
 
         for class_or_function in [concat, Concat, ConcatDataclass]:
-            output_1 = tapify(class_or_function, args=['--a', '1', '--b', '2', '--c', '3'])
-            output_2 = tapify(class_or_function, args=['--a', '4', '--b', '5', '--c', '6'])
+            output_1 = tapify(class_or_function, command_line_args=['--a', '1', '--b', '2', '--c', '3'])
+            output_2 = tapify(class_or_function, command_line_args=['--a', '4', '--b', '5', '--c', '6'])
 
             self.assertEqual(output_1, '1 2 3')
             self.assertEqual(output_2, '4 5 6')
@@ -480,7 +480,7 @@ class TapifyTests(TestCase):
 
         for class_or_function in [concat, Concat]:
             with self.assertRaises(SystemExit):
-                tapify(class_or_function, args=['--a', '1', '--b', '2'])
+                tapify(class_or_function, command_line_args=['--a', '1', '--b', '2'])
 
     def test_tapify_help(self):
         def concat(a: int, b: int, c: int) -> str:
@@ -524,7 +524,7 @@ class TapifyTests(TestCase):
             f = io.StringIO()
             with contextlib.redirect_stdout(f):
                 with self.assertRaises(SystemExit):
-                    tapify(class_or_function, args=['-h'])
+                    tapify(class_or_function, command_line_args=['-h'])
 
             self.assertIn('Concatenate three numbers.', f.getvalue())
             self.assertIn('--a A       (int, required) The first number.', f.getvalue())
