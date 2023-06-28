@@ -26,15 +26,13 @@ setup(
     packages=find_packages(),
     package_data={'tap': ['py.typed']},
     install_requires=[
-        'typing_extensions >= 3.7.4',
         'typing-inspect >= 0.7.1',
         'docstring-parser >= 0.15'
     ],
     tests_require=['pytest'],
-    python_requires='>=3.7',
+    python_requires='>=3.8',
     classifiers=[
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',

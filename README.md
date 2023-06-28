@@ -39,7 +39,7 @@ Running `python square.py --num 2` will print `The square of your number is 4.0.
 
 ## Installation
 
-Tap requires Python 3.7+
+Tap requires Python 3.8+
 
 To install Tap from PyPI run: 
 ```
@@ -281,7 +281,7 @@ Tuples can be used to specify a fixed number of arguments with specified types u
 
 #### `Literal`
 
-Literal is analagous to argparse's [choices](https://docs.python.org/3/library/argparse.html#choices), which specifies the values that an argument can take. For example, if arg can only be one of 'H', 1, False, or 1.0078 then you would specify that `arg: Literal['H', 1, False, 1.0078]`. For instance, `--arg False` assigns arg to False and `--arg True` throws error. The `Literal` type was introduced in Python 3.8 ([PEP 586](https://www.python.org/dev/peps/pep-0586/)) and can be imported with `from typing_extensions import Literal`.
+Literal is analagous to argparse's [choices](https://docs.python.org/3/library/argparse.html#choices), which specifies the values that an argument can take. For example, if arg can only be one of 'H', 1, False, or 1.0078 then you would specify that `arg: Literal['H', 1, False, 1.0078]`. For instance, `--arg False` assigns arg to False and `--arg True` throws error.
 
 #### `Union`
 

@@ -4,10 +4,9 @@ import json
 import os
 import subprocess
 from tempfile import TemporaryDirectory
-from typing import Any, Callable, List, Dict, Set, Tuple, Union
+from typing import Any, Callable, List, Literal, Dict, Set, Tuple, Union
 import unittest
 from unittest import TestCase
-from typing_extensions import Literal
 
 from tap.utils import (
     get_class_column,

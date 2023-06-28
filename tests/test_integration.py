@@ -5,8 +5,7 @@ from pathlib import Path
 import pickle
 import sys
 from tempfile import TemporaryDirectory
-from typing import Any, Iterable, List, Optional, Set, Tuple, Union
-from typing_extensions import Literal
+from typing import Any, Iterable, List, Literal, Optional, Set, Tuple, Union
 import unittest
 from unittest import TestCase
 

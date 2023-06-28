@@ -1,7 +1,6 @@
 from argparse import ArgumentError
 import sys
-from typing import Union
-from typing_extensions import Literal
+from typing import Literal, Union
 import unittest
 from unittest import TestCase
 
