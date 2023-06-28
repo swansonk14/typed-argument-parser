@@ -1606,7 +1606,7 @@ class TestDefaultImmutability(TestCase):
         holy_hand_grenada = [1, 2, 5]  # no, 3 sir!
 
         class DefaultImmutabilityTap(Tap):
-            array: list[int] = holy_hand_grenada
+            array: List[int] = holy_hand_grenada
 
         args = DefaultImmutabilityTap().parse_args([])
         self.assertEqual(args.array, holy_hand_grenada)
@@ -1618,7 +1618,7 @@ class TestDefaultImmutability(TestCase):
         holy_hand_grenada = [1, 2, 5]
 
         class DefaultImmutabilityTap(Tap):
-            array: list[int]
+            array: List[int]
 
             def configure(self) -> None:
                 self.add_argument('--array', default=holy_hand_grenada)
