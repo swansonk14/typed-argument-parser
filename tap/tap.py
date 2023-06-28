@@ -54,7 +54,7 @@ class Tap(ArgumentParser):
                  *args,
                  underscores_to_dashes: bool = False,
                  explicit_bool: bool = False,
-                 config_files: Optional[List[str | PathLike]] = None,
+                 config_files: Optional[List[PathLike]] = None,
                  **kwargs):
         """Initializes the Tap instance.
 
