@@ -456,7 +456,7 @@ class Tap(ArgumentParser):
                     elif var_type in (Tuple, tuple):
                         value = tuple(value)
 
-            # Set variable in self (and deepcopy)
+            # Set variable in self (and deepcopy to prevent mutation of default values)
             setattr(self, variable, deepcopy(value))
 
         # Process args

@@ -1601,5 +1601,21 @@ class TestParserDescription(TestCase):
         self.assertNotIn("I do not exist", help_desc)
 
 
+class TestDefaultImmutability(TestCase):
+    def test_default_immutability(self):
+        holy_hand_grenada = [1, 2, 5]  # no, 3 sir!
+
+        class DefaultImmutabilityTap(Tap):
+            array: list[int] = holy_hand_grenada
+
+        args = DefaultImmutabilityTap().parse_args([])
+
+        self.assertEqual(args.array, holy_hand_grenada)
+
+        holy_hand_grenada[2] = 3
+
+        self.assertEqual(args.array, [1, 2, 5])
+
+
 if __name__ == '__main__':
     unittest.main()
