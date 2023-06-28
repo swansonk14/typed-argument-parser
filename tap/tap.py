@@ -140,7 +140,8 @@ class Tap(ArgumentParser):
 
         # Get default if not specified
         if hasattr(self, variable):
-            kwargs['default'] = kwargs.get('default', getattr(self, variable))
+            # Deepcopy to prevent mutation of default values
+            kwargs['default'] = deepcopy(kwargs.get('default', getattr(self, variable)))
 
         # Set required if option arg
         if (
@@ -456,8 +457,8 @@ class Tap(ArgumentParser):
                     elif var_type in (Tuple, tuple):
                         value = tuple(value)
 
-            # Set variable in self (and deepcopy to prevent mutation of default values)
-            setattr(self, variable, deepcopy(value))
+            # Set variable in self
+            setattr(self, variable, value)
 
         # Process args
         self.process_args()
