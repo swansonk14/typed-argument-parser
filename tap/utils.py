@@ -31,6 +31,7 @@ if sys.version_info >= (3, 10):
 
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
 PRIMITIVES = (str, int, float, bool)
+PathLike = Union[str, os.PathLike]
 
 
 def check_output(command: List[str], suppress_stderr: bool = True, **kwargs) -> str:
@@ -49,7 +50,7 @@ def check_output(command: List[str], suppress_stderr: bool = True, **kwargs) -> 
 class GitInfo:
     """Class with helper methods for extracting information about a git repo."""
 
-    def __init__(self, repo_path: str):
+    def __init__(self, repo_path: PathLike):
         self.repo_path = repo_path
 
     def has_git(self) -> bool:
@@ -452,7 +453,7 @@ def fix_py36_copy(func: Callable) -> Callable:
 
 def enforce_reproducibility(saved_reproducibility_data: Optional[Dict[str, str]],
                             current_reproducibility_data: Dict[str, str],
-                            path: str) -> None:
+                            path: PathLike) -> None:
     """Checks if reproducibility has failed and raises the appropriate error.
 
     :param saved_reproducibility_data: Reproducibility information loaded from a saved file.

@@ -11,7 +11,6 @@ from shlex import quote, split
 from types import MethodType
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
 from typing_inspect import is_literal_type
-from warnings import warn
 
 from tap.utils import (
     get_class_variables,
@@ -30,6 +29,7 @@ from tap.utils import (
     as_python_object,
     fix_py36_copy,
     enforce_reproducibility,
+    PathLike
 )
 
 if sys.version_info >= (3, 10):
@@ -54,7 +54,7 @@ class Tap(ArgumentParser):
                  *args,
                  underscores_to_dashes: bool = False,
                  explicit_bool: bool = False,
-                 config_files: Optional[List[str]] = None,
+                 config_files: Optional[List[str | PathLike]] = None,
                  **kwargs):
         """Initializes the Tap instance.
 
@@ -354,7 +354,7 @@ class Tap(ArgumentParser):
         pass
 
     @staticmethod
-    def get_reproducibility_info(repo_path: Optional[str] = None) -> Dict[str, str]:
+    def get_reproducibility_info(repo_path: Optional[PathLike] = None) -> Dict[str, str]:
         """Gets a dictionary of reproducibility information.
 
         Reproducibility information always includes:
@@ -389,7 +389,7 @@ class Tap(ArgumentParser):
 
         return reproducibility
 
-    def _log_all(self, repo_path: Optional[str] = None) -> Dict[str, Any]:
+    def _log_all(self, repo_path: Optional[PathLike] = None) -> Dict[str, Any]:
         """Gets all arguments along with reproducibility information.
 
         :param repo_path: Path to the git repo to examine for reproducibility info.
@@ -626,9 +626,10 @@ class Tap(ArgumentParser):
         return self
 
     def save(self,
-             path: str, with_reproducibility: bool = True,
+             path: PathLike,
+             with_reproducibility: bool = True,
              skip_unpicklable: bool = False,
-             repo_path: Optional[str] = None) -> None:
+             repo_path: Optional[PathLike] = None) -> None:
         """Saves the arguments and reproducibility information in JSON format, pickling what can't be encoded.
 
         :param path: Path to the JSON file where the arguments will be saved.
@@ -643,10 +644,10 @@ class Tap(ArgumentParser):
             json.dump(args, f, indent=4, sort_keys=True, cls=define_python_object_encoder(skip_unpicklable))
 
     def load(self,
-             path: str,
+             path: PathLike,
              check_reproducibility: bool = False,
              skip_unsettable: bool = False,
-             repo_path: Optional[str] = None) -> TapType:
+             repo_path: Optional[PathLike] = None) -> TapType:
         """Loads the arguments in JSON format. Note: Due to JSON, tuples are loaded as lists.
 
         :param path: Path to the JSON file where the arguments will be loaded from.
