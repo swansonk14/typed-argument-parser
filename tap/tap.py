@@ -140,8 +140,7 @@ class Tap(ArgumentParser):
 
         # Get default if not specified
         if hasattr(self, variable):
-            # Deepcopy to prevent mutation of default values
-            kwargs['default'] = deepcopy(kwargs.get('default', getattr(self, variable)))
+            kwargs['default'] = kwargs.get('default', getattr(self, variable))
 
         # Set required if option arg
         if (
@@ -276,6 +275,10 @@ class Tap(ArgumentParser):
             # Replace "_" with "-" for arguments that aren't positional
             name_or_flags = tuple(name_or_flag.replace('_', '-') if name_or_flag.startswith('-') else name_or_flag
                                   for name_or_flag in name_or_flags)
+
+        # Deepcopy default to prevent mutation of values
+        if 'default' in kwargs:
+            kwargs['default'] = deepcopy(kwargs['default'])
 
         super(Tap, self).add_argument(*name_or_flags, **kwargs)
 
