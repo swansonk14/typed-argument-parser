@@ -639,7 +639,7 @@ class Tap(ArgumentParser):
         :param skip_unpicklable: If True, does not save attributes whose values cannot be pickled.
         """
         with open(path, 'w') as f:
-            args = self._log_all() if with_reproducibility else self.as_dict()
+            args = self._log_all(repo_path=repo_path) if with_reproducibility else self.as_dict()
             json.dump(args, f, indent=4, sort_keys=True, cls=define_python_object_encoder(skip_unpicklable))
 
     def load(self,
