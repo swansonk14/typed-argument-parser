@@ -2,7 +2,7 @@ import contextlib
 from dataclasses import dataclass
 import io
 import sys
-from typing import List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any
 import unittest
 from unittest import TestCase
 
@@ -545,7 +545,7 @@ class TestTapifyKwargs(unittest.TestCase):
         self.concat_function = concat
 
         class Concat:
-            def __init__(self, a: int, b: int = 2, **kwargs: dict[str, str]):
+            def __init__(self, a: int, b: int = 2, **kwargs: Dict[str, str]):
                 """Concatenate three numbers.
 
                 :param a: The first number.
