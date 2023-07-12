@@ -532,5 +532,52 @@ class TapifyTests(TestCase):
             self.assertIn('--c C       (int, required) The third number.', f.getvalue())
 
 
+class TestTapifyKwargs(unittest.TestCase):
+    def setUp(self) -> None:
+        def concat(a: int, b: int = 2, **kwargs) -> str:
+            """Concatenate three numbers.
+
+            :param a: The first number.
+            :param b: The second number.
+            """
+            return f'{a}_{b}_{"-".join(f"{k}={v}" for k, v in kwargs.items())}'
+
+        self.concat_function = concat
+
+        class Concat:
+            def __init__(self, a: int, b: int = 2, **kwargs: dict[str, str]):
+                """Concatenate three numbers.
+
+                :param a: The first number.
+                :param b: The second number.
+                """
+                self.a = a
+                self.b = b
+                self.kwargs = kwargs
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(self.a, self.b, **self.kwargs)
+
+        self.concat_class = Concat
+
+    def test_tapify_empty_kwargs(self) -> None:
+        for class_or_function in [self.concat_function, self.concat_class]:
+            output = tapify(class_or_function, command_line_args=['--a', '1'])
+
+            self.assertEqual(output, '1_2_')
+
+    def test_tapify_has_kwargs(self) -> None:
+        for class_or_function in [self.concat_function, self.concat_class]:
+            output = tapify(class_or_function, command_line_args=['--a', '1', '--c', '3', '--d', '4'])
+
+            self.assertEqual(output, '1_2_c=3-d=4')
+
+    def test_tapify_has_kwargs_replace_default(self) -> None:
+        for class_or_function in [self.concat_function, self.concat_class]:
+            output = tapify(class_or_function, command_line_args=['--a', '1', '--c', '3', '--b', '5', '--d', '4'])
+
+            self.assertEqual(output, '1_5_c=3-d=4')
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -42,9 +42,18 @@ def tapify(class_or_function: Union[Callable[[InputType], OutputType], OutputTyp
     # Create a Tap object with a description from the docstring of the function or class
     tap = Tap(description='\n'.join(filter(None, (docstring.short_description, docstring.long_description))))
 
+    # Keep track of whether **kwargs was provided
+    has_kwargs = False
+
     # Add arguments of class init or function to the Tap object
     for param_name, param in sig.parameters.items():
         tap_kwargs = {}
+
+        # Skip **kwargs
+        if param.kind == Parameter.VAR_KEYWORD:
+            has_kwargs = True
+            known_only = True
+            continue
 
         # Get type of the argument
         if param.annotation != Parameter.empty:
@@ -81,5 +90,17 @@ def tapify(class_or_function: Union[Callable[[InputType], OutputType], OutputTyp
         known_only=known_only
     )
 
+    # Get command line arguments as a dictionary
+    command_line_args_dict = command_line_args.as_dict()
+
+    # Get **kwargs from extra command line arguments
+    if has_kwargs:
+        kwargs = {
+            tap.extra_args[i].lstrip('-'): tap.extra_args[i + 1]
+            for i in range(0, len(tap.extra_args), 2)
+        }
+
+        command_line_args_dict.update(kwargs)
+
     # Initialize the class or run the function with the parsed arguments
-    return class_or_function(**command_line_args.as_dict())
+    return class_or_function(**command_line_args_dict)
