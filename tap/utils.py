@@ -23,8 +23,10 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    _SpecialForm,
 )
 from typing_inspect import get_args as typing_inspect_get_args, get_origin as typing_inspect_get_origin
+from typing_inspect import _GenericAlias
 
 if sys.version_info >= (3, 10):
     from types import UnionType
@@ -497,6 +499,10 @@ def get_origin(tp: Any) -> Any:
     if origin is None:
         origin = tp
 
+    # fix typing_inspect not supporting TapIgnore
+    if hasattr(tp, '__origin__') and tp.__origin__ == TapIgnore:
+        origin = TapIgnore
+
     if sys.version_info >= (3, 10) and isinstance(origin, UnionType):
         origin = UnionType
 
@@ -510,3 +516,9 @@ def get_args(tp: Any) -> Tuple[type, ...]:
         return tp.__args__
 
     return typing_inspect_get_args(tp)
+
+@_SpecialForm
+def TapIgnore(self, parameters):
+    if not callable(parameters):
+        raise TypeError(f"{self} only accepts single type, got {parameters!r:.100}.")
+    return _GenericAlias(self, (parameters,))

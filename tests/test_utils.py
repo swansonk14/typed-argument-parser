@@ -20,6 +20,7 @@ from tap.utils import (
     UnpicklableObject,
     as_python_object,
     enforce_reproducibility,
+    TapIgnore,
 )
 
 
@@ -134,6 +135,8 @@ class TypeToStrTests(TestCase):
         self.assertEqual(type_to_str(Set[int]), 'Set[int]')
         self.assertEqual(type_to_str(Dict[str, int]), 'Dict[str, int]')
         self.assertEqual(type_to_str(Union[List[int], Dict[float, bool]]), 'Union[List[int], Dict[float, bool]]')
+        self.assertEqual(type_to_str(TapIgnore), "TapIgnore")
+        self.assertEqual(type_to_str(TapIgnore[int]), "TapIgnore[int]")
 
 
 def class_decorator(cls):

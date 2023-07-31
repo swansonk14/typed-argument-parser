@@ -5,11 +5,11 @@ from pathlib import Path
 import pickle
 import sys
 from tempfile import TemporaryDirectory
-from typing import Any, Iterable, List, Literal, Optional, Set, Tuple, Union
+from typing import Any, Dict, Iterable, List, Literal, Optional, Set, Tuple, Union
 import unittest
 from unittest import TestCase
 
-from tap import Tap
+from tap import Tap, TapIgnore
 
 
 # Suppress prints from SystemExit
@@ -330,6 +330,14 @@ class IntegrationDefaultTap(Tap):
     # TODO: move these elsewhere since we don't support them as defaults
     # arg_other_type_required: Person
     # arg_other_type_default: Person = Person('tap')
+    arg_ignore: str  # tap: ignore
+    arg_tapignore: TapIgnore
+    arg_tapignore_int: TapIgnore[int]
+    arg_tapignore_bool: TapIgnore[bool]
+    arg_tapignore_str: TapIgnore[str]
+    arg_tapignore_union: TapIgnore[Union[int, str]]
+    arg_tapignore_dict: TapIgnore[Dict[int, int]]
+    arg_tapignore_customed: TapIgnore[Person]
 
 
 class SubclassTests(TestCase):
@@ -402,6 +410,17 @@ class DefaultClassVariableTests(TestCase):
         self.assertEqual(args.arg_tuple_float, (3.14, 6.28))
         self.assertEqual(args.arg_tuple_bool, (True, True, True, False))
         self.assertEqual(args.arg_tuple_multi, (1.2, 1, 'hi', True, 1.3))
+
+        # test for ignored args
+        self.assertFalse(hasattr(args, 'arg_ignore'))
+        self.assertFalse(hasattr(args, 'arg_tapignore'))
+        self.assertFalse(hasattr(args, 'arg_tapignore_int'))
+        self.assertFalse(hasattr(args, 'arg_tapignore_bool'))
+        self.assertFalse(hasattr(args, 'arg_tapignore_str'))
+        self.assertFalse(hasattr(args, 'arg_tapignore_union'))
+        self.assertFalse(hasattr(args, 'arg_tapignore_dict'))
+        self.assertFalse(hasattr(args, 'arg_tapignore_customed'))
+
 
     def test_set_default_args(self) -> None:
         arg_untyped = 'yes'

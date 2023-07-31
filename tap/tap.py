@@ -29,7 +29,8 @@ from tap.utils import (
     as_python_object,
     fix_py36_copy,
     enforce_reproducibility,
-    PathLike
+    PathLike,
+    TapIgnore,
 )
 
 if sys.version_info >= (3, 10):
@@ -169,12 +170,21 @@ class Tap(ArgumentParser):
 
             # Description
             if variable in self.class_variables:
-                kwargs['help'] += ' ' + self.class_variables[variable]['comment']
+                comment = self.class_variables[variable]['comment']
+                # Ignore attributes with comment starting with "tap: ignore"
+                if comment.startswith('tap: ignore'):
+                    return
+                kwargs['help'] += ' ' + comment
 
         # Set other kwargs where not provided
         if variable in self._annotations:
             # Get type annotation
             var_type = self._annotations[variable]
+
+            # ignore the variables annotated by TapIgnore
+            # e.g., var_ignore: TapIgnore[str]
+            if get_origin(var_type) == TapIgnore:
+                return
 
             # If type is not explicitly provided, set it if it's one of our supported default types
             if 'type' not in kwargs:
