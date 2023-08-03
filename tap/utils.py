@@ -23,8 +23,7 @@ from typing import (
     Optional,
     Tuple,
     Union,
-    TypeVar,
-    Generic,
+    ClassVar,
 )
 from typing_inspect import get_args as typing_inspect_get_args, get_origin as typing_inspect_get_origin
 
@@ -34,10 +33,10 @@ if sys.version_info >= (3, 10):
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
 PRIMITIVES = (str, int, float, bool)
 PathLike = Union[str, os.PathLike]
-T = TypeVar('T')
-class TapIgnore(Generic[T]):
-    ...
 
+# use some hacks to implement the hint in IDE, like ClassVar
+TapIgnore = ClassVar
+TapIgnore._name = "TapIgnore"
 
 def check_output(command: List[str], suppress_stderr: bool = True, **kwargs) -> str:
     """Runs subprocess.check_output and returns the result as a string.
@@ -134,7 +133,7 @@ def type_to_str(type_annotation: Union[type, Any]) -> str:
         return type_annotation.__name__
 
     # Typing type
-    return str(type_annotation).replace('typing.', '').replace("tap.utils.", "")
+    return str(type_annotation).replace('typing.', '')
 
 
 def get_argument_name(*name_or_flags) -> str:
