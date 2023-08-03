@@ -23,10 +23,10 @@ from typing import (
     Optional,
     Tuple,
     Union,
-    _SpecialForm,
+    TypeVar,
+    Generic,
 )
 from typing_inspect import get_args as typing_inspect_get_args, get_origin as typing_inspect_get_origin
-from typing_inspect import _GenericAlias
 
 if sys.version_info >= (3, 10):
     from types import UnionType
@@ -34,6 +34,9 @@ if sys.version_info >= (3, 10):
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
 PRIMITIVES = (str, int, float, bool)
 PathLike = Union[str, os.PathLike]
+T = TypeVar('T')
+class TapIgnore(Generic[T]):
+    ...
 
 
 def check_output(command: List[str], suppress_stderr: bool = True, **kwargs) -> str:
@@ -131,7 +134,7 @@ def type_to_str(type_annotation: Union[type, Any]) -> str:
         return type_annotation.__name__
 
     # Typing type
-    return str(type_annotation).replace('typing.', '')
+    return str(type_annotation).replace('typing.', '').replace("tap.utils.", "")
 
 
 def get_argument_name(*name_or_flags) -> str:
@@ -516,9 +519,3 @@ def get_args(tp: Any) -> Tuple[type, ...]:
         return tp.__args__
 
     return typing_inspect_get_args(tp)
-
-@_SpecialForm
-def TapIgnore(self, parameters):
-    if not callable(parameters):
-        raise TypeError(f"{self} only accepts single type, got {parameters!r:.100}.")
-    return _GenericAlias(self, (parameters,))
