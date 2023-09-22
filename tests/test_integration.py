@@ -1170,11 +1170,59 @@ class TupleTests(TestCase):
         input_args = ('1', '2', '3', '4')
         true_args = (1, '2', Dummy('3'), Dummy('4'))
 
-        args = TupleClassTap().parse_args([
+        args = TupleClassTap().parse_args(['--tup', *input_args])
+
+        self.assertEqual(args.tup, true_args)
+
+    def test_tuple_literally_one(self):
+        class LiterallyOne(Tap):
+            tup: Tuple[Literal[1]]
+
+        input_args = ('1',)
+        true_args = (1,)
+
+        args = LiterallyOne().parse_args(['--tup', *input_args])
+
+        self.assertEqual(args.tup, true_args)
+
+        with self.assertRaises(SystemExit):
+            LiterallyOne().parse_args(['--tup', '2'])
+
+    def test_tuple_literally_two(self):
+        class LiterallyTwo(Tap):
+            tup: Tuple[Literal['two', 2], Literal[2, 'too']]
+
+        input_args = ('2', 'too')
+        true_args = (2, 'too')
+
+        args = LiterallyTwo().parse_args([
             '--tup', *input_args
         ])
 
         self.assertEqual(args.tup, true_args)
+
+        with self.assertRaises(SystemExit):
+            LiterallyTwo().parse_args(['--tup', '2'])
+
+        with self.assertRaises(SystemExit):
+            LiterallyTwo().parse_args(['--tup', '2', '3'])
+
+        with self.assertRaises(SystemExit):
+            LiterallyTwo().parse_args(['--tup', 'too', 'two'])
+
+    def test_tuple_literally_infinity(self):
+        class LiterallyInfinity(Tap):
+            tup: Tuple[Literal['infinity', '∞'], ...]
+
+        input_args = ('∞', 'infinity', '∞')
+        true_args = input_args
+
+        args = LiterallyInfinity().parse_args(['--tup', *input_args])
+
+        self.assertEqual(args.tup, true_args)
+
+        with self.assertRaises(SystemExit):
+            LiterallyInfinity().parse_args(['--tup', '8'])
 
     def test_tuple_wrong_type_fails(self):
         class TupleTapTypeFails(Tap):

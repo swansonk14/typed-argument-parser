@@ -283,7 +283,10 @@ def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any],
         raise ArgumentTypeError('All literals must have unique string representations')
 
     def var_type(arg: str) -> Any:
-        return str_to_literal.get(arg, arg)
+        if arg not in str_to_literal:
+            raise ArgumentTypeError(f'Value for variable "{variable}" must be one of {literals}.')
+
+        return str_to_literal[arg]
 
     return var_type, literals
 

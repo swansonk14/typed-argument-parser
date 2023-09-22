@@ -239,6 +239,9 @@ class Tap(ArgumentParser):
                     else:
                         kwargs['nargs'] = len(types)
 
+                    # Handle Literal types
+                    types = [get_literals(tp, variable)[0] if is_literal_type(tp) else tp for tp in types]
+
                     var_type = TupleTypeEnforcer(types=types, loop=loop)
 
                 if get_origin(var_type) in BOXED_TYPES:
