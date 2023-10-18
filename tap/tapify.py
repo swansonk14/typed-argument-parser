@@ -1,6 +1,6 @@
 """Tapify module, which can initialize a class or run a function by parsing arguments from the command line."""
 from inspect import signature, Parameter
-from typing import Any, Callable, List, Optional, TypeVar, Union
+from typing import Any, Callable, List, Optional, Type, TypeVar, Union
 
 from docstring_parser import parse
 
@@ -10,7 +10,7 @@ InputType = TypeVar('InputType')
 OutputType = TypeVar('OutputType')
 
 
-def tapify(class_or_function: Union[Callable[[InputType], OutputType], OutputType],
+def tapify(class_or_function: Union[Callable[[InputType], OutputType], Type[OutputType]],
            known_only: bool = False,
            command_line_args: Optional[List[str]] = None,
            **func_kwargs) -> OutputType:
