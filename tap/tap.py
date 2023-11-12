@@ -538,7 +538,7 @@ class Tap(ArgumentParser):
 
     def _get_class_variables(self) -> OrderedDict:
         """Returns an OrderedDict mapping class variables names to their additional information."""
-        class_variable_names = self._get_class_dict().keys() | self._get_annotations().keys()
+        class_variable_names = {**self._get_annotations(), **self._get_class_dict()}.keys()
 
         try:
             class_variables = self._get_from_self_and_super(
