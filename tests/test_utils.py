@@ -1,5 +1,4 @@
 from argparse import ArgumentTypeError
-from collections import OrderedDict
 import json
 import os
 import subprocess
@@ -192,31 +191,26 @@ class ClassVariableTests(TestCase):
     def test_no_variables(self):
         class NoVariables:
             pass
-        self.assertEqual(get_class_variables(NoVariables), OrderedDict())
+        self.assertEqual(get_class_variables(NoVariables), {})
 
     def test_one_variable(self):
         class OneVariable:
             arg = 2
-        class_variables = OrderedDict()
-        class_variables['arg'] = {'comment': ''}
+        class_variables = {'arg': {'comment': ''}}
         self.assertEqual(get_class_variables(OneVariable), class_variables)
 
     def test_multiple_variable(self):
         class MultiVariable:
             arg_1 = 2
             arg_2 = 3
-        class_variables = OrderedDict()
-        class_variables['arg_1'] = {'comment': ''}
-        class_variables['arg_2'] = {'comment': ''}
+        class_variables = {'arg_1': {'comment': ''}, 'arg_2': {'comment': ''}}
         self.assertEqual(get_class_variables(MultiVariable), class_variables)
 
     def test_typed_variables(self):
         class TypedVariable:
             arg_1: str
             arg_2: int = 3
-        class_variables = OrderedDict()
-        class_variables['arg_1'] = {'comment': ''}
-        class_variables['arg_2'] = {'comment': ''}
+        class_variables = {'arg_1': {'comment': ''}, 'arg_2': {'comment': ''}}
         self.assertEqual(get_class_variables(TypedVariable), class_variables)
 
     def test_separated_variables(self):
@@ -232,9 +226,7 @@ class ClassVariableTests(TestCase):
 
             arg_2: int = 3
             """More comment"""
-        class_variables = OrderedDict()
-        class_variables['arg_1'] = {'comment': ''}
-        class_variables['arg_2'] = {'comment': 'More comment'}
+        class_variables = {'arg_1': {'comment': ''}, 'arg_2': {'comment': 'More comment'}}
         self.assertEqual(get_class_variables(SeparatedVariable), class_variables)
 
     def test_commented_variables(self):
@@ -251,10 +243,8 @@ class ClassVariableTests(TestCase):
             arg_2: int = 3  # Arg 2 comment
             arg_3   :   Dict[str, int]      # noqa E203,E262   Poorly   formatted comment
             """More comment"""
-        class_variables = OrderedDict()
-        class_variables['arg_1'] = {'comment': 'Arg 1 comment'}
-        class_variables['arg_2'] = {'comment': 'Arg 2 comment'}
-        class_variables['arg_3'] = {'comment': 'noqa E203,E262   Poorly   formatted comment More comment'}
+        class_variables = {'arg_1': {'comment': 'Arg 1 comment'}, 'arg_2': {'comment': 'Arg 2 comment'},
+                           'arg_3': {'comment': 'noqa E203,E262   Poorly   formatted comment More comment'}}
         self.assertEqual(get_class_variables(CommentedVariable), class_variables)
 
     def test_bad_spacing_multiline(self):
@@ -275,7 +265,7 @@ T
             line!!
                 """
 
-        class_variables = OrderedDict()
+        class_variables = {}
         comment = 'Header line Footer\nT\n        A\n                P\n\n            multi\n            line!!'
         class_variables['foo'] = {'comment': comment}
         self.assertEqual(get_class_variables(TrickyMultiline), class_variables)
@@ -288,9 +278,7 @@ T
             hi: str
             """Hello there"""
 
-        class_variables = OrderedDict()
-        class_variables['bar'] = {'comment': 'biz baz'}
-        class_variables['hi'] = {'comment': 'Hello there'}
+        class_variables = {'bar': {'comment': 'biz baz'}, 'hi': {'comment': 'Hello there'}}
         self.assertEqual(get_class_variables(TripleQuoteMultiline), class_variables)
 
     def test_single_quote_multiline(self):
@@ -301,9 +289,7 @@ T
             hi: str
             "Hello there"
 
-        class_variables = OrderedDict()
-        class_variables['bar'] = {'comment': 'biz baz'}
-        class_variables['hi'] = {'comment': 'Hello there'}
+        class_variables = {'bar': {'comment': 'biz baz'}, 'hi': {'comment': 'Hello there'}}
         self.assertEqual(get_class_variables(SingleQuoteMultiline), class_variables)
 
     def test_functions_with_docs_multiline(self):
@@ -315,16 +301,14 @@ T
                 a: str = 'hello'  # noqa F841
                 """with docs"""
 
-        class_variables = OrderedDict()
-        class_variables['i'] = {'comment': ''}
+        class_variables = {'i': {'comment': ''}}
         self.assertEqual(get_class_variables(FunctionsWithDocs), class_variables)
 
     def test_dataclass(self):
         @class_decorator
         class DataclassColumn:
             arg: int = 5
-        class_variables = OrderedDict()
-        class_variables['arg'] = {'comment': ''}
+        class_variables = {'arg': {'comment': ''}}
         self.assertEqual(get_class_variables(DataclassColumn), class_variables)
 
 

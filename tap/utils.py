@@ -1,6 +1,5 @@
 from argparse import ArgumentParser, ArgumentTypeError
 from base64 import b64encode, b64decode
-from collections import OrderedDict
 import copy
 from functools import wraps
 import inspect
@@ -218,8 +217,8 @@ def source_line_to_tokens(obj: object) -> Dict[int, List[Dict[str, Union[str, in
     return line_to_tokens
 
 
-def get_class_variables(cls: type) -> OrderedDict:
-    """Returns an OrderedDict mapping class variables to their additional information (currently just comments)."""
+def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
+    """Returns a dictionary mapping class variables to their additional information (currently just comments)."""
     # Get mapping from line number to tokens
     line_to_tokens = source_line_to_tokens(cls)
 
@@ -228,7 +227,7 @@ def get_class_variables(cls: type) -> OrderedDict:
 
     # Extract class variables
     class_variable = None
-    variable_to_comment = OrderedDict()
+    variable_to_comment = {}
     for tokens in line_to_tokens.values():
         for i, token in enumerate(tokens):
 

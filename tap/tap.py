@@ -2,7 +2,6 @@ import json
 import sys
 import time
 from argparse import ArgumentParser, ArgumentTypeError
-from collections import OrderedDict
 from copy import deepcopy
 from functools import partial
 from pathlib import Path
@@ -85,7 +84,7 @@ class Tap(ArgumentParser):
         self.extra_args = []
 
         # Create argument buffer
-        self.argument_buffer = OrderedDict()
+        self.argument_buffer = {}
 
         # Create a place to put all of the subparsers
         self._subparser_buffer: List[Tuple[str, type, Dict[str, Any]]] = []
@@ -475,25 +474,22 @@ class Tap(ArgumentParser):
         return self
 
     @classmethod
-    def _get_from_self_and_super(cls,
-                                 extract_func: Callable[[type], dict],
-                                 dict_type: type = dict) -> Union[Dict[str, Any], OrderedDict]:
+    def _get_from_self_and_super(cls, extract_func: Callable[[type], dict]) -> Union[Dict[str, Any], Dict]:
         """Returns a dictionary mapping variable names to values.
 
         Variables and values are extracted from classes using key starting
         with this class and traversing up the super classes up through Tap.
 
-        If super class and sub class have the same key, the sub class value is used.
+        If super class and subclass have the same key, the subclass value is used.
 
         Super classes are traversed through breadth first search.
 
         :param extract_func: A function that extracts from a class a dictionary mapping variables to values.
-        :param dict_type: The type of dictionary to use (e.g. dict, OrderedDict, etc.)
         :return: A dictionary mapping variable names to values from the class dict.
         """
         visited = set()
         super_classes = [cls]
-        dictionary = dict_type()
+        dictionary = {}
 
         while len(super_classes) > 0:
             super_class = super_classes.pop(0)
@@ -536,14 +532,13 @@ class Tap(ArgumentParser):
             extract_func=lambda super_class: dict(get_type_hints(super_class))
         )
 
-    def _get_class_variables(self) -> OrderedDict:
-        """Returns an OrderedDict mapping class variables names to their additional information."""
+    def _get_class_variables(self) -> dict:
+        """Returns a dictionary mapping class variables names to their additional information."""
         class_variable_names = {**self._get_annotations(), **self._get_class_dict()}.keys()
 
         try:
             class_variables = self._get_from_self_and_super(
-                extract_func=lambda super_class: get_class_variables(super_class),
-                dict_type=OrderedDict
+                extract_func=lambda super_class: get_class_variables(super_class)
             )
 
             # Handle edge-case of source code modification while code is running
@@ -557,7 +552,7 @@ class Tap(ArgumentParser):
                 class_variables.pop(variable)
         # Exception if inspect.getsource fails to extract the source code
         except Exception:
-            class_variables = OrderedDict()
+            class_variables = {}
             for variable in class_variable_names:
                 class_variables[variable] = {'comment': ''}
 
