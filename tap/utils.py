@@ -40,9 +40,9 @@ def check_output(command: List[str], suppress_stderr: bool = True, **kwargs) -> 
     :param suppress_stderr: Whether to suppress anything written to standard error.
     :return: The output of the command, converted from bytes to string and stripped.
     """
-    with open(os.devnull, 'w') as devnull:
+    with open(os.devnull, "w") as devnull:
         devnull = devnull if suppress_stderr else None
-        output = subprocess.check_output(command, stderr=devnull, **kwargs).decode('utf-8').strip()
+        output = subprocess.check_output(command, stderr=devnull, **kwargs).decode("utf-8").strip()
     return output
 
 
@@ -58,8 +58,8 @@ class GitInfo:
         :return: True if git is installed, False otherwise.
         """
         try:
-            output = check_output(['git', 'rev-parse', '--is-inside-work-tree'], cwd=self.repo_path)
-            return output == 'true'
+            output = check_output(["git", "rev-parse", "--is-inside-work-tree"], cwd=self.repo_path)
+            return output == "true"
         except (FileNotFoundError, subprocess.CalledProcessError):
             return False
 
@@ -68,7 +68,7 @@ class GitInfo:
 
         :return: The root directory of the current git repo.
         """
-        return check_output(['git', 'rev-parse', '--show-toplevel'], cwd=self.repo_path)
+        return check_output(["git", "rev-parse", "--show-toplevel"], cwd=self.repo_path)
 
     def get_git_url(self, commit_hash: bool = True) -> str:
         """Gets the https url of the git repo where the command is run.
@@ -79,24 +79,24 @@ class GitInfo:
         """
         # Get git url (either https or ssh)
         try:
-            url = check_output(['git', 'remote', 'get-url', 'origin'], cwd=self.repo_path)
+            url = check_output(["git", "remote", "get-url", "origin"], cwd=self.repo_path)
         except subprocess.CalledProcessError:
             # For git versions <2.0
-            url = check_output(['git', 'config', '--get', 'remote.origin.url'], cwd=self.repo_path)
+            url = check_output(["git", "config", "--get", "remote.origin.url"], cwd=self.repo_path)
 
         # Remove .git at end
-        url = url[:-len('.git')]
+        url = url[: -len(".git")]
 
         # Convert ssh url to https url
-        m = re.search('git@(.+):', url)
+        m = re.search("git@(.+):", url)
         if m is not None:
             domain = m.group(1)
-            path = url[m.span()[1]:]
-            url = f'https://{domain}/{path}'
+            path = url[m.span()[1] :]
+            url = f"https://{domain}/{path}"
 
         if commit_hash:
             # Add tree and hash of current commit
-            url = f'{url}/tree/{self.get_git_hash()}'
+            url = f"{url}/tree/{self.get_git_hash()}"
 
         return url
 
@@ -105,14 +105,14 @@ class GitInfo:
 
         :return: The git hash of HEAD of the current git repo.
         """
-        return check_output(['git', 'rev-parse', 'HEAD'], cwd=self.repo_path)
+        return check_output(["git", "rev-parse", "HEAD"], cwd=self.repo_path)
 
     def has_uncommitted_changes(self) -> bool:
         """Returns whether there are uncommitted changes in the git repo where the command is run.
 
         :return: True if there are uncommitted changes in the current git repo, False otherwise.
         """
-        status = check_output(['git', 'status'], cwd=self.repo_path)
+        status = check_output(["git", "status"], cwd=self.repo_path)
 
         return not status.endswith(NO_CHANGES_STATUS)
 
@@ -128,7 +128,7 @@ def type_to_str(type_annotation: Union[type, Any]) -> str:
         return type_annotation.__name__
 
     # Typing type
-    return str(type_annotation).replace('typing.', '')
+    return str(type_annotation).replace("typing.", "")
 
 
 def get_argument_name(*name_or_flags) -> str:
@@ -137,16 +137,16 @@ def get_argument_name(*name_or_flags) -> str:
     :param name_or_flags: Either a name or a list of option strings, e.g. foo or -f, --foo.
     :return: The name of the argument (extracted from name_or_flags).
     """
-    if '-h' in name_or_flags or '--help' in name_or_flags:
-        return 'help'
+    if "-h" in name_or_flags or "--help" in name_or_flags:
+        return "help"
 
     if len(name_or_flags) > 1:
-        name_or_flags = [n_or_f for n_or_f in name_or_flags if n_or_f.startswith('--')]
+        name_or_flags = [n_or_f for n_or_f in name_or_flags if n_or_f.startswith("--")]
 
     if len(name_or_flags) != 1:
-        raise ValueError(f'There should only be a single canonical name for argument {name_or_flags}!')
+        raise ValueError(f"There should only be a single canonical name for argument {name_or_flags}!")
 
-    return name_or_flags[0].lstrip('-')
+    return name_or_flags[0].lstrip("-")
 
 
 def get_dest(*name_or_flags, **kwargs) -> str:
@@ -156,8 +156,8 @@ def get_dest(*name_or_flags, **kwargs) -> str:
     :param kwargs: Keyword arguments.
     :return: The name of the argument (extracted from name_or_flags).
     """
-    if '-h' in name_or_flags or '--help' in name_or_flags:
-        return 'help'
+    if "-h" in name_or_flags or "--help" in name_or_flags:
+        return "help"
 
     return ArgumentParser().add_argument(*name_or_flags, **kwargs).dest
 
@@ -168,7 +168,7 @@ def is_option_arg(*name_or_flags) -> bool:
     :param name_or_flags: Either a name or a list of option strings, e.g. foo or -f, --foo.
     :return: True if the argument is an option arg, False otherwise.
     """
-    return any(name_or_flag.startswith('-') for name_or_flag in name_or_flags)
+    return any(name_or_flag.startswith("-") for name_or_flag in name_or_flags)
 
 
 def is_positional_arg(*name_or_flags) -> bool:
@@ -192,9 +192,9 @@ def get_class_column(obj: type) -> int:
     """Determines the column number for class variables in a class."""
     first_line = 1
     for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(obj):
-        if token.strip() == '@':
+        if token.strip() == "@":
             first_line += 1
-        if start_line <= first_line or token.strip() == '':
+        if start_line <= first_line or token.strip() == "":
             continue
 
         return start_column
@@ -204,15 +204,17 @@ def source_line_to_tokens(obj: object) -> Dict[int, List[Dict[str, Union[str, in
     """Gets a dictionary mapping from line number to a dictionary of tokens on that line for an object's source code."""
     line_to_tokens = {}
     for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(obj):
-        line_to_tokens.setdefault(start_line, []).append({
-            'token_type': token_type,
-            'token': token,
-            'start_line': start_line,
-            'start_column': start_column,
-            'end_line': end_line,
-            'end_column': end_column,
-            'line': line
-        })
+        line_to_tokens.setdefault(start_line, []).append(
+            {
+                "token_type": token_type,
+                "token": token,
+                "start_line": start_line,
+                "start_column": start_column,
+                "end_line": end_line,
+                "end_column": end_column,
+                "line": line,
+            }
+        )
 
     return line_to_tokens
 
@@ -232,32 +234,36 @@ def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
         for i, token in enumerate(tokens):
 
             # Skip whitespace
-            if token['token'].strip() == '':
+            if token["token"].strip() == "":
                 continue
 
             # Extract multiline comments
-            if (class_variable is not None
-                    and token['token_type'] == tokenize.STRING
-                    and token['token'][:1] in {'"', "'"}):
-                sep = ' ' if variable_to_comment[class_variable]['comment'] else ''
-                quote_char = token['token'][:1]
-                variable_to_comment[class_variable]['comment'] += sep + token['token'].strip(quote_char).strip()
+            if (
+                class_variable is not None
+                and token["token_type"] == tokenize.STRING
+                and token["token"][:1] in {'"', "'"}
+            ):
+                sep = " " if variable_to_comment[class_variable]["comment"] else ""
+                quote_char = token["token"][:1]
+                variable_to_comment[class_variable]["comment"] += sep + token["token"].strip(quote_char).strip()
 
             # Match class variable
             class_variable = None
-            if (token['token_type'] == tokenize.NAME and
-                    token['start_column'] == class_variable_column and
-                    len(tokens) > i and
-                    tokens[i + 1]['token'] in ['=', ':']):
+            if (
+                token["token_type"] == tokenize.NAME
+                and token["start_column"] == class_variable_column
+                and len(tokens) > i
+                and tokens[i + 1]["token"] in ["=", ":"]
+            ):
 
-                class_variable = token['token']
-                variable_to_comment[class_variable] = {'comment': ''}
+                class_variable = token["token"]
+                variable_to_comment[class_variable] = {"comment": ""}
 
                 # Find the comment (if it exists)
                 for j in range(i + 1, len(tokens)):
-                    if tokens[j]['token_type'] == tokenize.COMMENT:
+                    if tokens[j]["token_type"] == tokenize.COMMENT:
                         # Leave out "#" and whitespace from comment
-                        variable_to_comment[class_variable]['comment'] = tokens[j]['token'][1:].strip()
+                        variable_to_comment[class_variable]["comment"] = tokens[j]["token"][1:].strip()
                         break
 
             break
@@ -272,14 +278,14 @@ def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any],
     if not all(isinstance(literal, PRIMITIVES) for literal in literals):
         raise ArgumentTypeError(
             f'The type for variable "{variable}" contains a literal'
-            f'of a non-primitive type e.g. (str, int, float, bool).\n'
-            f'Currently only primitive-typed literals are supported.'
+            f"of a non-primitive type e.g. (str, int, float, bool).\n"
+            f"Currently only primitive-typed literals are supported."
         )
 
     str_to_literal = {str(literal): literal for literal in literals}
 
     if len(literals) != len(str_to_literal):
-        raise ArgumentTypeError('All literals must have unique string representations')
+        raise ArgumentTypeError("All literals must have unique string representations")
 
     def var_type(arg: str) -> Any:
         if arg not in str_to_literal:
@@ -292,15 +298,16 @@ def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any],
 
 def boolean_type(flag_value: str) -> bool:
     """Convert a string to a boolean if it is a prefix of 'True' or 'False' (case insensitive) or is '1' or '0'."""
-    if 'true'.startswith(flag_value.lower()) or flag_value == '1':
+    if "true".startswith(flag_value.lower()) or flag_value == "1":
         return True
-    if 'false'.startswith(flag_value.lower()) or flag_value == '0':
+    if "false".startswith(flag_value.lower()) or flag_value == "0":
         return False
     raise ArgumentTypeError('Value has to be a prefix of "True" or "False" (case insensitive) or "1" or "0".')
 
 
 class TupleTypeEnforcer:
     """The type argument to argparse for checking and applying types to Tuples."""
+
     def __init__(self, types: List[type], loop: bool = False):
         self.types = [boolean_type if t == bool else t for t in types]
         self.loop = loop
@@ -318,6 +325,7 @@ class TupleTypeEnforcer:
 
 class MockTuple:
     """Mock of a tuple needed to prevent JSON encoding tuples as lists."""
+
     def __init__(self, _tuple: tuple) -> None:
         self.tuple = _tuple
 
@@ -351,44 +359,37 @@ def _nested_replace_type(obj: Any, find_type: type, replace_type: type) -> Any:
     return obj
 
 
-def define_python_object_encoder(skip_unpicklable: bool = False) -> 'PythonObjectEncoder':  # noqa F821
-
+def define_python_object_encoder(skip_unpicklable: bool = False) -> "PythonObjectEncoder":  # noqa F821
     class PythonObjectEncoder(JSONEncoder):
         """Stores parameters that are not JSON serializable as pickle dumps.
 
         See: https://stackoverflow.com/a/36252257
         """
+
         def iterencode(self, o: Any, _one_shot: bool = False) -> Iterator[str]:
             o = _nested_replace_type(o, tuple, MockTuple)
             return super(PythonObjectEncoder, self).iterencode(o, _one_shot)
 
         def default(self, obj: Any) -> Any:
             if isinstance(obj, set):
-                return {
-                    '_type': 'set',
-                    '_value': list(obj)
-                }
+                return {"_type": "set", "_value": list(obj)}
             elif isinstance(obj, MockTuple):
-                return {
-                    '_type': 'tuple',
-                    '_value': list(obj.tuple)
-                }
+                return {"_type": "tuple", "_value": list(obj.tuple)}
 
             try:
                 return {
-                    '_type': f'python_object (type = {obj.__class__.__name__})',
-                    '_value': b64encode(pickle.dumps(obj)).decode('utf-8')
+                    "_type": f"python_object (type = {obj.__class__.__name__})",
+                    "_value": b64encode(pickle.dumps(obj)).decode("utf-8"),
                 }
             except (pickle.PicklingError, TypeError, AttributeError) as e:
                 if not skip_unpicklable:
-                    raise ValueError(f'Could not pickle this object: Failed with exception {e}\n'
-                                     f'If you would like to ignore unpicklable attributes set '
-                                     f'skip_unpickleable = True in save.')
+                    raise ValueError(
+                        f"Could not pickle this object: Failed with exception {e}\n"
+                        f"If you would like to ignore unpicklable attributes set "
+                        f"skip_unpickleable = True in save."
+                    )
                 else:
-                    return {
-                        '_type': f'unpicklable_object {obj.__class__.__name__}',
-                        '_value': None
-                    }
+                    return {"_type": f"unpicklable_object {obj.__class__.__name__}", "_value": None}
 
     return PythonObjectEncoder
 
@@ -405,19 +406,19 @@ def as_python_object(dct: Any) -> Any:
 
     See: https://stackoverflow.com/a/36252257
     """
-    if '_type' in dct and '_value' in dct:
-        _type, value = dct['_type'], dct['_value']
+    if "_type" in dct and "_value" in dct:
+        _type, value = dct["_type"], dct["_value"]
 
-        if _type == 'tuple':
+        if _type == "tuple":
             return tuple(value)
 
-        elif _type == 'set':
+        elif _type == "set":
             return set(value)
 
-        elif _type.startswith('python_object'):
-            return pickle.loads(b64decode(value.encode('utf-8')))
+        elif _type.startswith("python_object"):
+            return pickle.loads(b64decode(value.encode("utf-8")))
 
-        elif _type.startswith('unpicklable_object'):
+        elif _type.startswith("unpicklable_object"):
             return UnpicklableObject()
 
         else:
@@ -436,10 +437,10 @@ def fix_py36_copy(func: Callable) -> Callable:
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        re_type = type(re.compile(''))
+        re_type = type(re.compile(""))
         has_prev_val = re_type in copy._deepcopy_dispatch
         prev_val = copy._deepcopy_dispatch.get(re_type, None)
-        copy._deepcopy_dispatch[type(re.compile(''))] = lambda r, _: r
+        copy._deepcopy_dispatch[type(re.compile(""))] = lambda r, _: r
 
         result = func(*args, **kwargs)
 
@@ -453,40 +454,40 @@ def fix_py36_copy(func: Callable) -> Callable:
     return wrapper
 
 
-def enforce_reproducibility(saved_reproducibility_data: Optional[Dict[str, str]],
-                            current_reproducibility_data: Dict[str, str],
-                            path: PathLike) -> None:
+def enforce_reproducibility(
+    saved_reproducibility_data: Optional[Dict[str, str]], current_reproducibility_data: Dict[str, str], path: PathLike
+) -> None:
     """Checks if reproducibility has failed and raises the appropriate error.
 
     :param saved_reproducibility_data: Reproducibility information loaded from a saved file.
     :param current_reproducibility_data: Reproducibility information from the current object.
     :param path: The path name of the file that is being loaded.
     """
-    no_reproducibility_message = 'Reproducibility not guaranteed'
+    no_reproducibility_message = "Reproducibility not guaranteed"
 
     if saved_reproducibility_data is None:
-        raise ValueError(f'{no_reproducibility_message}: Could not find reproducibility '
-                         f'information in args loaded from "{path}".')
+        raise ValueError(
+            f"{no_reproducibility_message}: Could not find reproducibility "
+            f'information in args loaded from "{path}".'
+        )
 
-    if 'git_url' not in saved_reproducibility_data:
-        raise ValueError(f'{no_reproducibility_message}: Could not find '
-                         f'git url in args loaded from "{path}".')
+    if "git_url" not in saved_reproducibility_data:
+        raise ValueError(f"{no_reproducibility_message}: Could not find " f'git url in args loaded from "{path}".')
 
-    if 'git_url' not in current_reproducibility_data:
-        raise ValueError(f'{no_reproducibility_message}: Could not find '
-                         f'git url in current args.')
+    if "git_url" not in current_reproducibility_data:
+        raise ValueError(f"{no_reproducibility_message}: Could not find " f"git url in current args.")
 
-    if saved_reproducibility_data['git_url'] != current_reproducibility_data['git_url']:
-        raise ValueError(f'{no_reproducibility_message}: Differing git url/hash '
-                         f'between current args and args loaded from "{path}".')
+    if saved_reproducibility_data["git_url"] != current_reproducibility_data["git_url"]:
+        raise ValueError(
+            f"{no_reproducibility_message}: Differing git url/hash "
+            f'between current args and args loaded from "{path}".'
+        )
 
-    if saved_reproducibility_data['git_has_uncommitted_changes']:
-        raise ValueError(f'{no_reproducibility_message}: Uncommitted changes '
-                         f'in args loaded from "{path}".')
+    if saved_reproducibility_data["git_has_uncommitted_changes"]:
+        raise ValueError(f"{no_reproducibility_message}: Uncommitted changes " f'in args loaded from "{path}".')
 
-    if current_reproducibility_data['git_has_uncommitted_changes']:
-        raise ValueError(f'{no_reproducibility_message}: Uncommitted changes '
-                         f'in current args.')
+    if current_reproducibility_data["git_has_uncommitted_changes"]:
+        raise ValueError(f"{no_reproducibility_message}: Uncommitted changes " f"in current args.")
 
 
 # TODO: remove this once typing_inspect.get_origin is fixed for Python 3.8, 3.9, and 3.10

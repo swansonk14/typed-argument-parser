@@ -27,12 +27,12 @@ class GitTests(TestCase):
         self.temp_dir = TemporaryDirectory()
         self.prev_dir = os.getcwd()
         os.chdir(self.temp_dir.name)
-        subprocess.check_output(['git', 'init'])
-        self.url = 'https://github.com/test_account/test_repo'
-        subprocess.check_output(['git', 'remote', 'add', 'origin', f'{self.url}.git'])
-        subprocess.check_output(['touch', 'README.md'])
-        subprocess.check_output(['git', 'add', 'README.md'])
-        subprocess.check_output(['git', 'commit', '-m', 'Initial commit'])
+        subprocess.check_output(["git", "init"])
+        self.url = "https://github.com/test_account/test_repo"
+        subprocess.check_output(["git", "remote", "add", "origin", f"{self.url}.git"])
+        subprocess.check_output(["touch", "README.md"])
+        subprocess.check_output(["git", "add", "README.md"])
+        subprocess.check_output(["git", "commit", "-m", "Initial commit"])
         self.git_info = GitInfo(repo_path=self.temp_dir.name)
 
     def tearDown(self) -> None:
@@ -58,15 +58,15 @@ class GitTests(TestCase):
 
     def test_get_git_root(self) -> None:
         # Ideally should be self.temp_dir.name == get_git_root() but the OS may add a prefix like /private
-        self.assertTrue(self.git_info.get_git_root().endswith(self.temp_dir.name.replace('\\', '/')))
+        self.assertTrue(self.git_info.get_git_root().endswith(self.temp_dir.name.replace("\\", "/")))
 
     def test_get_git_root_subdir(self) -> None:
-        subdir = os.path.join(self.temp_dir.name, 'subdir')
+        subdir = os.path.join(self.temp_dir.name, "subdir")
         os.makedirs(subdir)
         os.chdir(subdir)
 
         # Ideally should be self.temp_dir.name == get_git_root() but the OS may add a prefix like /private
-        self.assertTrue(self.git_info.get_git_root().endswith(self.temp_dir.name.replace('\\', '/')))
+        self.assertTrue(self.git_info.get_git_root().endswith(self.temp_dir.name.replace("\\", "/")))
 
         os.chdir(self.temp_dir.name)
 
@@ -74,65 +74,66 @@ class GitTests(TestCase):
         self.assertEqual(self.git_info.get_git_url(commit_hash=False), self.url)
 
     def test_get_git_url_https_hash(self) -> None:
-        url = f'{self.url}/tree/'
-        self.assertEqual(self.git_info.get_git_url(commit_hash=True)[:len(url)], url)
+        url = f"{self.url}/tree/"
+        self.assertEqual(self.git_info.get_git_url(commit_hash=True)[: len(url)], url)
 
     def test_get_git_url_ssh(self) -> None:
-        subprocess.run(['git', 'remote', 'set-url', 'origin', 'git@github.com:test_account/test_repo.git'])
+        subprocess.run(["git", "remote", "set-url", "origin", "git@github.com:test_account/test_repo.git"])
         self.assertEqual(self.git_info.get_git_url(commit_hash=False), self.url)
 
     def test_get_git_url_ssh_hash(self) -> None:
-        subprocess.run(['git', 'remote', 'set-url', 'origin', 'git@github.com:test_account/test_repo.git'])
-        url = f'{self.url}/tree/'
-        self.assertEqual(self.git_info.get_git_url(commit_hash=True)[:len(url)], url)
+        subprocess.run(["git", "remote", "set-url", "origin", "git@github.com:test_account/test_repo.git"])
+        url = f"{self.url}/tree/"
+        self.assertEqual(self.git_info.get_git_url(commit_hash=True)[: len(url)], url)
 
     def test_get_git_url_https_enterprise(self) -> None:
-        true_url = 'https://github.tap.com/test_account/test_repo'
-        subprocess.run(['git', 'remote', 'set-url', 'origin', f'{true_url}.git'])
+        true_url = "https://github.tap.com/test_account/test_repo"
+        subprocess.run(["git", "remote", "set-url", "origin", f"{true_url}.git"])
         self.assertEqual(self.git_info.get_git_url(commit_hash=False), true_url)
 
     def test_get_git_url_https_hash_enterprise(self) -> None:
-        true_url = 'https://github.tap.com/test_account/test_repo'
-        subprocess.run(['git', 'remote', 'set-url', 'origin', f'{true_url}.git'])
-        url = f'{true_url}/tree/'
-        self.assertEqual(self.git_info.get_git_url(commit_hash=True)[:len(url)], url)
+        true_url = "https://github.tap.com/test_account/test_repo"
+        subprocess.run(["git", "remote", "set-url", "origin", f"{true_url}.git"])
+        url = f"{true_url}/tree/"
+        self.assertEqual(self.git_info.get_git_url(commit_hash=True)[: len(url)], url)
 
     def test_get_git_url_ssh_enterprise(self) -> None:
-        true_url = 'https://github.tap.com/test_account/test_repo'
-        subprocess.run(['git', 'remote', 'set-url', 'origin', 'git@github.tap.com:test_account/test_repo.git'])
+        true_url = "https://github.tap.com/test_account/test_repo"
+        subprocess.run(["git", "remote", "set-url", "origin", "git@github.tap.com:test_account/test_repo.git"])
         self.assertEqual(self.git_info.get_git_url(commit_hash=False), true_url)
 
     def test_get_git_url_ssh_hash_enterprise(self) -> None:
-        true_url = 'https://github.tap.com/test_account/test_repo'
-        subprocess.run(['git', 'remote', 'set-url', 'origin', 'git@github.tap.com:test_account/test_repo.git'])
-        url = f'{true_url}/tree/'
-        self.assertEqual(self.git_info.get_git_url(commit_hash=True)[:len(url)], url)
+        true_url = "https://github.tap.com/test_account/test_repo"
+        subprocess.run(["git", "remote", "set-url", "origin", "git@github.tap.com:test_account/test_repo.git"])
+        url = f"{true_url}/tree/"
+        self.assertEqual(self.git_info.get_git_url(commit_hash=True)[: len(url)], url)
 
     def test_has_uncommitted_changes_false(self) -> None:
         self.assertFalse(self.git_info.has_uncommitted_changes())
 
     def test_has_uncommited_changes_true(self) -> None:
-        subprocess.run(['touch', 'main.py'])
+        subprocess.run(["touch", "main.py"])
         self.assertTrue(self.git_info.has_uncommitted_changes())
 
 
 class TypeToStrTests(TestCase):
     def test_type_to_str(self) -> None:
-        self.assertEqual(type_to_str(str), 'str')
-        self.assertEqual(type_to_str(int), 'int')
-        self.assertEqual(type_to_str(float), 'float')
-        self.assertEqual(type_to_str(bool), 'bool')
-        self.assertEqual(type_to_str(Any), 'Any')
-        self.assertEqual(type_to_str(Callable[[str], str]), 'Callable[[str], str]')
-        self.assertEqual(type_to_str(Callable[[str, int], Tuple[float, bool]]),
-                         'Callable[[str, int], Tuple[float, bool]]')
-        self.assertEqual(type_to_str(List[int]), 'List[int]')
-        self.assertEqual(type_to_str(List[str]), 'List[str]')
-        self.assertEqual(type_to_str(List[float]), 'List[float]')
-        self.assertEqual(type_to_str(List[bool]), 'List[bool]')
-        self.assertEqual(type_to_str(Set[int]), 'Set[int]')
-        self.assertEqual(type_to_str(Dict[str, int]), 'Dict[str, int]')
-        self.assertEqual(type_to_str(Union[List[int], Dict[float, bool]]), 'Union[List[int], Dict[float, bool]]')
+        self.assertEqual(type_to_str(str), "str")
+        self.assertEqual(type_to_str(int), "int")
+        self.assertEqual(type_to_str(float), "float")
+        self.assertEqual(type_to_str(bool), "bool")
+        self.assertEqual(type_to_str(Any), "Any")
+        self.assertEqual(type_to_str(Callable[[str], str]), "Callable[[str], str]")
+        self.assertEqual(
+            type_to_str(Callable[[str, int], Tuple[float, bool]]), "Callable[[str, int], Tuple[float, bool]]"
+        )
+        self.assertEqual(type_to_str(List[int]), "List[int]")
+        self.assertEqual(type_to_str(List[str]), "List[str]")
+        self.assertEqual(type_to_str(List[float]), "List[float]")
+        self.assertEqual(type_to_str(List[bool]), "List[bool]")
+        self.assertEqual(type_to_str(Set[int]), "Set[int]")
+        self.assertEqual(type_to_str(Dict[str, int]), "Dict[str, int]")
+        self.assertEqual(type_to_str(Union[List[int], Dict[float, bool]]), "Union[List[int], Dict[float, bool]]")
 
 
 def class_decorator(cls):
@@ -143,6 +144,7 @@ class ClassColumnTests(TestCase):
     def test_column_simple(self):
         class SimpleColumn:
             arg = 2
+
         self.assertEqual(get_class_column(SimpleColumn), 12)
 
     def test_column_comment(self):
@@ -153,13 +155,16 @@ class ClassColumnTests(TestCase):
 
             hi
             """
+
             arg = 2
+
         self.assertEqual(get_class_column(CommentColumn), 12)
 
     def test_column_space(self):
         class SpaceColumn:
 
             arg = 2
+
         self.assertEqual(get_class_column(SpaceColumn), 12)
 
     def test_column_method(self):
@@ -173,6 +178,7 @@ class ClassColumnTests(TestCase):
         @class_decorator
         class DataclassColumn:
             arg: int = 5
+
         self.assertEqual(get_class_column(DataclassColumn), 12)
 
     def test_dataclass_method(self):
@@ -184,6 +190,7 @@ class ClassColumnTests(TestCase):
             @wrapper
             def func(self):
                 pass
+
         self.assertEqual(get_class_column(DataclassColumn), 12)
 
 
@@ -191,26 +198,30 @@ class ClassVariableTests(TestCase):
     def test_no_variables(self):
         class NoVariables:
             pass
+
         self.assertEqual(get_class_variables(NoVariables), {})
 
     def test_one_variable(self):
         class OneVariable:
             arg = 2
-        class_variables = {'arg': {'comment': ''}}
+
+        class_variables = {"arg": {"comment": ""}}
         self.assertEqual(get_class_variables(OneVariable), class_variables)
 
     def test_multiple_variable(self):
         class MultiVariable:
             arg_1 = 2
             arg_2 = 3
-        class_variables = {'arg_1': {'comment': ''}, 'arg_2': {'comment': ''}}
+
+        class_variables = {"arg_1": {"comment": ""}, "arg_2": {"comment": ""}}
         self.assertEqual(get_class_variables(MultiVariable), class_variables)
 
     def test_typed_variables(self):
         class TypedVariable:
             arg_1: str
             arg_2: int = 3
-        class_variables = {'arg_1': {'comment': ''}, 'arg_2': {'comment': ''}}
+
+        class_variables = {"arg_1": {"comment": ""}, "arg_2": {"comment": ""}}
         self.assertEqual(get_class_variables(TypedVariable), class_variables)
 
     def test_separated_variables(self):
@@ -218,6 +229,7 @@ class ClassVariableTests(TestCase):
             """Comment
 
             """
+
             arg_1: str
 
             # Hello
@@ -226,7 +238,8 @@ class ClassVariableTests(TestCase):
 
             arg_2: int = 3
             """More comment"""
-        class_variables = {'arg_1': {'comment': ''}, 'arg_2': {'comment': 'More comment'}}
+
+        class_variables = {"arg_1": {"comment": ""}, "arg_2": {"comment": "More comment"}}
         self.assertEqual(get_class_variables(SeparatedVariable), class_variables)
 
     def test_commented_variables(self):
@@ -234,6 +247,7 @@ class ClassVariableTests(TestCase):
             """Comment
 
             """
+
             arg_1: str  # Arg 1 comment
 
             # Hello
@@ -241,10 +255,14 @@ class ClassVariableTests(TestCase):
                 pass
 
             arg_2: int = 3  # Arg 2 comment
-            arg_3   :   Dict[str, int]      # noqa E203,E262   Poorly   formatted comment
+            arg_3: Dict[str, int]  # noqa E203,E262   Poorly   formatted comment
             """More comment"""
-        class_variables = {'arg_1': {'comment': 'Arg 1 comment'}, 'arg_2': {'comment': 'Arg 2 comment'},
-                           'arg_3': {'comment': 'noqa E203,E262   Poorly   formatted comment More comment'}}
+
+        class_variables = {
+            "arg_1": {"comment": "Arg 1 comment"},
+            "arg_2": {"comment": "Arg 2 comment"},
+            "arg_3": {"comment": "noqa E203,E262   Poorly   formatted comment More comment"},
+        }
         self.assertEqual(get_class_variables(CommentedVariable), class_variables)
 
     def test_bad_spacing_multiline(self):
@@ -254,7 +272,8 @@ class ClassVariableTests(TestCase):
         so
             so very difficult
             """
-            foo: str = 'my'  # Header line
+
+            foo: str = "my"  # Header line
 
             """    Footer
 T
@@ -266,30 +285,30 @@ T
                 """
 
         class_variables = {}
-        comment = 'Header line Footer\nT\n        A\n                P\n\n            multi\n            line!!'
-        class_variables['foo'] = {'comment': comment}
+        comment = "Header line Footer\nT\n        A\n                P\n\n            multi\n            line!!"
+        class_variables["foo"] = {"comment": comment}
         self.assertEqual(get_class_variables(TrickyMultiline), class_variables)
 
     def test_triple_quote_multiline(self):
         class TripleQuoteMultiline:
             bar: int = 0
-            '''biz baz'''
+            """biz baz"""
 
             hi: str
             """Hello there"""
 
-        class_variables = {'bar': {'comment': 'biz baz'}, 'hi': {'comment': 'Hello there'}}
+        class_variables = {"bar": {"comment": "biz baz"}, "hi": {"comment": "Hello there"}}
         self.assertEqual(get_class_variables(TripleQuoteMultiline), class_variables)
 
     def test_single_quote_multiline(self):
         class SingleQuoteMultiline:
             bar: int = 0
-            'biz baz'
+            "biz baz"
 
             hi: str
             "Hello there"
 
-        class_variables = {'bar': {'comment': 'biz baz'}, 'hi': {'comment': 'Hello there'}}
+        class_variables = {"bar": {"comment": "biz baz"}, "hi": {"comment": "Hello there"}}
         self.assertEqual(get_class_variables(SingleQuoteMultiline), class_variables)
 
     def test_functions_with_docs_multiline(self):
@@ -298,40 +317,41 @@ T
 
             def f(self):
                 """Function"""
-                a: str = 'hello'  # noqa F841
+                a: str = "hello"  # noqa F841
                 """with docs"""
 
-        class_variables = {'i': {'comment': ''}}
+        class_variables = {"i": {"comment": ""}}
         self.assertEqual(get_class_variables(FunctionsWithDocs), class_variables)
 
     def test_dataclass(self):
         @class_decorator
         class DataclassColumn:
             arg: int = 5
-        class_variables = {'arg': {'comment': ''}}
+
+        class_variables = {"arg": {"comment": ""}}
         self.assertEqual(get_class_variables(DataclassColumn), class_variables)
 
 
 class GetLiteralsTests(TestCase):
     def test_get_literals_string(self) -> None:
-        literal_f, shapes = get_literals(Literal['square', 'triangle', 'circle'], 'shape')
-        self.assertEqual(shapes, ['square', 'triangle', 'circle'])
-        self.assertEqual(literal_f('square'), 'square')
-        self.assertEqual(literal_f('triangle'), 'triangle')
-        self.assertEqual(literal_f('circle'), 'circle')
+        literal_f, shapes = get_literals(Literal["square", "triangle", "circle"], "shape")
+        self.assertEqual(shapes, ["square", "triangle", "circle"])
+        self.assertEqual(literal_f("square"), "square")
+        self.assertEqual(literal_f("triangle"), "triangle")
+        self.assertEqual(literal_f("circle"), "circle")
 
     def test_get_literals_primitives(self) -> None:
-        literals = [True, 'one', 2, 3.14]
-        literal_f, prims = get_literals(Literal[True, 'one', 2, 3.14], 'number')
+        literals = [True, "one", 2, 3.14]
+        literal_f, prims = get_literals(Literal[True, "one", 2, 3.14], "number")
         self.assertEqual(prims, literals)
         self.assertEqual([literal_f(str(p)) for p in prims], literals)
 
     def test_get_literals_uniqueness(self) -> None:
         with self.assertRaises(ArgumentTypeError):
-            get_literals(Literal['two', 2, '2'], 'number')
+            get_literals(Literal["two", 2, "2"], "number")
 
     def test_get_literals_empty(self) -> None:
-        literal_f, prims = get_literals(Literal, 'hi')
+        literal_f, prims = get_literals(Literal, "hi")
         self.assertEqual(prims, [])
 
 
@@ -339,48 +359,48 @@ class TupleTypeEnforcerTests(TestCase):
     def test_tuple_type_enforcer_zero_types(self):
         enforcer = TupleTypeEnforcer(types=[])
         with self.assertRaises(IndexError):
-            enforcer('hi')
+            enforcer("hi")
 
     def test_tuple_type_enforcer_one_type_str(self):
         enforcer = TupleTypeEnforcer(types=[str])
-        self.assertEqual(enforcer('hi'), 'hi')
+        self.assertEqual(enforcer("hi"), "hi")
 
     def test_tuple_type_enforcer_one_type_int(self):
         enforcer = TupleTypeEnforcer(types=[int])
-        self.assertEqual(enforcer('123'), 123)
+        self.assertEqual(enforcer("123"), 123)
 
     def test_tuple_type_enforcer_one_type_float(self):
         enforcer = TupleTypeEnforcer(types=[float])
-        self.assertEqual(enforcer('3.14159'), 3.14159)
+        self.assertEqual(enforcer("3.14159"), 3.14159)
 
     def test_tuple_type_enforcer_one_type_bool(self):
         enforcer = TupleTypeEnforcer(types=[bool])
-        self.assertEqual(enforcer('True'), True)
+        self.assertEqual(enforcer("True"), True)
 
         enforcer = TupleTypeEnforcer(types=[bool])
-        self.assertEqual(enforcer('true'), True)
+        self.assertEqual(enforcer("true"), True)
 
         enforcer = TupleTypeEnforcer(types=[bool])
-        self.assertEqual(enforcer('False'), False)
+        self.assertEqual(enforcer("False"), False)
 
         enforcer = TupleTypeEnforcer(types=[bool])
-        self.assertEqual(enforcer('false'), False)
+        self.assertEqual(enforcer("false"), False)
 
         enforcer = TupleTypeEnforcer(types=[bool])
-        self.assertEqual(enforcer('tRu'), True)
+        self.assertEqual(enforcer("tRu"), True)
 
         enforcer = TupleTypeEnforcer(types=[bool])
-        self.assertEqual(enforcer('faL'), False)
+        self.assertEqual(enforcer("faL"), False)
 
         enforcer = TupleTypeEnforcer(types=[bool])
-        self.assertEqual(enforcer('1'), True)
+        self.assertEqual(enforcer("1"), True)
 
         enforcer = TupleTypeEnforcer(types=[bool])
-        self.assertEqual(enforcer('0'), False)
+        self.assertEqual(enforcer("0"), False)
 
     def test_tuple_type_enforcer_multi_types_same(self):
         enforcer = TupleTypeEnforcer(types=[str, str])
-        args = ['hi', 'bye']
+        args = ["hi", "bye"]
         output = [enforcer(arg) for arg in args]
         self.assertEqual(output, args)
 
@@ -395,15 +415,15 @@ class TupleTypeEnforcerTests(TestCase):
         self.assertEqual(output, args)
 
         enforcer = TupleTypeEnforcer(types=[bool, bool, bool, bool, bool])
-        args = ['True', 'False', '1', '0', 'tru']
+        args = ["True", "False", "1", "0", "tru"]
         true_output = [True, False, True, False, True]
         output = [enforcer(str(arg)) for arg in args]
         self.assertEqual(output, true_output)
 
     def test_tuple_type_enforcer_multi_types_different(self):
         enforcer = TupleTypeEnforcer(types=[str, int, float, bool])
-        args = ['hello', 77, 0.2, 'tru']
-        true_output = ['hello', 77, 0.2, True]
+        args = ["hello", 77, 0.2, "tru"]
+        true_output = ["hello", 77, 0.2, True]
         output = [enforcer(str(arg)) for arg in args]
         self.assertEqual(output, true_output)
 
@@ -416,21 +436,21 @@ class TupleTypeEnforcerTests(TestCase):
 
 class NestedReplaceTypeTests(TestCase):
     def test_nested_replace_type_notype(self):
-        obj = ['123', 4, 5, ('hello', 4.4)]
+        obj = ["123", 4, 5, ("hello", 4.4)]
         replaced_obj = _nested_replace_type(obj, bool, int)
         self.assertEqual(obj, replaced_obj)
 
     def test_nested_replace_type_unnested(self):
-        obj = ['123', 4, 5, ('hello', 4.4), True, False, 'hi there']
+        obj = ["123", 4, 5, ("hello", 4.4), True, False, "hi there"]
         replaced_obj = _nested_replace_type(obj, tuple, list)
-        correct_obj = ['123', 4, 5, ['hello', 4.4], True, False, 'hi there']
+        correct_obj = ["123", 4, 5, ["hello", 4.4], True, False, "hi there"]
         self.assertNotEqual(obj, replaced_obj)
         self.assertEqual(correct_obj, replaced_obj)
 
     def test_nested_replace_type_nested(self):
-        obj = ['123', [4, (1, 2, (3, 4))], 5, ('hello', (4,), 4.4), {'1': [2, 3, [{'2': (3, 10)}, ' hi ']]}]
+        obj = ["123", [4, (1, 2, (3, 4))], 5, ("hello", (4,), 4.4), {"1": [2, 3, [{"2": (3, 10)}, " hi "]]}]
         replaced_obj = _nested_replace_type(obj, tuple, list)
-        correct_obj = ['123', [4, [1, 2, [3, 4]]], 5, ['hello', [4], 4.4], {'1': [2, 3, [{'2': [3, 10]}, ' hi ']]}]
+        correct_obj = ["123", [4, [1, 2, [3, 4]]], 5, ["hello", [4], 4.4], {"1": [2, 3, [{"2": [3, 10]}, " hi "]]}]
         self.assertNotEqual(obj, replaced_obj)
         self.assertEqual(correct_obj, replaced_obj)
 
@@ -445,26 +465,38 @@ class Person:
 
 class PythonObjectEncoderTests(TestCase):
     def test_python_object_encoder_simple_types(self):
-        obj = [1, 2, 'hi', 'bye', 7.3, [1, 2, 'blarg'], True, False, None]
+        obj = [1, 2, "hi", "bye", 7.3, [1, 2, "blarg"], True, False, None]
         dumps = json.dumps(obj, indent=4, sort_keys=True, cls=define_python_object_encoder())
         recreated_obj = json.loads(dumps, object_hook=as_python_object)
         self.assertEqual(recreated_obj, obj)
 
     def test_python_object_encoder_tuple(self):
-        obj = [1, 2, 'hi', 'bye', 7.3, (1, 2, 'blarg'), [('hi', 'bye'), 2], {'hi': {'bye': (3, 4)}}, True, False, None]
+        obj = [1, 2, "hi", "bye", 7.3, (1, 2, "blarg"), [("hi", "bye"), 2], {"hi": {"bye": (3, 4)}}, True, False, None]
         dumps = json.dumps(obj, indent=4, sort_keys=True, cls=define_python_object_encoder())
         recreated_obj = json.loads(dumps, object_hook=as_python_object)
         self.assertEqual(recreated_obj, obj)
 
     def test_python_object_encoder_set(self):
-        obj = [1, 2, 'hi', 'bye', 7.3, {1, 2, 'blarg'}, [{'hi', 'bye'}, 2], {'hi': {'bye': {3, 4}}}, True, False, None]
+        obj = [1, 2, "hi", "bye", 7.3, {1, 2, "blarg"}, [{"hi", "bye"}, 2], {"hi": {"bye": {3, 4}}}, True, False, None]
         dumps = json.dumps(obj, indent=4, sort_keys=True, cls=define_python_object_encoder())
         recreated_obj = json.loads(dumps, object_hook=as_python_object)
         self.assertEqual(recreated_obj, obj)
 
     def test_python_object_encoder_complex(self):
-        obj = [1, 2, 'hi', 'bye', 7.3, {1, 2, 'blarg'}, [('hi', 'bye'), 2], {'hi': {'bye': {3, 4}}}, True, False, None,
-               (Person('tappy'), Person('tapper'))]
+        obj = [
+            1,
+            2,
+            "hi",
+            "bye",
+            7.3,
+            {1, 2, "blarg"},
+            [("hi", "bye"), 2],
+            {"hi": {"bye": {3, 4}}},
+            True,
+            False,
+            None,
+            (Person("tappy"), Person("tapper")),
+        ]
         dumps = json.dumps(obj, indent=4, sort_keys=True, cls=define_python_object_encoder())
         recreated_obj = json.loads(dumps, object_hook=as_python_object)
         self.assertEqual(recreated_obj, obj)
@@ -472,6 +504,7 @@ class PythonObjectEncoderTests(TestCase):
     def test_python_object_encoder_unpicklable(self):
         class CannotPickleThis:
             """Da na na na. Can't pickle this. """
+
             def __init__(self):
                 self.x = 1
 
@@ -486,31 +519,36 @@ class PythonObjectEncoderTests(TestCase):
 
 
 class EnforceReproducibilityTests(TestCase):
-
     def test_saved_reproducibility_data_is_none(self):
         with self.assertRaises(ValueError):
-            enforce_reproducibility(None, {}, 'here')
+            enforce_reproducibility(None, {}, "here")
 
     def test_git_url_not_in_saved_reproducibility_data(self):
         with self.assertRaises(ValueError):
-            enforce_reproducibility({}, {}, 'here')
+            enforce_reproducibility({}, {}, "here")
 
     def test_git_url_not_in_current_reproducibility_data(self):
         with self.assertRaises(ValueError):
-            enforce_reproducibility({'git_url': 'none'}, {}, 'here')
+            enforce_reproducibility({"git_url": "none"}, {}, "here")
 
     def test_git_urls_disagree(self):
         with self.assertRaises(ValueError):
-            enforce_reproducibility({'git_url': 'none'}, {'git_url': 'some'}, 'here')
+            enforce_reproducibility({"git_url": "none"}, {"git_url": "some"}, "here")
 
     def test_throw_error_for_saved_uncommitted_changes(self):
         with self.assertRaises(ValueError):
-            enforce_reproducibility({'git_url': 'none', 'git_has_uncommitted_changes': True}, {'git_url': 'some'}, 'here')
+            enforce_reproducibility(
+                {"git_url": "none", "git_has_uncommitted_changes": True}, {"git_url": "some"}, "here"
+            )
 
     def test_throw_error_for_uncommitted_changes(self):
         with self.assertRaises(ValueError):
-            enforce_reproducibility({'git_url': 'none', 'git_has_uncommitted_changes': False}, {'git_url': 'some', 'git_has_uncommitted_changes': True}, 'here')
+            enforce_reproducibility(
+                {"git_url": "none", "git_has_uncommitted_changes": False},
+                {"git_url": "some", "git_has_uncommitted_changes": True},
+                "here",
+            )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

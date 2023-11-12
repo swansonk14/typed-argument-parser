@@ -6,14 +6,16 @@ from docstring_parser import parse
 
 from tap import Tap
 
-InputType = TypeVar('InputType')
-OutputType = TypeVar('OutputType')
+InputType = TypeVar("InputType")
+OutputType = TypeVar("OutputType")
 
 
-def tapify(class_or_function: Union[Callable[[InputType], OutputType], Type[OutputType]],
-           known_only: bool = False,
-           command_line_args: Optional[List[str]] = None,
-           **func_kwargs) -> OutputType:
+def tapify(
+    class_or_function: Union[Callable[[InputType], OutputType], Type[OutputType]],
+    known_only: bool = False,
+    command_line_args: Optional[List[str]] = None,
+    **func_kwargs,
+) -> OutputType:
     """Tapify initializes a class or runs a function by parsing arguments from the command line.
 
     :param class_or_function: The class or function to run with the provided arguments.
@@ -40,7 +42,7 @@ def tapify(class_or_function: Union[Callable[[InputType], OutputType], Type[Outp
     param_to_description = {param.arg_name: param.description for param in docstring.params}
 
     # Create a Tap object with a description from the docstring of the function or class
-    tap = Tap(description='\n'.join(filter(None, (docstring.short_description, docstring.long_description))))
+    tap = Tap(description="\n".join(filter(None, (docstring.short_description, docstring.long_description))))
 
     # Keep track of whether **kwargs was provided
     has_kwargs = False
@@ -66,39 +68,33 @@ def tapify(class_or_function: Union[Callable[[InputType], OutputType], Type[Outp
 
         # Get the default or required of the argument
         if param.name in func_kwargs:
-            tap_kwargs['default'] = func_kwargs[param.name]
+            tap_kwargs["default"] = func_kwargs[param.name]
             del func_kwargs[param.name]
         elif param.default != Parameter.empty:
-            tap_kwargs['default'] = param.default
+            tap_kwargs["default"] = param.default
         else:
-            tap_kwargs['required'] = True
+            tap_kwargs["required"] = True
 
         # Get the help string of the argument
         if param.name in param_to_description:
-            tap.class_variables[param.name] = {'comment': param_to_description[param.name]}
+            tap.class_variables[param.name] = {"comment": param_to_description[param.name]}
 
         # Add the argument to the Tap object
-        tap._add_argument(f'--{param_name}', **tap_kwargs)
+        tap._add_argument(f"--{param_name}", **tap_kwargs)
 
     # If any func_kwargs remain, they are not used in the function, so raise an error
     if func_kwargs and not known_only:
-        raise ValueError(f'Unknown keyword arguments: {func_kwargs}')
+        raise ValueError(f"Unknown keyword arguments: {func_kwargs}")
 
     # Parse command line arguments
-    command_line_args = tap.parse_args(
-        args=command_line_args,
-        known_only=known_only
-    )
+    command_line_args = tap.parse_args(args=command_line_args, known_only=known_only)
 
     # Get command line arguments as a dictionary
     command_line_args_dict = command_line_args.as_dict()
 
     # Get **kwargs from extra command line arguments
     if has_kwargs:
-        kwargs = {
-            tap.extra_args[i].lstrip('-'): tap.extra_args[i + 1]
-            for i in range(0, len(tap.extra_args), 2)
-        }
+        kwargs = {tap.extra_args[i].lstrip("-"): tap.extra_args[i + 1] for i in range(0, len(tap.extra_args), 2)}
 
         command_line_args_dict.update(kwargs)
 

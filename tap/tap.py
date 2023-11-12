@@ -28,7 +28,7 @@ from tap.utils import (
     as_python_object,
     fix_py36_copy,
     enforce_reproducibility,
-    PathLike
+    PathLike,
 )
 
 if sys.version_info >= (3, 10):
@@ -43,18 +43,20 @@ OPTIONAL_TYPES = {Optional} | UNION_TYPES
 BOXED_TYPES = BOXED_COLLECTION_TYPES | OPTIONAL_TYPES
 
 
-TapType = TypeVar('TapType', bound='Tap')
+TapType = TypeVar("TapType", bound="Tap")
 
 
 class Tap(ArgumentParser):
     """Tap is a typed argument parser that wraps Python's built-in ArgumentParser."""
 
-    def __init__(self,
-                 *args,
-                 underscores_to_dashes: bool = False,
-                 explicit_bool: bool = False,
-                 config_files: Optional[List[PathLike]] = None,
-                 **kwargs):
+    def __init__(
+        self,
+        *args,
+        underscores_to_dashes: bool = False,
+        explicit_bool: bool = False,
+        config_files: Optional[List[PathLike]] = None,
+        **kwargs,
+    ):
         """Initializes the Tap instance.
 
         :param args: Arguments passed to the super class ArgumentParser.
@@ -96,7 +98,7 @@ class Tap(ArgumentParser):
         self._annotations = self._get_annotations()
 
         # Set the default description to be the docstring
-        kwargs.setdefault('description', self.__doc__)
+        kwargs.setdefault("description", self.__doc__)
 
         # Initialize the super class, i.e. ArgumentParser
         super(Tap, self).__init__(*args, **kwargs)
@@ -135,40 +137,40 @@ class Tap(ArgumentParser):
         variable = get_argument_name(*name_or_flags)
 
         if self._underscores_to_dashes:
-            variable = variable.replace('-', '_')
+            variable = variable.replace("-", "_")
 
         # Get default if not specified
         if hasattr(self, variable):
-            kwargs['default'] = kwargs.get('default', getattr(self, variable))
+            kwargs["default"] = kwargs.get("default", getattr(self, variable))
 
         # Set required if option arg
         if (
             is_option_arg(*name_or_flags)
-            and variable != 'help'
-            and 'default' not in kwargs
-            and kwargs.get('action') != 'version'
+            and variable != "help"
+            and "default" not in kwargs
+            and kwargs.get("action") != "version"
         ):
-            kwargs['required'] = kwargs.get('required', not hasattr(self, variable))
+            kwargs["required"] = kwargs.get("required", not hasattr(self, variable))
 
         # Set help if necessary
-        if 'help' not in kwargs:
-            kwargs['help'] = '('
+        if "help" not in kwargs:
+            kwargs["help"] = "("
 
             # Type
             if variable in self._annotations:
-                kwargs['help'] += type_to_str(self._annotations[variable]) + ', '
+                kwargs["help"] += type_to_str(self._annotations[variable]) + ", "
 
             # Required/default
-            if kwargs.get('required', False) or is_positional_arg(*name_or_flags):
-                kwargs['help'] += 'required'
+            if kwargs.get("required", False) or is_positional_arg(*name_or_flags):
+                kwargs["help"] += "required"
             else:
-                kwargs['help'] += f'default={kwargs.get("default", None)}'
+                kwargs["help"] += f'default={kwargs.get("default", None)}'
 
-            kwargs['help'] += ')'
+            kwargs["help"] += ")"
 
             # Description
             if variable in self.class_variables:
-                kwargs['help'] += ' ' + self.class_variables[variable]['comment']
+                kwargs["help"] += " " + self.class_variables[variable]["comment"]
 
         # Set other kwargs where not provided
         if variable in self._annotations:
@@ -176,7 +178,7 @@ class Tap(ArgumentParser):
             var_type = self._annotations[variable]
 
             # If type is not explicitly provided, set it if it's one of our supported default types
-            if 'type' not in kwargs:
+            if "type" not in kwargs:
                 # Unbox Union[type] (Optional[type]) and set var_type = type
                 if get_origin(var_type) in OPTIONAL_TYPES:
                     var_args = get_args(var_type)
@@ -188,15 +190,15 @@ class Tap(ArgumentParser):
                     # Raise error if type function is not explicitly provided for Union types (not including Optionals)
                     if get_origin(var_type) in UNION_TYPES and not (len(var_args) == 2 and var_args[1] == type(None)):
                         raise ArgumentTypeError(
-                            'For Union types, you must include an explicit type function in the configure method. '
-                            'For example,\n\n'
-                            'def to_number(string: str) -> Union[float, int]:\n'
-                            '    return float(string) if \'.\' in string else int(string)\n\n'
-                            'class Args(Tap):\n'
-                            '    arg: Union[float, int]\n'
-                            '\n'
-                            '    def configure(self) -> None:\n'
-                            '        self.add_argument(\'--arg\', type=to_number)'
+                            "For Union types, you must include an explicit type function in the configure method. "
+                            "For example,\n\n"
+                            "def to_number(string: str) -> Union[float, int]:\n"
+                            "    return float(string) if '.' in string else int(string)\n\n"
+                            "class Args(Tap):\n"
+                            "    arg: Union[float, int]\n"
+                            "\n"
+                            "    def configure(self) -> None:\n"
+                            "        self.add_argument('--arg', type=to_number)"
                         )
 
                     if len(var_args) > 0:
@@ -211,14 +213,16 @@ class Tap(ArgumentParser):
 
                 # First check whether it is a literal type or a boxed literal type
                 if is_literal_type(var_type):
-                    var_type, kwargs['choices'] = get_literals(var_type, variable)
+                    var_type, kwargs["choices"] = get_literals(var_type, variable)
 
-                elif (get_origin(var_type) in (List, list, Set, set)
-                      and len(get_args(var_type)) > 0
-                      and is_literal_type(get_args(var_type)[0])):
-                    var_type, kwargs['choices'] = get_literals(get_args(var_type)[0], variable)
-                    if kwargs.get('action') not in {'append', 'append_const'}:
-                        kwargs['nargs'] = kwargs.get('nargs', '*')
+                elif (
+                    get_origin(var_type) in (List, list, Set, set)
+                    and len(get_args(var_type)) > 0
+                    and is_literal_type(get_args(var_type)[0])
+                ):
+                    var_type, kwargs["choices"] = get_literals(get_args(var_type)[0], variable)
+                    if kwargs.get("action") not in {"append", "append_const"}:
+                        kwargs["nargs"] = kwargs.get("nargs", "*")
 
                 # Handle Tuple type (with type args) by extracting types of Tuple elements and enforcing them
                 elif get_origin(var_type) in (Tuple, tuple) and len(get_args(var_type)) > 0:
@@ -229,14 +233,14 @@ class Tap(ArgumentParser):
                     if len(types) == 2 and types[1] == Ellipsis:
                         types = types[0:1]
                         loop = True
-                        kwargs['nargs'] = '*'
+                        kwargs["nargs"] = "*"
                     # Handle Tuple[()]
                     elif len(types) == 1 and types[0] == tuple():
                         types = [str]
                         loop = True
-                        kwargs['nargs'] = '*'
+                        kwargs["nargs"] = "*"
                     else:
-                        kwargs['nargs'] = len(types)
+                        kwargs["nargs"] = len(types)
 
                     # Handle Literal types
                     types = [get_literals(tp, variable)[0] if is_literal_type(tp) else tp for tp in types]
@@ -245,9 +249,11 @@ class Tap(ArgumentParser):
 
                 if get_origin(var_type) in BOXED_TYPES:
                     # If List or Set or Tuple type, set nargs
-                    if (get_origin(var_type) in BOXED_COLLECTION_TYPES
-                            and kwargs.get('action') not in {'append', 'append_const'}):
-                        kwargs['nargs'] = kwargs.get('nargs', '*')
+                    if get_origin(var_type) in BOXED_COLLECTION_TYPES and kwargs.get("action") not in {
+                        "append",
+                        "append_const",
+                    }:
+                        kwargs["nargs"] = kwargs.get("nargs", "*")
 
                     # Extract boxed type for Optional, List, Set
                     arg_types = get_args(var_type)
@@ -265,33 +271,37 @@ class Tap(ArgumentParser):
                 # If bool then set action, otherwise set type
                 if var_type == bool:
                     if explicit_bool:
-                        kwargs['type'] = boolean_type
-                        kwargs['choices'] = [True, False]  # this makes the help message more helpful
+                        kwargs["type"] = boolean_type
+                        kwargs["choices"] = [True, False]  # this makes the help message more helpful
                     else:
-                        action_cond = 'true' if kwargs.get('required', False) or not kwargs['default'] else 'false'
-                        kwargs['action'] = kwargs.get('action', f'store_{action_cond}')
-                elif kwargs.get('action') not in {'count', 'append_const'}:
-                    kwargs['type'] = var_type
+                        action_cond = "true" if kwargs.get("required", False) or not kwargs["default"] else "false"
+                        kwargs["action"] = kwargs.get("action", f"store_{action_cond}")
+                elif kwargs.get("action") not in {"count", "append_const"}:
+                    kwargs["type"] = var_type
 
         if self._underscores_to_dashes:
             # Replace "_" with "-" for arguments that aren't positional
-            name_or_flags = tuple(name_or_flag.replace('_', '-') if name_or_flag.startswith('-') else name_or_flag
-                                  for name_or_flag in name_or_flags)
+            name_or_flags = tuple(
+                name_or_flag.replace("_", "-") if name_or_flag.startswith("-") else name_or_flag
+                for name_or_flag in name_or_flags
+            )
 
         # Deepcopy default to prevent mutation of values
-        if 'default' in kwargs:
-            kwargs['default'] = deepcopy(kwargs['default'])
+        if "default" in kwargs:
+            kwargs["default"] = deepcopy(kwargs["default"])
 
         super(Tap, self).add_argument(*name_or_flags, **kwargs)
 
     def add_argument(self, *name_or_flags, **kwargs) -> None:
         """Adds an argument to the argument buffer, which will later be passed to _add_argument."""
         if self._initialized:
-            raise ValueError('add_argument cannot be called after initialization. '
-                             'Arguments must be added either as class variables or by overriding '
-                             'configure and including a self.add_argument call there.')
+            raise ValueError(
+                "add_argument cannot be called after initialization. "
+                "Arguments must be added either as class variables or by overriding "
+                "configure and including a self.add_argument call there."
+            )
 
-        variable = get_argument_name(*name_or_flags).replace('-', '_')
+        variable = get_argument_name(*name_or_flags).replace("-", "_")
         self.argument_buffer[variable] = (name_or_flags, kwargs)
 
     def _add_arguments(self) -> None:
@@ -302,7 +312,7 @@ class Tap(ArgumentParser):
                 name_or_flags, kwargs = self.argument_buffer[variable]
                 self._add_argument(*name_or_flags, **kwargs)
             else:
-                self._add_argument(f'--{variable}')
+                self._add_argument(f"--{variable}")
 
         # Add any arguments that were added manually in configure but aren't class variables (in order)
         for variable, (name_or_flags, kwargs) in self.argument_buffer.items():
@@ -315,9 +325,9 @@ class Tap(ArgumentParser):
 
     def add_subparser(self, flag: str, subparser_type: type, **kwargs) -> None:
         """Add a subparser to the collection of subparsers"""
-        help_desc = kwargs.get('help', subparser_type.__doc__)
-        kwargs['help'] = help_desc
-        
+        help_desc = kwargs.get("help", subparser_type.__doc__)
+        kwargs["help"] = help_desc
+
         self._subparser_buffer.append((flag, subparser_type, kwargs))
 
     def _add_subparsers(self) -> None:
@@ -382,16 +392,16 @@ class Tap(ArgumentParser):
             repo_path = (Path.cwd() / Path(sys.argv[0]).parent).resolve()
 
         reproducibility = {
-            'command_line': f'python {" ".join(quote(arg) for arg in sys.argv)}',
-            'time': time.strftime('%c')
+            "command_line": f'python {" ".join(quote(arg) for arg in sys.argv)}',
+            "time": time.strftime("%c"),
         }
 
         git_info = GitInfo(repo_path=repo_path)
 
         if git_info.has_git():
-            reproducibility['git_root'] = git_info.get_git_root()
-            reproducibility['git_url'] = git_info.get_git_url(commit_hash=True)
-            reproducibility['git_has_uncommitted_changes'] = git_info.has_uncommitted_changes()
+            reproducibility["git_root"] = git_info.get_git_root()
+            reproducibility["git_url"] = git_info.get_git_url(commit_hash=True)
+            reproducibility["git_has_uncommitted_changes"] = git_info.has_uncommitted_changes()
 
         return reproducibility
 
@@ -403,14 +413,13 @@ class Tap(ArgumentParser):
         :return: A dictionary containing all arguments along with reproducibility information.
         """
         arg_log = self.as_dict()
-        arg_log['reproducibility'] = self.get_reproducibility_info(repo_path=repo_path)
+        arg_log["reproducibility"] = self.get_reproducibility_info(repo_path=repo_path)
 
         return arg_log
 
-    def parse_args(self: TapType,
-                   args: Optional[Sequence[str]] = None,
-                   known_only: bool = False,
-                   legacy_config_parsing = False) -> TapType:
+    def parse_args(
+        self: TapType, args: Optional[Sequence[str]] = None, known_only: bool = False, legacy_config_parsing=False
+    ) -> TapType:
         """Parses arguments, sets attributes of self equal to the parsed arguments, and processes arguments.
 
         :param args: List of strings to parse. The default is taken from `sys.argv`.
@@ -421,7 +430,7 @@ class Tap(ArgumentParser):
         """
         # Prevent double parsing
         if self._parsed:
-            raise ValueError('parse_args can only be called once.')
+            raise ValueError("parse_args can only be called once.")
 
         # Collect arguments from all of the configs
 
@@ -512,25 +521,25 @@ class Tap(ArgumentParser):
     def _get_class_dict(self) -> Dict[str, Any]:
         """Returns a dictionary mapping class variable names to values from the class dict."""
         class_dict = self._get_from_self_and_super(
-            extract_func=lambda super_class: dict(getattr(super_class, '__dict__', dict()))
+            extract_func=lambda super_class: dict(getattr(super_class, "__dict__", dict()))
         )
         class_dict = {
             var: val
             for var, val in class_dict.items()
-            if not (var.startswith('_')
-                    or callable(val)
-                    or isinstance(val, staticmethod)
-                    or isinstance(val, classmethod)
-                    or isinstance(val, property))
+            if not (
+                var.startswith("_")
+                or callable(val)
+                or isinstance(val, staticmethod)
+                or isinstance(val, classmethod)
+                or isinstance(val, property)
+            )
         }
 
         return class_dict
 
     def _get_annotations(self) -> Dict[str, Any]:
         """Returns a dictionary mapping variable names to their type annotations."""
-        return self._get_from_self_and_super(
-            extract_func=lambda super_class: dict(get_type_hints(super_class))
-        )
+        return self._get_from_self_and_super(extract_func=lambda super_class: dict(get_type_hints(super_class)))
 
     def _get_class_variables(self) -> dict:
         """Returns a dictionary mapping class variables names to their additional information."""
@@ -546,7 +555,7 @@ class Tap(ArgumentParser):
             variables_to_remove = class_variables.keys() - class_variable_names
 
             for variable in variables_to_add:
-                class_variables[variable] = {'comment': ''}
+                class_variables[variable] = {"comment": ""}
 
             for variable in variables_to_remove:
                 class_variables.pop(variable)
@@ -554,16 +563,17 @@ class Tap(ArgumentParser):
         except Exception:
             class_variables = {}
             for variable in class_variable_names:
-                class_variables[variable] = {'comment': ''}
+                class_variables[variable] = {"comment": ""}
 
         return class_variables
 
     def _get_argument_names(self) -> Set[str]:
         """Returns a list of variable names corresponding to the arguments."""
-        return ({get_dest(*name_or_flags, **kwargs)
-                 for name_or_flags, kwargs in self.argument_buffer.values()} |
-                set(self._get_class_dict().keys()) |
-                set(self._annotations.keys())) - {'help'}
+        return (
+            {get_dest(*name_or_flags, **kwargs) for name_or_flags, kwargs in self.argument_buffer.values()}
+            | set(self._get_class_dict().keys())
+            | set(self._annotations.keys())
+        ) - {"help"}
 
     def as_dict(self) -> Dict[str, Any]:
         """Returns the member variables corresponding to the parsed arguments.
@@ -574,11 +584,11 @@ class Tap(ArgumentParser):
         :return: A dictionary mapping each argument's name to its value.
         """
         if not self._parsed:
-            raise ValueError('You should call `parse_args` before retrieving arguments.')
+            raise ValueError("You should call `parse_args` before retrieving arguments.")
 
         self_dict = self.__dict__
         class_dict = self._get_from_self_and_super(
-            extract_func=lambda super_class: dict(getattr(super_class, '__dict__', dict()))
+            extract_func=lambda super_class: dict(getattr(super_class, "__dict__", dict()))
         )
         class_dict = {key: val for key, val in class_dict.items() if key not in self_dict}
         stored_dict = {**self_dict, **class_dict}
@@ -586,9 +596,7 @@ class Tap(ArgumentParser):
         stored_dict = {
             var: getattr(self, var)
             for var, val in stored_dict.items()
-            if not (var.startswith('_')
-                    or isinstance(val, MethodType)
-                    or isinstance(val, staticmethod))
+            if not (var.startswith("_") or isinstance(val, MethodType) or isinstance(val, staticmethod))
         }
 
         tap_class_dict_keys = Tap().__dict__.keys() | Tap.__dict__.keys()
@@ -610,8 +618,10 @@ class Tap(ArgumentParser):
         missing_required_args = [arg for arg in unprovided_required_args if not hasattr(self, arg)]
 
         if len(missing_required_args) > 0:
-            raise ValueError(f'Input dictionary "{args_dict}" does not include '
-                             f'all unset required arguments: "{missing_required_args}".')
+            raise ValueError(
+                f'Input dictionary "{args_dict}" does not include '
+                f'all unset required arguments: "{missing_required_args}".'
+            )
 
         # Load all arguments
         for key, value in args_dict.items():
@@ -619,19 +629,23 @@ class Tap(ArgumentParser):
                 setattr(self, key, value)
             except AttributeError:
                 if not skip_unsettable:
-                    raise AttributeError(f'Cannot set attribute "{key}" to "{value}". '
-                                         f'To skip arguments that cannot be set \n'
-                                         f'\t"skip_unsettable = True"')
+                    raise AttributeError(
+                        f'Cannot set attribute "{key}" to "{value}". '
+                        f"To skip arguments that cannot be set \n"
+                        f'\t"skip_unsettable = True"'
+                    )
 
         self._parsed = True
 
         return self
 
-    def save(self,
-             path: PathLike,
-             with_reproducibility: bool = True,
-             skip_unpicklable: bool = False,
-             repo_path: Optional[PathLike] = None) -> None:
+    def save(
+        self,
+        path: PathLike,
+        with_reproducibility: bool = True,
+        skip_unpicklable: bool = False,
+        repo_path: Optional[PathLike] = None,
+    ) -> None:
         """Saves the arguments and reproducibility information in JSON format, pickling what can't be encoded.
 
         :param path: Path to the JSON file where the arguments will be saved.
@@ -641,15 +655,17 @@ class Tap(ArgumentParser):
                           If None, uses the git repo of the Python file that is run.
         :param skip_unpicklable: If True, does not save attributes whose values cannot be pickled.
         """
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             args = self._log_all(repo_path=repo_path) if with_reproducibility else self.as_dict()
             json.dump(args, f, indent=4, sort_keys=True, cls=define_python_object_encoder(skip_unpicklable))
 
-    def load(self,
-             path: PathLike,
-             check_reproducibility: bool = False,
-             skip_unsettable: bool = False,
-             repo_path: Optional[PathLike] = None) -> TapType:
+    def load(
+        self,
+        path: PathLike,
+        check_reproducibility: bool = False,
+        skip_unsettable: bool = False,
+        repo_path: Optional[PathLike] = None,
+    ) -> TapType:
         """Loads the arguments in JSON format. Note: Due to JSON, tuples are loaded as lists.
 
         :param path: Path to the JSON file where the arguments will be loaded from.
@@ -665,7 +681,7 @@ class Tap(ArgumentParser):
             args_dict = json.load(f, object_hook=as_python_object)
 
         # Remove loaded reproducibility information since it is no longer valid
-        saved_reproducibility_data = args_dict.pop('reproducibility', None)
+        saved_reproducibility_data = args_dict.pop("reproducibility", None)
         if check_reproducibility:
             current_reproducibility_data = self.get_reproducibility_info(repo_path=repo_path)
             enforce_reproducibility(saved_reproducibility_data, current_reproducibility_data, path)
