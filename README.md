@@ -449,6 +449,33 @@ Specifically, Tap has a method called `get_reproducibility_info` that returns a 
     - Whether there are any uncommitted changes in the git repo (i.e. whether the code is different from the code at the above git hash)
     - Ex. `True` or `False`
 
+### Conversion Tap to and from dictionaries
+
+Tap has methods `as_dict` and `from_dict` that convert Tap objects to and from dictionaries.
+For example,
+
+```python
+"""main.py"""
+from tap import Tap
+
+class Args(Tap):
+    package: str
+    is_cool: bool = True
+    stars: int = 5
+
+args = Args().parse_args(["--package", "Tap"])
+
+args_dict = args.as_dict()
+print(args_dict)  # {'package': 'Tap', 'is_cool': True, 'stars': 5}
+
+args_dict['stars'] = 2000
+args = args.from_dict(args_dict)
+print(args.stars)  # 2000 
+```
+
+Note that `as_dict` does not include attributes set directly on an instance (e.g. `arg` is not included in `Args().arg = "hi"`).
+Also note that `from_dict` ensures that all required arguments are set.
+
 ### Saving and loading arguments
 
 #### Save
