@@ -567,6 +567,59 @@ class TapifyTests(TestCase):
             self.assertIn("--c C       (int, required) The third number.", f.getvalue())
 
 
+class TestTapifyExplicitBool(unittest.TestCase):
+    def setUp(self) -> None:
+        def cool(is_cool: bool = False) -> "Cool":
+            """cool.
+
+            :param is_cool: is it cool?
+            """
+            return Cool(is_cool)
+
+        self.cool_fun = cool
+
+        class Cool:
+            def __init__(self, is_cool: bool = False):
+                """cool.
+
+                :param is_cool: is it cool?
+                """
+                self.is_cool = is_cool
+
+            def __eq__(self, other: "Cool") -> bool:
+                return other.is_cool == cool(self.is_cool).is_cool
+
+        self.cool_class = Cool
+
+    def test_explicit_bool_true(self):
+        for class_or_function in [self.cool_fun, self.cool_class]:
+            # Since the boolean argument is_cool is set to False by default and explicit_bool is False,
+            # the argument is_cool is False.
+            a_cool = tapify(class_or_function, explicit_bool=False)
+            self.assertEqual(a_cool.is_cool, False)
+
+            # If the argument is provided, it is set to True.
+            a_cool = tapify(class_or_function, command_line_args=["--is_cool"], explicit_bool=False)
+            self.assertEqual(a_cool.is_cool, True)
+
+            # If explicit_bool is True and the argument is not provided then the default of False should be used.
+            a_cool = tapify(class_or_function, explicit_bool=True)
+            self.assertEqual(a_cool.is_cool, False)
+
+            # If explicit_bool is True and the argument is provided without an explicit boolean assigned to it
+            # then the argument parser should crash.
+            with self.assertRaises(SystemExit):
+                tapify(class_or_function, command_line_args=["--is_cool"], explicit_bool=True)
+
+            # If explicit_bool is True and the argument is provided with an explicit boolean assigned to it
+            # then the argument should be set to what it's assigned to.
+            a_cool = tapify(class_or_function, command_line_args=["--is_cool", "False"], explicit_bool=True)
+            self.assertEqual(a_cool.is_cool, False)
+
+            a_cool = tapify(class_or_function, command_line_args=["--is_cool", "True"], explicit_bool=True)
+            self.assertEqual(a_cool.is_cool, True)
+
+
 class TestTapifyKwargs(unittest.TestCase):
     def setUp(self) -> None:
         def concat(a: int, b: int = 2, **kwargs) -> str:

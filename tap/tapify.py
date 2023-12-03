@@ -14,6 +14,7 @@ def tapify(
     class_or_function: Union[Callable[[InputType], OutputType], Type[OutputType]],
     known_only: bool = False,
     command_line_args: Optional[List[str]] = None,
+    explicit_bool: bool = False,
     **func_kwargs,
 ) -> OutputType:
     """Tapify initializes a class or runs a function by parsing arguments from the command line.
@@ -22,6 +23,9 @@ def tapify(
     :param known_only: If true, ignores extra arguments and only parses known arguments.
     :param command_line_args: A list of command line style arguments to parse (e.g., ['--arg', 'value']).
                               If None, arguments are parsed from the command line (default behavior).
+    :param explicit_bool: Booleans can be specified on the command line as "--arg True" or "--arg False"
+                        rather than "--arg". Additionally, booleans can be specified by prefixes of True and False
+                        with any capitalization as well as 1 or 0.
     :param func_kwargs: Additional keyword arguments for the function. These act as default values when
                         parsing the command line arguments and overwrite the function defaults but
                         are overwritten by the parsed command line arguments.
@@ -42,7 +46,8 @@ def tapify(
     param_to_description = {param.arg_name: param.description for param in docstring.params}
 
     # Create a Tap object with a description from the docstring of the function or class
-    tap = Tap(description="\n".join(filter(None, (docstring.short_description, docstring.long_description))))
+    description = "\n".join(filter(None, (docstring.short_description, docstring.long_description)))
+    tap = Tap(description=description, explicit_bool=explicit_bool)
 
     # Keep track of whether **kwargs was provided
     has_kwargs = False
