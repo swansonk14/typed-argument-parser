@@ -595,7 +595,7 @@ class TestTapifyExplicitBool(unittest.TestCase):
         for class_or_function in [self.cool_fun, self.cool_class]:
             # Since the boolean argument is_cool is set to False by default and explicit_bool is False,
             # the argument is_cool is False.
-            a_cool = tapify(class_or_function, explicit_bool=False)
+            a_cool = tapify(class_or_function, command_line_args=[], explicit_bool=False)
             self.assertEqual(a_cool.is_cool, False)
 
             # If the argument is provided, it is set to True.
@@ -603,7 +603,7 @@ class TestTapifyExplicitBool(unittest.TestCase):
             self.assertEqual(a_cool.is_cool, True)
 
             # If explicit_bool is True and the argument is not provided then the default of False should be used.
-            a_cool = tapify(class_or_function, explicit_bool=True)
+            a_cool = tapify(class_or_function, command_line_args=[], explicit_bool=True)
             self.assertEqual(a_cool.is_cool, False)
 
             # If explicit_bool is True and the argument is provided without an explicit boolean assigned to it
