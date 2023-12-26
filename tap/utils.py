@@ -380,6 +380,7 @@ def define_python_object_encoder(skip_unpicklable: bool = False) -> "PythonObjec
                 return {
                     "_type": f"python_object (type = {obj.__class__.__name__})",
                     "_value": b64encode(pickle.dumps(obj)).decode("utf-8"),
+                    "_string": str(obj),
                 }
             except (pickle.PicklingError, TypeError, AttributeError) as e:
                 if not skip_unpicklable:
