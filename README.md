@@ -465,15 +465,15 @@ class Args(Tap):
 
 args = Args().parse_args(["--package", "Tap"])
 
-args_dict = args.as_dict()
-print(args_dict)  # {'package': 'Tap', 'is_cool': True, 'stars': 5}
+args_data = args.as_dict()
+print(args_data)  # {'package': 'Tap', 'is_cool': True, 'stars': 5}
 
-args_dict['stars'] = 2000
-args = args.from_dict(args_dict)
+args_data['stars'] = 2000
+args = args.from_dict(args_data)
 print(args.stars)  # 2000 
 ```
 
-Note that `as_dict` does not include attributes set directly on an instance (e.g. `arg` is not included in `Args().arg = "hi"`).
+Note that `as_dict` does not include attributes set directly on an instance (e.g., `arg` is not included even after setting `args.arg = "hi"` in the code above because `arg` is not an attribute of the `Args` class).
 Also note that `from_dict` ensures that all required arguments are set.
 
 ### Saving and loading arguments
