@@ -88,7 +88,7 @@ class Tap(ArgumentParser):
         # Create argument buffer
         self.argument_buffer = {}
 
-        # Create a place to put all of the subparsers
+        # Create a place to put the subparsers
         self._subparser_buffer: List[Tuple[str, type, Dict[str, Any]]] = []
 
         # Get class variables help strings from the comments
@@ -103,7 +103,7 @@ class Tap(ArgumentParser):
         # Initialize the super class, i.e. ArgumentParser
         super(Tap, self).__init__(*args, **kwargs)
 
-        # Stores all of the subparsers
+        # Stores the subparsers
         self._subparsers = None
 
         # Load in the configuration files

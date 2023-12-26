@@ -507,7 +507,7 @@ def get_origin(tp: Any) -> Any:
     return origin
 
 
-# TODO: remove this once typing_insepct.get_args is fixed for Python 3.10 union types
+# TODO: remove this once typing_inspect.get_args is fixed for Python 3.10 union types
 def get_args(tp: Any) -> Tuple[type, ...]:
     """Same as typing_inspect.get_args but fixes Python 3.10 union types."""
     if sys.version_info >= (3, 10) and isinstance(tp, UnionType):
