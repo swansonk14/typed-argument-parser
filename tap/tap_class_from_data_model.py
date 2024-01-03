@@ -102,7 +102,7 @@ def _tap_class(fields_data: Sequence[_FieldData]) -> type[Tap]:
             # Add arguments from fields_data (extracted from a data model)
             for field_data in fields_data:
                 variable = field_data.name
-                self._annotations[variable] = field_data.annotation
+                self._annotations[variable] = str if field_data.annotation is Any else field_data.annotation
                 self.class_variables[variable] = {"comment": field_data.description or ""}
                 if field_data.is_required:
                     kwargs = {}
@@ -130,7 +130,8 @@ def tap_class_from_data_model(data_model: Any) -> type[Tap]:
 
         from dataclasses import dataclass, field
 
-        @dataclass class Data:
+        @dataclass
+        class Data:
             my_field: str = field(metadata={"description": "field description"})
     """
     fields_data = _fields_data(data_model)
