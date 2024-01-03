@@ -60,18 +60,6 @@ def _fields_data(data_model: Any) -> list[_FieldData]:
             "data_model must be a builtin or Pydantic dataclass (instance or class) or "
             f"a Pydantic BaseModel (instance or class). Got {type(data_model)}"
         )
-        # TODO: instead of raising an error, inspect the signature of data_model to return a list[_FieldData]
-        # We could then refactor tapify to use _tap_class. It'd go like this:
-        # In tapify, add a kwarg for return_tap_class=False (then we don't need tap_class_from_data_model)
-        # fields_data = from inspecting the signature of the input class_or_function
-        # tap_class = _tap_class(fields_data)
-        # if return_tap_class:
-        #     return tap_class
-        # tap = tap_class(description=description, explicit_bool=explicit_bool)
-        # command_line_args = tap.parse_args()
-        # command_line_args_dict = command_line_args.as_dict()
-        # return class_or_function(**command_line_args_dict)
-
     # It's possible to mix fields w/ classes, e.g., use pydantic Fields in a (builtin) dataclass, or use (builtin)
     # dataclass fields in a pydantic BaseModel. It's also possible to use (builtin) dataclass fields and pydantic Fields
     # in the same data model. Therefore, the type of the data model doesn't determine the type of each field. The
