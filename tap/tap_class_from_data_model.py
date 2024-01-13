@@ -3,7 +3,7 @@ Convert a data model to a Tap class.
 """
 
 import dataclasses
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, List, Optional, Sequence, Type, Union
 
 import pydantic
 from pydantic.fields import FieldInfo as PydanticFieldBaseModel
@@ -82,7 +82,7 @@ def _fields_data(data_model: Any) -> List[_FieldData]:
     return fields_data
 
 
-def _tap_class(fields_data: Sequence[_FieldData]) -> type:
+def _tap_class(fields_data: Sequence[_FieldData]) -> Type[Tap]:
     class ArgParser(Tap):
         # Overwriting configure would force a user to remember to call super().configure if they want to overwrite it
         # Instead, overwrite _configure
@@ -103,7 +103,7 @@ def _tap_class(fields_data: Sequence[_FieldData]) -> type:
     return ArgParser
 
 
-def tap_class_from_data_model(data_model: Any) -> type[Tap]:
+def tap_class_from_data_model(data_model: Any) -> Type[Tap]:
     """Convert a data model to a typed CLI argument parser.
 
     :param data_model: a builtin or Pydantic dataclass (class or instance) or Pydantic `BaseModel` (class or instance)
