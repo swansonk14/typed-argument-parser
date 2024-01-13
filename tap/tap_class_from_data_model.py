@@ -3,7 +3,7 @@ Convert a data model to a Tap class.
 """
 
 import dataclasses
-from typing import Any, Sequence
+from typing import Any, List, Optional, Sequence, Union
 
 import pydantic
 from pydantic.fields import FieldInfo as PydanticFieldBaseModel
@@ -12,7 +12,7 @@ from pydantic.dataclasses import FieldInfo as PydanticFieldDataclass
 from tap import Tap
 
 
-_PydanticField = PydanticFieldBaseModel | PydanticFieldDataclass
+_PydanticField = Union[PydanticFieldBaseModel, PydanticFieldDataclass]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -27,7 +27,7 @@ class _FieldData:
     annotation: type
     is_required: bool
     default: Any
-    description: str | None = ""
+    description: Optional[str] = ""
 
 
 def _field_data_from_dataclass(name: str, field: dataclasses.Field) -> _FieldData:
@@ -43,12 +43,12 @@ def _field_data_from_dataclass(name: str, field: dataclasses.Field) -> _FieldDat
     )
 
 
-def _field_data_from_pydantic(name: str, field: _PydanticField, annotation: type | None = None) -> _FieldData:
+def _field_data_from_pydantic(name: str, field: _PydanticField, annotation: Optional[type] = None) -> _FieldData:
     annotation = field.annotation if annotation is None else annotation
     return _FieldData(name, annotation, field.is_required(), field.default, field.description)
 
 
-def _fields_data(data_model: Any) -> list[_FieldData]:
+def _fields_data(data_model: Any) -> List[_FieldData]:
     if dataclasses.is_dataclass(data_model):
         # This condition also holds for a Pydantic dataclass instance or model
         name_to_field = {field.name: field for field in dataclasses.fields(data_model)}
@@ -64,7 +64,7 @@ def _fields_data(data_model: Any) -> list[_FieldData]:
     # dataclass fields in a pydantic BaseModel. It's also possible to use (builtin) dataclass fields and pydantic Fields
     # in the same data model. Therefore, the type of the data model doesn't determine the type of each field. The
     # solution is to iterate through the fields and check each type.
-    fields_data: list[_FieldData] = []
+    fields_data: List[_FieldData] = []
     for name, field in name_to_field.items():
         if isinstance(field, dataclasses.Field):
             # Idiosyncrasy: if a pydantic Field is used in a pydantic dataclass, then field.default is a FieldInfo
@@ -82,7 +82,7 @@ def _fields_data(data_model: Any) -> list[_FieldData]:
     return fields_data
 
 
-def _tap_class(fields_data: Sequence[_FieldData]) -> type[Tap]:
+def _tap_class(fields_data: Sequence[_FieldData]) -> type:
     class ArgParser(Tap):
         # Overwriting configure would force a user to remember to call super().configure if they want to overwrite it
         # Instead, overwrite _configure
