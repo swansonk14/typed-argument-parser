@@ -52,7 +52,7 @@ class _TapData:
     "True if you can pass variable/extra kwargs to the class or function (as in **kwargs), else False"
 
     known_only: bool
-    "I don't know yet"
+    "If true, ignore extra arguments and only parse known arguments"
 
 
 def _is_pydantic_base_model(obj: Any) -> bool:
@@ -102,13 +102,14 @@ def _tap_data_from_data_model(
         # This condition also holds for a Pydantic dataclass instance or model
         name_to_field = {field.name: field for field in dataclasses.fields(data_model)}
         has_kwargs = False
-        known_only = False  # TODO: figure out what this was for dataclasses
+        known_only = False
     elif _is_pydantic_base_model(data_model):
         data_model: pydantic.BaseModel = cast(pydantic.BaseModel, data_model)
         name_to_field = data_model.model_fields
+        # TODO: understand current behavior of extra arg handling for Pydantic models through tapify
         is_extra_ok = data_model.model_config.get("extra", "ignore") != "forbid"
         has_kwargs = is_extra_ok
-        known_only = not is_extra_ok  # TODO: figure out what this means
+        known_only = is_extra_ok
     else:
         raise TypeError(
             "data_model must be a builtin or Pydantic dataclass (instance or class) or "
