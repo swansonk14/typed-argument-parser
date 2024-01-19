@@ -1,7 +1,7 @@
 """Tapify module, which can initialize a class or run a function by parsing arguments from the command line."""
 import dataclasses
 import inspect
-from typing import Any, Callable, List, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, TypeVar, Union
 
 from docstring_parser import Docstring, parse
 
@@ -71,7 +71,7 @@ def _is_pydantic_base_model(obj: Any) -> bool:
 
 
 def _tap_data_from_data_model(
-    data_model: Any, func_kwargs: dict[str, Any], param_to_description: dict[str, str] = None
+    data_model: Any, func_kwargs: Dict[str, Any], param_to_description: Dict[str, str] = None
 ) -> _TapData:
     """
     Currently only works when `data_model` is a:
@@ -151,7 +151,7 @@ def _tap_data_from_data_model(
 
 
 def _tap_data_from_class_or_function(
-    class_or_function: _ClassOrFunction, func_kwargs: dict[str, Any], param_to_description: dict[str, str]
+    class_or_function: _ClassOrFunction, func_kwargs: Dict[str, Any], param_to_description: Dict[str, str]
 ) -> _TapData:
     """
     Note
