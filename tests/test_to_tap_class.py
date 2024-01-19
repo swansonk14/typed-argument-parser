@@ -90,12 +90,12 @@ def subclass_tap_simple(class_or_function: Any) -> Type[Tap]:
 # TODO: use this. Will need to change how the test is parametrized b/c the output will depend on using
 # subclass_tap_simple vs subclass_tap_weird
 def subclass_tap_weird(class_or_function):
-    def to_number(string: str) -> float | int:
+    def to_number(string: str) -> Union[float, int]:
         return float(string) if "." in string else int(string)
 
     class TapSubclass(to_tap_class(class_or_function)):
         # You can supply additional arguments here
-        argument_with_really_long_name: float | int = 3
+        argument_with_really_long_name: Union[float, int] = 3
         "This argument has a long name and will be aliased with a short one"
 
         def configure(self) -> None:
