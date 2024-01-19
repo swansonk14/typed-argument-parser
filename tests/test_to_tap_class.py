@@ -1,5 +1,5 @@
 """
-Tests `tap.convert_to_tap_class`.
+Tests `tap.to_tap_class`.
 
 TODO: test help message, test subclass_tap_weird, test with func_kwargs
 TODO: I might redesign this soon. It's not thorough yet.
@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 import pydantic
 import pytest
 
-from tap import convert_to_tap_class, Tap
+from tap import to_tap_class, Tap
 
 
 @dataclasses.dataclass
@@ -79,12 +79,12 @@ class Model(pydantic.BaseModel):
     arg_list: Optional[List[str]] = pydantic.Field(default=None, description="some list of strings")
 
 
-# Define some functions which take a class or function and calls `tap.convert_to_tap_class` on it to create a `tap.Tap`
+# Define some functions which take a class or function and calls `tap.to_tap_class` on it to create a `tap.Tap`
 # subclass (class, not instance). Call this type of function a subclasser
 
 
 def subclass_tap_simple(class_or_function: Any) -> Type[Tap]:
-    return convert_to_tap_class(class_or_function)  # plain subclass / do nothing
+    return to_tap_class(class_or_function)  # plain subclass / do nothing
 
 
 # TODO: use this. Will need to change how the test is parametrized b/c the output will depend on using
@@ -93,7 +93,7 @@ def subclass_tap_weird(class_or_function):
     def to_number(string: str) -> float | int:
         return float(string) if "." in string else int(string)
 
-    class TapSubclass(convert_to_tap_class(class_or_function)):
+    class TapSubclass(to_tap_class(class_or_function)):
         # You can supply additional arguments here
         argument_with_really_long_name: float | int = 3
         "This argument has a long name and will be aliased with a short one"
@@ -122,7 +122,7 @@ def subclass_tap_weird(class_or_function):
         Class,
         DataclassBuiltin,
         DataclassBuiltin(
-            "convert_to_tap_class works on instances of data models (for free). It ignores the attribute values",
+            "to_tap_class works on instances of data models (for free). It ignores the attribute values",
             arg_bool=False,
             arg_list=["doesn't", "matter"],
         ),
@@ -150,7 +150,7 @@ def subclass_tap_weird(class_or_function):
         ),
     ],
 )
-def test_convert_to_tap_class(
+def test_to_tap_class(
     subclass_tap: Callable[[Any], Type[Tap]],
     class_or_function: Any,
     args_string_and_arg_to_expected_value: Tuple[str, Union[Dict[str, Any], BaseException]],

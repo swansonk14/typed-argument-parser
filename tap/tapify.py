@@ -241,7 +241,7 @@ def _tap_class(args_data: Sequence[_ArgData]) -> Type[Tap]:
     return ArgParser
 
 
-def convert_to_tap_class(class_or_function: _ClassOrFunction, **func_kwargs) -> Type[Tap]:
+def to_tap_class(class_or_function: _ClassOrFunction, **func_kwargs) -> Type[Tap]:
     """Creates a `Tap` class from `class_or_function`. This can be subclassed to add custom argument handling and
     instantiated to create a typed argument parser.
 
@@ -275,7 +275,7 @@ def tapify(
                         parsing the command line arguments and overwrite the function defaults but
                         are overwritten by the parsed command line arguments.
     """
-    # We don't directly call convert_to_tap_class b/c we need tap_data, not just tap_class
+    # We don't directly call to_tap_class b/c we need tap_data, not just tap_class
     docstring = _docstring(class_or_function)
     tap_data = _tap_data(class_or_function, docstring, func_kwargs)
     tap_class = _tap_class(tap_data.args_data)

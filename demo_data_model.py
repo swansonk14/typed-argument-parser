@@ -8,7 +8,7 @@ python demo_data_model.py \
 -arg 2
 """
 from pydantic import BaseModel, Field
-from tap import tapify, convert_to_tap_class
+from tap import tapify, to_tap_class
 
 
 class Model(BaseModel):
@@ -30,7 +30,7 @@ def to_number(string: str) -> float | int:
     return float(string) if "." in string else int(string)
 
 
-class ModelTap(convert_to_tap_class(Model)):
+class ModelTap(to_tap_class(Model)):
     # You can supply additional arguments here
     argument_with_really_long_name: float | int = 3
     "This argument has a long name and will be aliased with a short one"
