@@ -1,6 +1,7 @@
 """
 Tests `tap.convert_to_tap_class`.
 
+TODO: test help message, test subclass_tap_weird, test with func_kwargs
 TODO: I might redesign this soon. It's not thorough yet.
 """
 import dataclasses
