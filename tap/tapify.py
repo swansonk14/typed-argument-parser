@@ -204,10 +204,11 @@ def _is_data_model(obj: Any) -> bool:
 
 def _docstring(class_or_function) -> Docstring:
     """Parse class or function docstring in one line"""
-    if inspect.isclass(class_or_function) and class_or_function.__init__.__doc__ is not None:
-        doc = class_or_function.__init__.__doc__
-    else:
+    is_function = not inspect.isclass(class_or_function)
+    if is_function or _is_pydantic_base_model(class_or_function):
         doc = class_or_function.__doc__
+    else:
+        doc = class_or_function.__init__.__doc__ or class_or_function.__doc__
     return parse(doc)
 
 
