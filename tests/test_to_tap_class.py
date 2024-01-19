@@ -80,7 +80,7 @@ class Model(pydantic.BaseModel):
 
 
 # Define some functions which take a class or function and calls `tap.to_tap_class` on it to create a `tap.Tap`
-# subclass (class, not instance). Call this type of function a subclasser
+# subclass (class, not instance)
 
 
 def subclass_tap_simple(class_or_function: Any) -> Type[Tap]:
@@ -114,7 +114,7 @@ def subclass_tap_weird(class_or_function):
     return TapSubclass
 
 
-@pytest.mark.parametrize("subclass_tap", [subclass_tap_simple])
+@pytest.mark.parametrize("subclasser", [subclass_tap_simple])
 @pytest.mark.parametrize(
     "class_or_function",
     [
@@ -151,12 +151,12 @@ def subclass_tap_weird(class_or_function):
     ],
 )
 def test_to_tap_class(
-    subclass_tap: Callable[[Any], Type[Tap]],
+    subclasser: Callable[[Any], Type[Tap]],
     class_or_function: Any,
     args_string_and_arg_to_expected_value: Tuple[str, Union[Dict[str, Any], BaseException]],
 ):
     args_string, arg_to_expected_value = args_string_and_arg_to_expected_value
-    TapSubclass = subclass_tap(class_or_function)
+    TapSubclass = subclasser(class_or_function)
     tap = TapSubclass(description="My description")
 
     # args_string is an invalid argument combo
