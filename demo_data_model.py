@@ -2,7 +2,7 @@
 Example:
 
 python demo_data_model.py \
---arg_str test \
+--arg_int 1 \
 --arg_list x y z \
 --arg_bool \
 -arg 2
@@ -16,7 +16,7 @@ class Model(BaseModel):
     My Pydantic Model which contains script args.
     """
 
-    arg_str: str = Field(description="hello")
+    arg_int: int = Field(description="hello")
     arg_bool: bool = Field(default=True, description=None)
     arg_list: list[str] | None = Field(default=None, description="optional list")
 
@@ -46,8 +46,8 @@ class ModelTap(to_tap_class(Model)):
             raise ValueError("nope")
 
         # No auto-complete (and other niceties) for the super class attributes b/c this is a dynamic subclass. Sorry
-        if self.arg_bool:
-            self.arg_str += " processed"
+        if self.arg_bool and self.arg_list is not None:
+            self.arg_list.append("processed")
 
 
 if __name__ == "__main__":
