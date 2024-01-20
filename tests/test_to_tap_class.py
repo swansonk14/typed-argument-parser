@@ -14,7 +14,9 @@ from tap import to_tap_class, Tap
 
 @dataclasses.dataclass
 class _Args:
-    """These are the argument names which every type of class or function must contain."""
+    """
+    These are the argument names which every type of class or function must contain.
+    """
 
     arg_int: int = dataclasses.field(metadata=dict(description="some integer"))
     arg_bool: bool = True
@@ -22,7 +24,9 @@ class _Args:
 
 
 def _monkeypatch_eq(cls):
-    """Monkey-patches `cls.__eq__` to check that the attribute values are equal to a dataclass representation of them"""
+    """
+    Monkey-patches `cls.__eq__` to check that the attribute values are equal to a dataclass representation of them.
+    """
 
     def _equality(self, other: _Args) -> bool:
         return _Args(self.arg_int, self.arg_bool, self.arg_list) == other
@@ -56,13 +60,14 @@ class Class:
 
 
 DataclassBuiltin = _Args
-"""Dataclass (builtin)"""
 
 
 @_monkeypatch_eq
 @pydantic.dataclasses.dataclass
 class DataclassPydantic:
-    """Dataclass (pydantic)"""
+    """
+    Dataclass (pydantic)
+    """
 
     arg_int: int = pydantic.dataclasses.Field(description="some integer")
     arg_bool: bool = pydantic.dataclasses.Field(default=True)
@@ -71,7 +76,9 @@ class DataclassPydantic:
 
 @_monkeypatch_eq
 class Model(pydantic.BaseModel):
-    """Pydantic model"""
+    """
+    Pydantic model
+    """
 
     arg_int: int = pydantic.Field(description="some integer")
     arg_bool: bool = pydantic.Field(default=True)
