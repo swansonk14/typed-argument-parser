@@ -213,8 +213,8 @@ def _test_subclasser_help_message(
             {"arg_int": 1, "arg_bool": True, "arg_list": ["x", "y", "z"]},
         ),
         (
-            "--arg_int 1 --arg_list x y z --arg_bool",
-            {"arg_int": 1, "arg_bool": False, "arg_list": ["x", "y", "z"]},
+            "--arg_int 1 --arg_bool",
+            {"arg_int": 1, "arg_bool": False, "arg_list": None},
         ),
         # The rest are invalid argument combos, as indicated by the 2nd elt being a BaseException instance
         (
@@ -274,11 +274,11 @@ options:
             },
         ),
         (
-            "--arg_int 1 --arg_bool --arg_list x y z --argument_with_really_long_name 2.3",
+            "--arg_int 1 --arg_bool --argument_with_really_long_name 2.3",
             {
                 "arg_int": 1,
                 "arg_bool": False,
-                "arg_list": ["x", "y", "z"],
+                "arg_list": None,
                 "argument_with_really_long_name": 2.3,
             },
         ),
