@@ -1,12 +1,23 @@
 """
-Example:
+Works for Pydantic v1 and v2.
+
+Example commands:
+
+python demo_data_model.py -h
 
 python demo_data_model.py \
---arg_int 1 \
---arg_list x y z \
---arg_bool \
--arg 3.14
+    --arg_int 1 \
+    --arg_list x y z \
+    --arg_bool \
+    -arg 3.14
+
+python demo_data_model.py \
+    --arg_int 1 \
+    --arg_list x y z \
+    -arg 3
 """
+from typing import List, Optional, Union
+
 from pydantic import BaseModel, Field
 from tap import tapify, to_tap_class
 
@@ -18,7 +29,7 @@ class Model(BaseModel):
 
     arg_int: int = Field(description="some integer")
     arg_bool: bool = Field(default=True)
-    arg_list: list[str] | None = Field(default=None, description="some list of strings")
+    arg_list: Optional[List[str]] = Field(default=None, description="some list of strings")
 
 
 def main(model: Model) -> None:
@@ -26,13 +37,13 @@ def main(model: Model) -> None:
     print(model)
 
 
-def to_number(string: str) -> float | int:
+def to_number(string: str) -> Union[float, int]:
     return float(string) if "." in string else int(string)
 
 
 class ModelTap(to_tap_class(Model)):
     # You can supply additional arguments here
-    argument_with_really_long_name: float | int = 3
+    argument_with_really_long_name: Union[float, int] = 3
     "This argument has a long name and will be aliased with a short one"
 
     def configure(self) -> None:

@@ -1,16 +1,25 @@
 """
-Tests `tap.to_tap_class`.
+Tests `tap.to_tap_class`. This test works for Pydantic v1 and v2.
 """
 from contextlib import redirect_stdout
 import dataclasses
 import io
 import re
+import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import pydantic
 import pytest
 
 from tap import to_tap_class, Tap
+
+
+_IS_PYDANTIC_V1 = pydantic.__version__ < "2.0.0"
+
+# To properly test the help message, we need to know how argparse formats it. It changed after 3.10
+_IS_BEFORE_PY_310 = sys.version_info < (3, 10)
+_OPTIONS_TITLE = "options" if not _IS_BEFORE_PY_310 else "optional arguments"
+_ARG_LIST_DOTS = "..." if not _IS_BEFORE_PY_310 else "[ARG_LIST ...]"
 
 
 @dataclasses.dataclass
@@ -70,9 +79,25 @@ class DataclassPydantic:
     Dataclass (pydantic)
     """
 
+    # Mixing field types should be ok
     arg_int: int = pydantic.dataclasses.Field(description="some integer")
     arg_bool: bool = pydantic.dataclasses.Field(default=True)
     arg_list: Optional[List[str]] = pydantic.Field(default=None, description="some list of strings")
+
+
+@_monkeypatch_eq
+@pydantic.dataclasses.dataclass
+class DataclassPydanticV1:  # for Pydantic v1 data models, we rely on the docstring to get descriptions
+    """
+    Dataclass (pydantic v1)
+
+    :param arg_int: some integer
+    :param arg_list: some list of strings
+    """
+
+    arg_int: int
+    arg_bool: bool = True
+    arg_list: Optional[List[str]] = None
 
 
 @_monkeypatch_eq
@@ -81,9 +106,24 @@ class Model(pydantic.BaseModel):
     Pydantic model
     """
 
+    # Mixing field types should be ok
     arg_int: int = pydantic.Field(description="some integer")
     arg_bool: bool = pydantic.Field(default=True)
-    arg_list: Optional[List[str]] = pydantic.Field(default=None, description="some list of strings")
+    arg_list: Optional[List[str]] = pydantic.dataclasses.Field(default=None, description="some list of strings")
+
+
+@_monkeypatch_eq
+class ModelV1(pydantic.BaseModel):  # for Pydantic v1 data models, we rely on the docstring to get descriptions
+    """
+    Pydantic model (pydantic v1)
+
+    :param arg_int: some integer
+    :param arg_list: some list of strings
+    """
+
+    arg_int: int
+    arg_bool: bool = True
+    arg_list: Optional[List[str]] = None
 
 
 @pytest.fixture(
@@ -93,12 +133,11 @@ class Model(pydantic.BaseModel):
         Class,
         DataclassBuiltin,
         DataclassBuiltin(
-            1, arg_bool=False, arg_list=["doesn't", "matter"]
+            1, arg_bool=False, arg_list=["these", "values", "don't", "matter"]
         ),  # to_tap_class also works on instances of data models. It ignores the attribute values
-        DataclassPydantic,
-        DataclassPydantic(arg_int=1_000, arg_bool=False, arg_list=None),
-        Model,
-        Model(arg_int=1, arg_bool=True, arg_list=["not", "used"]),
+        DataclassPydantic if not _IS_PYDANTIC_V1 else DataclassPydanticV1,
+        Model if not _IS_PYDANTIC_V1 else ModelV1,
+        # We can test instances of DataclassPydantic and Model for pydantic v2 but not v1
     ],
 )
 def data_model(request: pytest.FixtureRequest):
@@ -176,7 +215,7 @@ def _test_subclasser(
     # Test that parsing works correctly
     args = tap.parse_args(args_string.split())
     for arg, expected_value in arg_to_expected_value.items():
-        assert getattr(args, arg) == expected_value
+        assert getattr(args, arg) == expected_value, arg
     if test_call and callable(class_or_function):
         result = class_or_function(**args.as_dict())
         assert result == _Args(**arg_to_expected_value)
@@ -231,18 +270,19 @@ def test_subclasser_simple(
     _test_subclasser(subclasser_simple, data_model, args_string_and_arg_to_expected_value)
 
 
+# @pytest.mark.skipif(_IS_BEFORE_PY_310, reason="argparse is different. Need to fix help_message_expected")
 def test_subclasser_simple_help_message(data_model: Any):
     description = "Script description"
     help_message_expected = f"""
-usage: pytest --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST ...]] [-h]
+usage: pytest --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST {_ARG_LIST_DOTS}]] [-h]
 
 {description}
 
-options:
+{_OPTIONS_TITLE}:
   --arg_int ARG_INT     (int, required) some integer
   --arg_bool            (bool, default=True)
-  --arg_list [ARG_LIST ...]
-                        (Optional[List[str]], default=None) some list of strings
+  --arg_list [ARG_LIST {_ARG_LIST_DOTS}]
+                        ({str(Optional[List[str]]).replace('typing.', '')}, default=None) some list of strings
   -h, --help            show this help message and exit
 """.lstrip(
         "\n"
@@ -302,20 +342,21 @@ def test_subclasser_complex(
     _test_subclasser(subclasser_complex, data_model, args_string_and_arg_to_expected_value, test_call=False)
 
 
+# @pytest.mark.skipif(_IS_BEFORE_PY_310, reason="argparse is different. Need to fix help_message_expected")
 def test_subclasser_complex_help_message(data_model: Any):
     description = "Script description"
     help_message_expected = f"""
-usage: pytest [-arg ARGUMENT_WITH_REALLY_LONG_NAME] --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST ...]] [-h]
+usage: pytest [-arg ARGUMENT_WITH_REALLY_LONG_NAME] --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST {_ARG_LIST_DOTS}]] [-h]
 
 {description}
 
-options:
+{_OPTIONS_TITLE}:
   -arg ARGUMENT_WITH_REALLY_LONG_NAME, --argument_with_really_long_name ARGUMENT_WITH_REALLY_LONG_NAME
                         (Union[float, int], default=3) This argument has a long name and will be aliased with a short one
   --arg_int ARG_INT     (int, required) some integer
   --arg_bool            (bool, default=True)
-  --arg_list [ARG_LIST ...]
-                        (Optional[List[str]], default=None) some list of strings
+  --arg_list [ARG_LIST {_ARG_LIST_DOTS}]
+                        ({str(Optional[List[str]]).replace('typing.', '')}, default=None) some list of strings
   -h, --help            show this help message and exit
 """.lstrip(
         "\n"

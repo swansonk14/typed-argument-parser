@@ -1,4 +1,9 @@
-"""Tapify module, which can initialize a class or run a function by parsing arguments from the command line."""
+"""
+`tapify`: initialize a class or run a function by parsing arguments from the command line.
+
+`to_tap_class`: convert a class or function into a `Tap` class, which can then be subclassed to add special argument
+handling
+"""
 import dataclasses
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Sequence, Type, TypeVar, Union
@@ -8,16 +13,19 @@ from docstring_parser import Docstring, parse
 try:
     import pydantic
 except ModuleNotFoundError:
+    _IS_PYDANTIC_V1 = None
+    # These are "empty" types. isinstance and issubclass will always be False
     BaseModel = type("BaseModel", (object,), {})
     _PydanticField = type("_PydanticField", (object,), {})
     _PYDANTIC_FIELD_TYPES = ()
 else:
+    _IS_PYDANTIC_V1 = pydantic.__version__ < "2.0.0"
     from pydantic import BaseModel
     from pydantic.fields import FieldInfo as PydanticFieldBaseModel
     from pydantic.dataclasses import FieldInfo as PydanticFieldDataclass
 
     _PydanticField = Union[PydanticFieldBaseModel, PydanticFieldDataclass]
-    # typing.get_args(_PydanticField) is the empty tuple for some reason. Just repeat
+    # typing.get_args(_PydanticField) is an empty tuple for some reason. Just repeat
     _PYDANTIC_FIELD_TYPES = (PydanticFieldBaseModel, PydanticFieldDataclass)
 
 from tap import Tap
@@ -65,11 +73,19 @@ class _TapData:
     "If true, ignore extra arguments and only parse known arguments"
 
 
-def _is_pydantic_base_model(obj: Any) -> bool:
+def _is_pydantic_base_model(obj: Union[Any, Type[Any]]) -> bool:
     if inspect.isclass(obj):  # issublcass requires that obj is a class
         return issubclass(obj, BaseModel)
     else:
         return isinstance(obj, BaseModel)
+
+
+def _is_pydantic_dataclass(obj: Union[Any, Type[Any]]) -> bool:
+    if _IS_PYDANTIC_V1:
+        # There's no public function in v1. This is a somewhat safe but linear check
+        return dataclasses.is_dataclass(obj) and any(key.startswith("__pydantic") for key in obj.__dict__)
+    else:
+        return pydantic.dataclasses.is_pydantic_dataclass(obj)
 
 
 def _tap_data_from_data_model(
@@ -81,8 +97,8 @@ def _tap_data_from_data_model(
       - Pydantic dataclass (class or instance)
       - Pydantic BaseModel (class or instance).
 
-    The advantage of this function over func:`_tap_data_from_class_or_function` is that descriptions are parsed, b/c
-    this function look at the fields of the data model.
+    The advantage of this function over func:`_tap_data_from_class_or_function` is that field/argument descriptions are
+    extracted, b/c this function look at the fields of the data model.
 
     Note
     ----
@@ -199,12 +215,11 @@ def _tap_data_from_class_or_function(
     return _TapData(args_data, has_kwargs, known_only)
 
 
-def _is_data_model(obj: Any) -> bool:
+def _is_data_model(obj: Union[Any, Type[Any]]) -> bool:
     return dataclasses.is_dataclass(obj) or _is_pydantic_base_model(obj)
 
 
 def _docstring(class_or_function) -> Docstring:
-    """Parse class or function docstring in one line"""
     is_function = not inspect.isclass(class_or_function)
     if is_function or _is_pydantic_base_model(class_or_function):
         doc = class_or_function.__doc__
@@ -213,13 +228,22 @@ def _docstring(class_or_function) -> Docstring:
     return parse(doc)
 
 
-def _tap_data(class_or_function: _ClassOrFunction, docstring: Docstring, func_kwargs) -> _TapData:
-    param_to_description = {param.arg_name: param.description for param in docstring.params}
-    if _is_data_model(class_or_function):
-        # TODO: allow passing func_kwargs to a Pydantic BaseModel
+def _tap_data(class_or_function: _ClassOrFunction, param_to_description: Dict[str, str], func_kwargs) -> _TapData:
+    """
+    Controls how class:`_TapData` is extracted from `class_or_function`.
+    """
+    is_pydantic_v1_data_model = _IS_PYDANTIC_V1 and (
+        _is_pydantic_base_model(class_or_function) or _is_pydantic_dataclass(class_or_function)
+    )
+    if _is_data_model(class_or_function) and not is_pydantic_v1_data_model:
+        # Data models from Pydantic v1 don't lend itself well to _tap_data_from_data_model. _tap_data_from_data_model
+        # looks at the data model's fields. In Pydantic v1, the field.type_ attribute stores the field's
+        # annotation/type. But (in Pydantic v1) there's a bug where field.type_ is set to the inner-most type of a
+        # subscripted type. For example, annotating a field with list[str] causes field.type_ to be str, not list[str].
+        # To get around this, we'll extract _TapData by looking at the signature of the data model
         return _tap_data_from_data_model(class_or_function, func_kwargs, param_to_description)
-    else:
-        return _tap_data_from_class_or_function(class_or_function, func_kwargs, param_to_description)
+        # TODO: allow passing func_kwargs to a Pydantic BaseModel
+    return _tap_data_from_class_or_function(class_or_function, func_kwargs, param_to_description)
 
 
 def _tap_class(args_data: Sequence[_ArgData]) -> Type[Tap]:
@@ -248,9 +272,10 @@ def to_tap_class(class_or_function: _ClassOrFunction) -> Type[Tap]:
 
     :param class_or_function: The class or function to run with the provided arguments.
     """
-    # TODO: add func_kwargs
     docstring = _docstring(class_or_function)
-    tap_data = _tap_data(class_or_function, docstring, {})
+    param_to_description = {param.arg_name: param.description for param in docstring.params}
+    # TODO: add func_kwargs
+    tap_data = _tap_data(class_or_function, param_to_description, func_kwargs={})
     return _tap_class(tap_data.args_data)
 
 
@@ -276,7 +301,8 @@ def tapify(
     """
     # We don't directly call to_tap_class b/c we need tap_data, not just tap_class
     docstring = _docstring(class_or_function)
-    tap_data = _tap_data(class_or_function, docstring, func_kwargs)
+    param_to_description = {param.arg_name: param.description for param in docstring.params}
+    tap_data = _tap_data(class_or_function, param_to_description, func_kwargs)
     tap_class = _tap_class(tap_data.args_data)
     # Create a Tap object with a description from the docstring of the class or function
     description = "\n".join(filter(None, (docstring.short_description, docstring.long_description)))

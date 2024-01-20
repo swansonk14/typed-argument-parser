@@ -1,3 +1,6 @@
+"""
+Tests `tap.tapify`. Currently requires Pydantic v2.
+"""
 import contextlib
 from dataclasses import dataclass, field
 import io
