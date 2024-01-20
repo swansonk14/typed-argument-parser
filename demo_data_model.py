@@ -16,9 +16,9 @@ class Model(BaseModel):
     My Pydantic Model which contains script args.
     """
 
-    arg_int: int = Field(description="hello")
-    arg_bool: bool = Field(default=True, description=None)
-    arg_list: list[str] | None = Field(default=None, description="optional list")
+    arg_int: int = Field(description="some integer")
+    arg_bool: bool = Field(default=True)
+    arg_list: list[str] | None = Field(default=None, description="some list of strings")
 
 
 def main(model: Model) -> None:
@@ -52,7 +52,7 @@ class ModelTap(to_tap_class(Model)):
 
 if __name__ == "__main__":
     # You don't have to subclass tap_class_from_data_model(Model) if you just want a plain argument parser:
-    # ModelTap = tap_class_from_data_model(Model)
+    # ModelTap = to_tap_class(Model)
     args = ModelTap(description="Script description").parse_args()
     print("Parsed args:")
     print(args)

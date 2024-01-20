@@ -1,9 +1,12 @@
 """
 Tests `tap.to_tap_class`.
 
-TODO: test help message, test with func_kwargs
+TODO: test with func_kwargs
 """
+from contextlib import redirect_stdout
 import dataclasses
+import io
+import re
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import pydantic
@@ -15,7 +18,7 @@ from tap import to_tap_class, Tap
 @dataclasses.dataclass
 class _Args:
     """
-    These are the argument names which every type of class or function must contain.
+    These are the arguments which every type of class or function must contain.
     """
 
     arg_int: int = dataclasses.field(metadata=dict(description="some integer"))
@@ -29,7 +32,7 @@ def _monkeypatch_eq(cls):
     """
 
     def _equality(self, other: _Args) -> bool:
-        return _Args(self.arg_int, self.arg_bool, self.arg_list) == other
+        return _Args(self.arg_int, arg_bool=self.arg_bool, arg_list=self.arg_list) == other
 
     cls.__eq__ = _equality
     return cls
@@ -44,7 +47,7 @@ def function(arg_int: int, arg_bool: bool = True, arg_list: Optional[List[str]] 
     :param arg_int: some integer
     :param arg_list: some list of strings
     """
-    return _Args(*locals().values())
+    return _Args(arg_int, arg_bool=arg_bool, arg_list=arg_list)
 
 
 @_monkeypatch_eq
@@ -92,19 +95,17 @@ class Model(pydantic.BaseModel):
         Class,
         DataclassBuiltin,
         DataclassBuiltin(
-            "to_tap_class will work on instances of data models (for free). It ignores the attribute values",
-            arg_bool=False,
-            arg_list=["doesn't", "matter"],
-        ),
+            1, arg_bool=False, arg_list=["doesn't", "matter"]
+        ),  # to_tap_class also works on instances of data models. It ignores the attribute values
         DataclassPydantic,
-        DataclassPydantic(arg_int=1_000, arg_bool=False, arg_list=[]),
+        DataclassPydantic(arg_int=1_000, arg_bool=False, arg_list=None),
         Model,
-        Model(arg_int=1_000, arg_bool=False, arg_list=[]),
+        Model(arg_int=1, arg_bool=True, arg_list=["not", "used"]),
     ],
 )
 def data_model(request: pytest.FixtureRequest):
     """
-    Same as class_or_function. Only difference is that data_model is parametrized while class_or_function is not.
+    Same meaning as class_or_function. Only difference is that data_model is parametrized.
     """
     return request.param
 
@@ -113,14 +114,14 @@ def data_model(request: pytest.FixtureRequest):
 # subclass (class, not instance)
 
 
-def subclass_tap_simple(class_or_function: Any) -> Type[Tap]:
+def subclasser_simple(class_or_function: Any) -> Type[Tap]:
     """
     Plain subclass, does nothing extra.
     """
     return to_tap_class(class_or_function)
 
 
-def subclass_tap_complex(class_or_function):
+def subclasser_complex(class_or_function):
     """
     It's conceivable that someone has a data model, but they want to add more arguments or handling when running a
     script.
@@ -163,7 +164,7 @@ def _test_subclasser(
 ):
     args_string, arg_to_expected_value = args_string_and_arg_to_expected_value
     TapSubclass = subclasser(class_or_function)
-    tap = TapSubclass(description="My description")
+    tap = TapSubclass(description="Script description")
 
     if isinstance(arg_to_expected_value, BaseException):
         # args_string is an invalid argument combo
@@ -174,12 +175,34 @@ def _test_subclasser(
         return
 
     # args_string is a valid argument combo
+    # Test that parsing works correctly
     args = tap.parse_args(args_string.split())
     for arg, expected_value in arg_to_expected_value.items():
         assert getattr(args, arg) == expected_value
     if test_call and callable(class_or_function):
         result = class_or_function(**args.as_dict())
         assert result == _Args(**arg_to_expected_value)
+
+
+def _test_subclasser_help_message(
+    subclasser: Callable[[Any], Type[Tap]], class_or_function: Any, description: str, help_message_expected: str
+):
+    def replace_whitespace(string: str):
+        # Replace all whitespaces with a single space
+        # FYI this line was written by an LLM:
+        return re.sub(r"\s+", " ", string).strip()
+
+    TapSubclass = subclasser(class_or_function)
+    tap = TapSubclass(description=description)
+
+    f = io.StringIO()
+    with redirect_stdout(f):
+        with pytest.raises(SystemExit):
+            tap.parse_args(["-h"])
+
+    help_message = f.getvalue()
+    # Standardize to ignore trivial differences due to terminal settings
+    assert replace_whitespace(help_message) == replace_whitespace(help_message_expected)
 
 
 @pytest.mark.parametrize(
@@ -204,10 +227,29 @@ def _test_subclasser(
         ),
     ],
 )
-def test_subclass_tap_simple(
+def test_subclasser_simple(
     data_model: Any, args_string_and_arg_to_expected_value: Tuple[str, Union[Dict[str, Any], BaseException]]
 ):
-    _test_subclasser(subclass_tap_simple, data_model, args_string_and_arg_to_expected_value)
+    _test_subclasser(subclasser_simple, data_model, args_string_and_arg_to_expected_value)
+
+
+def test_subclasser_simple_help_message(data_model: Any):
+    description = "Script description"
+    help_message_expected = f"""
+usage: pytest --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST ...]] [-h]
+
+{description}
+
+options:
+  --arg_int ARG_INT     (int, required) some integer
+  --arg_bool            (bool, default=True)
+  --arg_list [ARG_LIST ...]
+                        (Optional[List[str]], default=None) some list of strings
+  -h, --help            show this help message and exit
+""".lstrip(
+        "\n"
+    )
+    _test_subclasser_help_message(subclasser_simple, data_model, description, help_message_expected)
 
 
 @pytest.mark.parametrize(
@@ -255,8 +297,29 @@ def test_subclass_tap_simple(
         ),
     ],
 )
-def test_subclass_tap_complex(
+def test_subclasser_complex(
     data_model: Any, args_string_and_arg_to_expected_value: Tuple[str, Union[Dict[str, Any], BaseException]]
 ):
     # Currently setting test_call=False b/c all data models except the pydantic Model don't accept extra args
-    _test_subclasser(subclass_tap_complex, data_model, args_string_and_arg_to_expected_value, test_call=False)
+    _test_subclasser(subclasser_complex, data_model, args_string_and_arg_to_expected_value, test_call=False)
+
+
+def test_subclasser_complex_help_message(data_model: Any):
+    description = "Script description"
+    help_message_expected = f"""
+usage: pytest [-arg ARGUMENT_WITH_REALLY_LONG_NAME] --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST ...]] [-h]
+
+{description}
+
+options:
+  -arg ARGUMENT_WITH_REALLY_LONG_NAME, --argument_with_really_long_name ARGUMENT_WITH_REALLY_LONG_NAME
+                        (Union[float, int], default=3) This argument has a long name and will be aliased with a short one
+  --arg_int ARG_INT     (int, required) some integer
+  --arg_bool            (bool, default=True)
+  --arg_list [ARG_LIST ...]
+                        (Optional[List[str]], default=None) some list of strings
+  -h, --help            show this help message and exit
+""".lstrip(
+        "\n"
+    )
+    _test_subclasser_help_message(subclasser_complex, data_model, description, help_message_expected)
