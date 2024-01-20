@@ -10,13 +10,15 @@ try:
 except ModuleNotFoundError:
     BaseModel = type("BaseModel", (object,), {})
     _PydanticField = type("_PydanticField", (object,), {})
+    _PYDANTIC_FIELD_TYPES = ()
 else:
     from pydantic import BaseModel
     from pydantic.fields import FieldInfo as PydanticFieldBaseModel
     from pydantic.dataclasses import FieldInfo as PydanticFieldDataclass
 
     _PydanticField = Union[PydanticFieldBaseModel, PydanticFieldDataclass]
-
+    # typing.get_args(_PydanticField) is the empty tuple for some reason. Just repeat
+    _PYDANTIC_FIELD_TYPES = (PydanticFieldBaseModel, PydanticFieldDataclass)
 
 from tap import Tap
 
@@ -132,11 +134,11 @@ def _tap_data_from_data_model(
             # Idiosyncrasy: if a pydantic Field is used in a pydantic dataclass, then field.default is a FieldInfo
             # object instead of the field's default value. Furthermore, field.annotation is always NoneType. Luckily,
             # the actual type of the field is stored in field.type
-            if isinstance(field.default, _PydanticField):
+            if isinstance(field.default, _PYDANTIC_FIELD_TYPES):
                 arg_data = arg_data_from_pydantic(name, field.default, annotation=field.type)
             else:
                 arg_data = arg_data_from_dataclass(name, field)
-        elif isinstance(field, _PydanticField):
+        elif isinstance(field, _PYDANTIC_FIELD_TYPES):
             arg_data = arg_data_from_pydantic(name, field)
         else:
             raise TypeError(f"Each field must be a dataclass or Pydantic field. Got {type(field)}")
