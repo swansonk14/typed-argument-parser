@@ -5,7 +5,7 @@ python demo_data_model.py \
 --arg_int 1 \
 --arg_list x y z \
 --arg_bool \
--arg 2
+-arg 3.14
 """
 from pydantic import BaseModel, Field
 from tap import tapify, to_tap_class

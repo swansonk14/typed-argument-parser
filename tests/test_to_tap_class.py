@@ -1,7 +1,5 @@
 """
 Tests `tap.to_tap_class`.
-
-TODO: test with func_kwargs
 """
 from contextlib import redirect_stdout
 import dataclasses

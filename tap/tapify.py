@@ -113,7 +113,6 @@ def _tap_data_from_data_model(
         known_only = False
     elif _is_pydantic_base_model(data_model):
         name_to_field = data_model.model_fields
-        # TODO: understand current behavior of extra arg handling for Pydantic models through tapify
         is_extra_ok = data_model.model_config.get("extra", "ignore") != "forbid"
         has_kwargs = is_extra_ok
         known_only = is_extra_ok
@@ -241,17 +240,15 @@ def _tap_class(args_data: Sequence[_ArgData]) -> Type[Tap]:
     return ArgParser
 
 
-def to_tap_class(class_or_function: _ClassOrFunction, **func_kwargs) -> Type[Tap]:
+def to_tap_class(class_or_function: _ClassOrFunction) -> Type[Tap]:
     """Creates a `Tap` class from `class_or_function`. This can be subclassed to add custom argument handling and
     instantiated to create a typed argument parser.
 
     :param class_or_function: The class or function to run with the provided arguments.
-    :param func_kwargs: Additional keyword arguments for the function. These act as default values when
-                        parsing the command line arguments and overwrite the function defaults but
-                        are overwritten by the parsed command line arguments.
     """
+    # TODO: add func_kwargs
     docstring = _docstring(class_or_function)
-    tap_data = _tap_data(class_or_function, docstring, func_kwargs)
+    tap_data = _tap_data(class_or_function, docstring, {})
     return _tap_class(tap_data.args_data)
 
 
