@@ -19,7 +19,7 @@ _IS_PYDANTIC_V1 = pydantic.__version__ < "2.0.0"
 # To properly test the help message, we need to know how argparse formats it. It changed after 3.10
 _IS_BEFORE_PY_310 = sys.version_info < (3, 10)
 _OPTIONS_TITLE = "options" if not _IS_BEFORE_PY_310 else "optional arguments"
-_ARG_LIST_DOTS = "..." if not _IS_BEFORE_PY_310 else "[ARG_LIST ...]"
+_ARG_LIST_DOTS = "..." if not sys.version_info < (3, 9) else "[ARG_LIST ...]"
 
 
 @dataclasses.dataclass
