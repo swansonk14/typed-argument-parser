@@ -666,7 +666,7 @@ from tap import tapify
 class Squarer:
     """Squarer with a number to square.
 
-     :param  num: The number to square.
+    :param num: The number to square.
     """
     num: float
 
@@ -680,6 +680,94 @@ if __name__ == '__main__':
 ```
 
 Running `python square_dataclass.py --num -1` prints `The square of your number is 1.0.`.
+
+<details>
+<summary>Argument descriptions</summary>
+
+For dataclasses, the argument's description (which is displayed in the `-h` help message) can either be specified in the
+class docstring or the field's description in `metadata`. If both are specified, the description from the docstring is
+used. In the example below, the description is provided in `metadata`.
+
+```python
+# square_dataclass.py
+from dataclasses import dataclass, field
+
+from tap import tapify
+
+@dataclass
+class Squarer:
+    """Squarer with a number to square.
+    """
+    num: float = field(metadata={"description": "The number to square."})
+
+    def get_square(self) -> float:
+        """Get the square of the number."""
+        return self.num ** 2
+
+if __name__ == '__main__':
+    squarer = tapify(Squarer)
+    print(f'The square of your number is {squarer.get_square()}.')
+```
+
+</details>
+
+#### Pydantic
+
+Pydantic [Models](https://docs.pydantic.dev/latest/concepts/models/) and
+[dataclasses](https://docs.pydantic.dev/latest/concepts/dataclasses/) can be `tapify`d.
+
+```python
+# square_dataclass.py
+from pydantic import BaseModel, Field
+
+from tap import tapify
+
+class Squarer(BaseModel):
+    """Squarer with a number to square.
+    """
+    num: float = Field(description="The number to square.")
+
+    def get_square(self) -> float:
+        """Get the square of the number."""
+        return self.num ** 2
+
+if __name__ == '__main__':
+    squarer = tapify(Squarer)
+    print(f'The square of your number is {squarer.get_square()}.')
+```
+
+<details>
+<summary>Argument descriptions</summary>
+
+For Pydantic v2 models and dataclasses, the argument's description (which is displayed in the `-h` help message) can
+either be specified in the class docstring or the field's `description`. If both are specified, the description from the
+docstring is used. In the example below, the description is provided in the docstring.
+
+For Pydantic v1 models and dataclasses, the argument's description must be provided in the class docstring:
+
+```python
+# square_dataclass.py
+from pydantic import BaseModel
+
+from tap import tapify
+
+class Squarer(BaseModel):
+    """Squarer with a number to square.
+
+    :param num: The number to square.
+    """
+    num: float
+
+    def get_square(self) -> float:
+        """Get the square of the number."""
+        return self.num ** 2
+
+if __name__ == '__main__':
+    squarer = tapify(Squarer)
+    print(f'The square of your number is {squarer.get_square()}.')
+```
+
+</details>
 
 ### tapify help
 
@@ -752,3 +840,44 @@ Running `python person.py --name Jesse --age 1` prints `My name is Jesse.` follo
 
 ### Explicit boolean arguments
 Tapify supports explicit specification of boolean arguments (see [bool](#bool) for more details). By default, `explicit_bool=False` and it can be set with `tapify(..., explicit_bool=True)`. 
+
+## to_tap_class
+
+`to_tap_class` turns a function or class into a `Tap` class. The returned class can be [subclassed](#subclassing) to add
+special argument behavior. For example, you can override [`configure`](#configuring-arguments) and
+[`process_args`](#argument-processing). If the object can be `tapify`d, then it can be `to_tap_class`d, and vice-versa.
+`to_tap_class` provides full control over argument parsing.
+
+### Examples
+
+#### Simple
+
+```python
+# main.py
+"""
+My script description
+"""
+
+from pydantic import BaseModel
+
+from tap import to_tap_class
+
+class Project(BaseModel):
+    package: str
+    is_cool: bool = True
+    stars: int = 5
+
+if __name__ == "__main__":
+    ProjectTap = to_tap_class(Project)
+    tap = ProjectTap(description=__doc__)  # from the top of this script
+    args = tap.parse_args()
+    project = Project(**args.as_dict())
+    print(f"Project instance: {project}")
+```
+
+Running `python main.py --package tap` will print `Project instance: package='tap' is_cool=True stars=5`.
+
+### Complex
+
+Please see `demo_data_model.py` for an example of overriding [`configure`](#configuring-arguments) and
+[`process_args`](#argument-processing).

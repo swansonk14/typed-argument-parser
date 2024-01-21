@@ -8,13 +8,13 @@ python demo_data_model.py -h
 python demo_data_model.py \
     --arg_int 1 \
     --arg_list x y z \
-    --arg_bool \
-    -arg 3.14
+    --argument_with_really_long_name 3
 
 python demo_data_model.py \
     --arg_int 1 \
     --arg_list x y z \
-    -arg 3
+    --arg_bool \
+    -arg 3.14
 """
 from typing import List, Optional, Union
 
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     main(model)
 
 
-# This works but doesn't show the field description, and immediately returns a Model instance instead of a Tap class
+# tapify works with Model. It immediately returns a Model instance instead of a Tap class
 # if __name__ == "__main__":
 #     model = tapify(Model)
 #     print(model)
