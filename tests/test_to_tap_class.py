@@ -247,8 +247,8 @@ def _test_subclasser(
     # args_string is an invalid argument combo
     if isinstance(arg_to_expected_value, SystemExit):
         # We need to get the error message by reading stdout
-        stdout = _test_raises_system_exit(tap, args_string)
-        assert str(arg_to_expected_value) in stdout
+        stderr = _test_raises_system_exit(tap, args_string)
+        assert str(arg_to_expected_value) in stderr
         return
     if isinstance(arg_to_expected_value, BaseException):
         expected_exception = arg_to_expected_value.__class__
