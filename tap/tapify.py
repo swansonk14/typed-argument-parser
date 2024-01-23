@@ -73,14 +73,14 @@ class _TapData:
     "If true, ignore extra arguments and only parse known arguments"
 
 
-def _is_pydantic_base_model(obj: Union[Any, Type[Any]]) -> bool:
+def _is_pydantic_base_model(obj: Union[Type[Any], Any]) -> bool:
     if inspect.isclass(obj):  # issublcass requires that obj is a class
         return issubclass(obj, BaseModel)
     else:
         return isinstance(obj, BaseModel)
 
 
-def _is_pydantic_dataclass(obj: Union[Any, Type[Any]]) -> bool:
+def _is_pydantic_dataclass(obj: Union[Type[Any], Any]) -> bool:
     if _IS_PYDANTIC_V1:
         # There's no public function in v1. This is a somewhat safe but linear check
         return dataclasses.is_dataclass(obj) and any(key.startswith("__pydantic") for key in obj.__dict__)
@@ -97,7 +97,7 @@ def _tap_data_from_data_model(
       - Pydantic dataclass (class or instance)
       - Pydantic BaseModel (class or instance).
 
-    The advantage of this function over func:`_tap_data_from_class_or_function` is that field/argument descriptions are
+    The advantage of this function over :func:`_tap_data_from_class_or_function` is that field/argument descriptions are
     extracted, b/c this function look at the fields of the data model.
 
     Note
@@ -171,6 +171,8 @@ def _tap_data_from_class_or_function(
     class_or_function: _ClassOrFunction, func_kwargs: Dict[str, Any], param_to_description: Dict[str, str]
 ) -> _TapData:
     """
+    Extract data by inspecting the signature of `class_or_function`.
+
     Note
     ----
     Deletes redundant keys from `func_kwargs`
@@ -215,7 +217,7 @@ def _tap_data_from_class_or_function(
     return _TapData(args_data, has_kwargs, known_only)
 
 
-def _is_data_model(obj: Union[Any, Type[Any]]) -> bool:
+def _is_data_model(obj: Union[Type[Any], Any]) -> bool:
     return dataclasses.is_dataclass(obj) or _is_pydantic_base_model(obj)
 
 
@@ -230,17 +232,17 @@ def _docstring(class_or_function) -> Docstring:
 
 def _tap_data(class_or_function: _ClassOrFunction, param_to_description: Dict[str, str], func_kwargs) -> _TapData:
     """
-    Controls how class:`_TapData` is extracted from `class_or_function`.
+    Controls how :class:`_TapData` is extracted from `class_or_function`.
     """
     is_pydantic_v1_data_model = _IS_PYDANTIC_V1 and (
         _is_pydantic_base_model(class_or_function) or _is_pydantic_dataclass(class_or_function)
     )
     if _is_data_model(class_or_function) and not is_pydantic_v1_data_model:
-        # Data models from Pydantic v1 don't lend itself well to _tap_data_from_data_model. _tap_data_from_data_model
-        # looks at the data model's fields. In Pydantic v1, the field.type_ attribute stores the field's
-        # annotation/type. But (in Pydantic v1) there's a bug where field.type_ is set to the inner-most type of a
-        # subscripted type. For example, annotating a field with list[str] causes field.type_ to be str, not list[str].
-        # To get around this, we'll extract _TapData by looking at the signature of the data model
+        # Data models from Pydantic v1 don't lend themselves well to _tap_data_from_data_model.
+        # _tap_data_from_data_model looks at the data model's fields. In Pydantic v1, the field.type_ attribute stores
+        # the field's annotation/type. But (in Pydantic v1) there's a bug where field.type_ is set to the inner-most
+        # type of a subscripted type. For example, annotating a field with list[str] causes field.type_ to be str, not
+        # list[str]. To get around this, we'll extract _TapData by looking at the signature of the data model
         return _tap_data_from_data_model(class_or_function, func_kwargs, param_to_description)
         # TODO: allow passing func_kwargs to a Pydantic BaseModel
     return _tap_data_from_class_or_function(class_or_function, func_kwargs, param_to_description)

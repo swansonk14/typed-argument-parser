@@ -21,9 +21,9 @@ except ModuleNotFoundError:
 else:
     _IS_PYDANTIC_V1 = pydantic.__version__ < "2.0.0"
 
+
 # To properly test the help message, we need to know how argparse formats it. It changed from 3.8 -> 3.9 -> 3.10
-_IS_BEFORE_PY_310 = sys.version_info < (3, 10)
-_OPTIONS_TITLE = "options" if not _IS_BEFORE_PY_310 else "optional arguments"
+_OPTIONS_TITLE = "options" if not sys.version_info < (3, 10) else "optional arguments"
 _ARG_LIST_DOTS = "..." if not sys.version_info < (3, 9) else "[ARG_LIST ...]"
 
 
@@ -335,7 +335,7 @@ def test_subclasser_simple(
     _test_subclasser(subclasser_simple, data_model, args_string_and_arg_to_expected_value)
 
 
-# @pytest.mark.skipif(_IS_BEFORE_PY_310, reason="argparse is different. Need to fix help_message_expected")
+# @pytest.mark.skipif(sys.version_info < (3, 10), reason="argparse is different. Need to fix help_message_expected")
 def test_subclasser_simple_help_message(data_model: Any):
     description = "Script description"
     help_message_expected = f"""
@@ -412,7 +412,7 @@ def test_subclasser_complex(
     _test_subclasser(subclasser_complex, data_model, args_string_and_arg_to_expected_value, test_call=False)
 
 
-# @pytest.mark.skipif(_IS_BEFORE_PY_310, reason="argparse is different. Need to fix help_message_expected")
+# @pytest.mark.skipif(sys.version_info < (3, 10), reason="argparse is different. Need to fix help_message_expected")
 def test_subclasser_complex_help_message(data_model: Any):
     description = "Script description"
     help_message_expected = f"""
@@ -494,7 +494,7 @@ def test_subclasser_subparser(
     _test_subclasser(subclasser_subparser, data_model, args_string_and_arg_to_expected_value, test_call=False)
 
 
-# @pytest.mark.skipif(_IS_BEFORE_PY_310, reason="argparse is different. Need to fix help_message_expected")
+# @pytest.mark.skipif(sys.version_info < (3, 10), reason="argparse is different. Need to fix help_message_expected")
 @pytest.mark.parametrize(
     "args_string_and_description_and_expected_message",
     [
