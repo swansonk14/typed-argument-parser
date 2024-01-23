@@ -6,7 +6,7 @@ import dataclasses
 import io
 import re
 import sys
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
 import pydantic
 import pytest
@@ -16,7 +16,7 @@ from tap import to_tap_class, Tap
 
 _IS_PYDANTIC_V1 = pydantic.__version__ < "2.0.0"
 
-# To properly test the help message, we need to know how argparse formats it. It changed after 3.10
+# To properly test the help message, we need to know how argparse formats it. It changed from 3.8 -> 3.9 -> 3.10
 _IS_BEFORE_PY_310 = sys.version_info < (3, 10)
 _OPTIONS_TITLE = "options" if not _IS_BEFORE_PY_310 else "optional arguments"
 _ARG_LIST_DOTS = "..." if not sys.version_info < (3, 9) else "[ARG_LIST ...]"
@@ -188,6 +188,24 @@ def subclasser_complex(class_or_function):
     return TapSubclass
 
 
+def subclasser_subparser(class_or_function):
+    class SubparserA(Tap):
+        bar: int  # bar help
+
+    class SubparserB(Tap):
+        baz: Literal["X", "Y", "Z"]  # baz help
+
+    class TapSubclass(to_tap_class(class_or_function)):
+        foo: bool = False  # foo help
+
+        def configure(self):
+            self.add_subparsers(help="sub-command help")
+            self.add_subparser("a", SubparserA, help="a help", description="Description (a)")
+            self.add_subparser("b", SubparserB, help="b help")
+
+    return TapSubclass
+
+
 # Test that the subclasser parses the args correctly or raises the correct error.
 # The subclassers are tested separately b/c the parametrizaiton of args_string_and_arg_to_expected_value depends on the
 # subclasser.
@@ -199,9 +217,16 @@ def _test_subclasser(
     args_string_and_arg_to_expected_value: Tuple[str, Union[Dict[str, Any], BaseException]],
     test_call: bool = True,
 ):
+    """
+    Tests that the `subclasser` converts `class_or_function` to a `Tap` class which parses the argument string
+    correctly.
+
+    Setting `test_call=True` additionally tests that calling the `class_or_function` on the parsed arguments works.
+    """
     args_string, arg_to_expected_value = args_string_and_arg_to_expected_value
     TapSubclass = subclasser(class_or_function)
-    tap = TapSubclass(description="Script description")
+    assert issubclass(TapSubclass, Tap)
+    tap = TapSubclass(description="Script description")  # description is a kwarg for argparse.ArgumentParser
 
     if isinstance(arg_to_expected_value, BaseException):
         # args_string is an invalid argument combo
@@ -214,16 +239,27 @@ def _test_subclasser(
     # args_string is a valid argument combo
     # Test that parsing works correctly
     args = tap.parse_args(args_string.split())
-    for arg, expected_value in arg_to_expected_value.items():
-        assert getattr(args, arg) == expected_value, arg
+    assert arg_to_expected_value == args.as_dict()
     if test_call and callable(class_or_function):
         result = class_or_function(**args.as_dict())
         assert result == _Args(**arg_to_expected_value)
 
 
-def _test_subclasser_help_message(
-    subclasser: Callable[[Any], Type[Tap]], class_or_function: Any, description: str, help_message_expected: str
+def _test_subclasser_message(
+    subclasser: Callable[[Any], Type[Tap]],
+    class_or_function: Any,
+    message_expected: str,
+    description: str = "Script description",
+    args_string: str = "-h",
 ):
+    """
+    Tests that::
+
+        subclasser(class_or_function)(description=description).parse_args(args_string.split())
+
+    outputs `message_expected` to stdout, ignoring differences in whitespaces/newlines/tabs.
+    """
+
     def replace_whitespace(string: str):
         # Replace all whitespaces with a single space
         # FYI this line was written by an LLM:
@@ -235,11 +271,14 @@ def _test_subclasser_help_message(
     f = io.StringIO()
     with redirect_stdout(f):
         with pytest.raises(SystemExit):
-            tap.parse_args(["-h"])
+            tap.parse_args(args_string.split())
 
-    help_message = f.getvalue()
+    message = f.getvalue()
     # Standardize to ignore trivial differences due to terminal settings
-    assert replace_whitespace(help_message) == replace_whitespace(help_message_expected)
+    assert replace_whitespace(message) == replace_whitespace(message_expected)
+
+
+# Test sublcasser_simple
 
 
 @pytest.mark.parametrize(
@@ -256,7 +295,7 @@ def _test_subclasser_help_message(
         # The rest are invalid argument combos, as indicated by the 2nd elt being a BaseException instance
         (
             "--arg_list x y z --arg_bool",  # Missing required arg_int
-            SystemExit(),  # TODO: figure out how to get argparse's error message and test that it matches
+            SystemExit(),  # TODO: get argparse's error message and test that it matches
         ),
         (
             "--arg_int not_an_int --arg_list x y z --arg_bool",  # Wrong type arg_int
@@ -287,7 +326,10 @@ usage: pytest --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST {_ARG_LIST_DO
 """.lstrip(
         "\n"
     )
-    _test_subclasser_help_message(subclasser_simple, data_model, description, help_message_expected)
+    _test_subclasser_message(subclasser_simple, data_model, help_message_expected, description=description)
+
+
+# Test subclasser_complex
 
 
 @pytest.mark.parametrize(
@@ -361,4 +403,122 @@ usage: pytest [-arg ARGUMENT_WITH_REALLY_LONG_NAME] --arg_int ARG_INT [--arg_boo
 """.lstrip(
         "\n"
     )
-    _test_subclasser_help_message(subclasser_complex, data_model, description, help_message_expected)
+    _test_subclasser_message(subclasser_complex, data_model, help_message_expected, description=description)
+
+
+# Test subclasser_subparser
+
+
+@pytest.mark.parametrize(
+    "args_string_and_arg_to_expected_value",
+    [
+        (
+            "--arg_int 1",
+            {"arg_int": 1, "arg_bool": True, "arg_list": None, "foo": False},
+        ),
+        (
+            "--arg_int 1 a --bar 2",
+            {"arg_int": 1, "arg_bool": True, "arg_list": None, "bar": 2, "foo": False},
+        ),
+        (
+            "--arg_int 1 --foo a --bar 2",
+            {"arg_int": 1, "arg_bool": True, "arg_list": None, "bar": 2, "foo": True},
+        ),
+        (
+            "--arg_int 1 b --baz X",
+            {"arg_int": 1, "arg_bool": True, "arg_list": None, "baz": "X", "foo": False},
+        ),
+        (
+            "--foo --arg_bool --arg_list x y z --arg_int 1 b --baz Y",
+            {"arg_int": 1, "arg_bool": False, "arg_list": ["x", "y", "z"], "baz": "Y", "foo": True},
+        ),
+        # The rest are invalid argument combos, as indicated by the 2nd elt being a BaseException instance
+        (
+            "a --bar 1",
+            SystemExit(),  # error: the following arguments are required: --arg_int
+        ),
+        (
+            "--arg_int not_an_int a --bar 1",
+            SystemExit(),  # error: argument --arg_int: invalid int value: 'not_an_int'
+        ),
+        (
+            "--arg_int 1 --baz X --foo b",
+            SystemExit(),  # error: argument {a,b}: invalid choice: 'X' (choose from 'a', 'b')
+        ),
+        (
+            "--arg_int 1 b --baz X --foo",
+            SystemExit(),  # error: unrecognized arguments: --foo
+        ),
+        (
+            "--arg_int 1 --foo b --baz A",
+            SystemExit(),  # error: argument --baz: Value for variable "baz" must be one of ['X', 'Y', 'Z'].
+        ),
+    ],
+)
+def test_subclasser_subparser(
+    data_model: Any, args_string_and_arg_to_expected_value: Tuple[str, Union[Dict[str, Any], BaseException]]
+):
+    # Currently setting test_call=False b/c all data models except the pydantic Model don't accept extra args
+    _test_subclasser(subclasser_subparser, data_model, args_string_and_arg_to_expected_value, test_call=False)
+
+
+# @pytest.mark.skipif(_IS_BEFORE_PY_310, reason="argparse is different. Need to fix help_message_expected")
+@pytest.mark.parametrize(
+    "args_string_and_description_and_expected_message",
+    [
+        (
+            "-h",
+            "Script description",
+            # foo help likely missing b/c class nesting. In a demo in a Python 3.8 env, foo help appears in -h
+            f"""
+usage: pytest [--foo] --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST {_ARG_LIST_DOTS}]] [-h] {{a,b}} ...
+
+Script description
+
+positional arguments:
+  {{a,b}}               sub-command help
+    a                   a help
+    b                   b help
+
+{_OPTIONS_TITLE}:
+  --foo                 (bool, default=False) {'' if sys.version_info < (3, 9) else 'foo help'}
+  --arg_int ARG_INT     (int, required) some integer
+  --arg_bool            (bool, default=True)
+  --arg_list [ARG_LIST {_ARG_LIST_DOTS}]
+                        ({str(Optional[List[str]]).replace('typing.', '')}, default=None) some list of strings
+  -h, --help            show this help message and exit
+""",
+        ),
+        (
+            "a -h",
+            "Description (a)",
+            f"""
+usage: pytest a --bar BAR [-h]
+
+Description (a)
+
+{_OPTIONS_TITLE}:
+  --bar BAR   (int, required) bar help
+  -h, --help  show this help message and exit
+""",
+        ),
+        (
+            "b -h",
+            "",
+            f"""
+usage: pytest b --baz {{X,Y,Z}} [-h]
+
+{_OPTIONS_TITLE}:
+  --baz {{X,Y,Z}}  (Literal['X', 'Y', 'Z'], required) baz help
+  -h, --help     show this help message and exit
+""",
+        ),
+    ],
+)
+def test_subclasser_subparser_help_message(
+    data_model: Any, args_string_and_description_and_expected_message: Tuple[str, str]
+):
+    args_string, description, expected_message = args_string_and_description_and_expected_message
+    _test_subclasser_message(
+        subclasser_subparser, data_model, expected_message, description=description, args_string=args_string
+    )

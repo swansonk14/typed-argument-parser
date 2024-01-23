@@ -16,10 +16,10 @@ python demo_data_model.py \
     --arg_bool \
     -arg 3.14
 """
-from typing import List, Optional, Union
+from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
-from tap import tapify, to_tap_class
+from tap import tapify, to_tap_class, Tap
 
 
 class Model(BaseModel):
@@ -61,10 +61,28 @@ class ModelTap(to_tap_class(Model)):
             self.arg_list.append("processed")
 
 
+# class SubparserA(Tap):
+#     bar: int  # bar help
+
+
+# class SubparserB(Tap):
+#     baz: Literal["X", "Y", "Z"]  # baz help
+
+
+# class ModelTapWithSubparsing(to_tap_class(Model)):
+#     foo: bool = False  # foo help
+
+#     def configure(self):
+#         self.add_subparsers(help="sub-command help")
+#         self.add_subparser("a", SubparserA, help="a help", description="Description (a)")
+#         self.add_subparser("b", SubparserB, help="b help")
+
+
 if __name__ == "__main__":
     # You don't have to subclass tap_class_from_data_model(Model) if you just want a plain argument parser:
     # ModelTap = to_tap_class(Model)
     args = ModelTap(description="Script description").parse_args()
+    # args = ModelTapWithSubparsing(description="Script description").parse_args()
     print("Parsed args:")
     print(args)
     # Run the main function. Pydantic BaseModels ignore arguments which aren't one of their fields instead of raising an
