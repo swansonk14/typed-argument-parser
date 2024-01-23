@@ -54,7 +54,7 @@ class ModelTap(to_tap_class(Model)):
         # You can still validate and modify arguments
         # (You should do this in the Pydantic Model. I'm just demonstrating that this functionality is still possible)
         if self.argument_with_really_long_name > 4:
-            raise ValueError("nope")
+            raise ValueError("argument_with_really_long_name cannot be > 4")
 
         # No auto-complete (and other niceties) for the super class attributes b/c this is a dynamic subclass. Sorry
         if self.arg_bool and self.arg_list is not None:

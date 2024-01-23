@@ -1,7 +1,7 @@
 """
 Tests `tap.to_tap_class`. This test works for Pydantic v1 and v2.
 """
-from contextlib import redirect_stdout
+from contextlib import redirect_stdout, redirect_stderr
 import dataclasses
 import io
 import re
@@ -209,6 +209,22 @@ def subclasser_subparser(class_or_function):
 # Test that the subclasser parses the args correctly or raises the correct error.
 # The subclassers are tested separately b/c the parametrizaiton of args_string_and_arg_to_expected_value depends on the
 # subclasser.
+# First, some helper functions.
+
+
+def _test_raises_system_exit(tap: Tap, args_string: str) -> str:
+    is_help = (
+        args_string.endswith("-h")
+        or args_string.endswith("--help")
+        or " -h " in args_string
+        or " --help " in args_string
+    )
+    f = io.StringIO()
+    with redirect_stdout(f) if is_help else redirect_stderr(f):
+        with pytest.raises(SystemExit):
+            tap.parse_args(args_string.split())
+
+    return f.getvalue()
 
 
 def _test_subclasser(
@@ -228,8 +244,13 @@ def _test_subclasser(
     assert issubclass(TapSubclass, Tap)
     tap = TapSubclass(description="Script description")  # description is a kwarg for argparse.ArgumentParser
 
+    # args_string is an invalid argument combo
+    if isinstance(arg_to_expected_value, SystemExit):
+        # We need to get the error message by reading stdout
+        stdout = _test_raises_system_exit(tap, args_string)
+        assert str(arg_to_expected_value) in stdout
+        return
     if isinstance(arg_to_expected_value, BaseException):
-        # args_string is an invalid argument combo
         expected_exception = arg_to_expected_value.__class__
         expected_error_message = str(arg_to_expected_value) or None
         with pytest.raises(expected_exception=expected_exception, match=expected_error_message):
@@ -260,20 +281,12 @@ def _test_subclasser_message(
     outputs `message_expected` to stdout, ignoring differences in whitespaces/newlines/tabs.
     """
 
-    def replace_whitespace(string: str):
-        # Replace all whitespaces with a single space
-        # FYI this line was written by an LLM:
-        return re.sub(r"\s+", " ", string).strip()
+    def replace_whitespace(string: str) -> str:
+        return re.sub(r"\s+", " ", string).strip()  # FYI this line was written by an LLM
 
     TapSubclass = subclasser(class_or_function)
     tap = TapSubclass(description=description)
-
-    f = io.StringIO()
-    with redirect_stdout(f):
-        with pytest.raises(SystemExit):
-            tap.parse_args(args_string.split())
-
-    message = f.getvalue()
+    message = _test_raises_system_exit(tap, args_string)
     # Standardize to ignore trivial differences due to terminal settings
     assert replace_whitespace(message) == replace_whitespace(message_expected)
 
@@ -294,12 +307,12 @@ def _test_subclasser_message(
         ),
         # The rest are invalid argument combos, as indicated by the 2nd elt being a BaseException instance
         (
-            "--arg_list x y z --arg_bool",  # Missing required arg_int
-            SystemExit(),  # TODO: get argparse's error message and test that it matches
+            "--arg_list x y z --arg_bool",
+            SystemExit("error: the following arguments are required: --arg_int"),
         ),
         (
-            "--arg_int not_an_int --arg_list x y z --arg_bool",  # Wrong type arg_int
-            SystemExit(),
+            "--arg_int not_an_int --arg_list x y z --arg_bool",
+            SystemExit("error: argument --arg_int: invalid int value: 'not_an_int'"),
         ),
     ],
 )
@@ -364,12 +377,14 @@ usage: pytest --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST {_ARG_LIST_DO
         ),
         # The rest are invalid argument combos, as indicated by the 2nd elt being a BaseException instance
         (
-            "--arg_list x y z --arg_bool",  # Missing required arg_int
-            SystemExit(),
+            "--arg_list x y z --arg_bool",
+            SystemExit("error: the following arguments are required: --arg_int"),
         ),
         (
-            "--arg_int 1 --arg_list x y z -arg not_a_float_or_int",  # Wrong type
-            SystemExit(),
+            "--arg_int 1 --arg_list x y z -arg not_a_float_or_int",
+            SystemExit(
+                "error: argument -arg/--argument_with_really_long_name: invalid to_number value: 'not_a_float_or_int'"
+            ),
         ),
         (
             "--arg_int 1 --arg_list x y z -arg 5",  # Wrong value arg (aliases argument_with_really_long_name)
@@ -435,23 +450,27 @@ usage: pytest [-arg ARGUMENT_WITH_REALLY_LONG_NAME] --arg_int ARG_INT [--arg_boo
         # The rest are invalid argument combos, as indicated by the 2nd elt being a BaseException instance
         (
             "a --bar 1",
-            SystemExit(),  # error: the following arguments are required: --arg_int
+            SystemExit("error: the following arguments are required: --arg_int"),
         ),
         (
             "--arg_int not_an_int a --bar 1",
-            SystemExit(),  # error: argument --arg_int: invalid int value: 'not_an_int'
+            SystemExit("error: argument --arg_int: invalid int value: 'not_an_int'"),
         ),
         (
             "--arg_int 1 --baz X --foo b",
-            SystemExit(),  # error: argument {a,b}: invalid choice: 'X' (choose from 'a', 'b')
+            SystemExit(
+                "error: argument {a,b}: invalid choice: 'X' (choose from 'a', 'b')"
+                if sys.version_info >= (3, 9)
+                else "error: invalid choice: 'X' (choose from 'a', 'b')"
+            ),
         ),
         (
             "--arg_int 1 b --baz X --foo",
-            SystemExit(),  # error: unrecognized arguments: --foo
+            SystemExit("error: unrecognized arguments: --foo"),
         ),
         (
             "--arg_int 1 --foo b --baz A",
-            SystemExit(),  # error: argument --baz: Value for variable "baz" must be one of ['X', 'Y', 'Z'].
+            SystemExit("""error: argument --baz: Value for variable "baz" must be one of ['X', 'Y', 'Z']."""),
         ),
     ],
 )
