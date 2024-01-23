@@ -1,5 +1,5 @@
 """
-Tests `tap.to_tap_class`. This test works for Pydantic v1 and v2.
+Tests `tap.to_tap_class`.
 """
 from contextlib import redirect_stdout, redirect_stderr
 import dataclasses
@@ -8,13 +8,17 @@ import re
 import sys
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
-import pydantic
 import pytest
 
 from tap import to_tap_class, Tap
 
 
-_IS_PYDANTIC_V1 = pydantic.__version__ < "2.0.0"
+try:
+    import pydantic
+except ModuleNotFoundError:
+    _IS_PYDANTIC_V1 = None
+else:
+    _IS_PYDANTIC_V1 = pydantic.__version__ < "2.0.0"
 
 # To properly test the help message, we need to know how argparse formats it. It changed from 3.8 -> 3.9 -> 3.10
 _IS_BEFORE_PY_310 = sys.version_info < (3, 10)
@@ -72,58 +76,67 @@ class Class:
 DataclassBuiltin = _Args
 
 
-@_monkeypatch_eq
-@pydantic.dataclasses.dataclass
-class DataclassPydantic:
-    """
-    Dataclass (pydantic)
-    """
+if _IS_PYDANTIC_V1 is None:
+    pass  # will raise NameError if attempting to use DataclassPydantic or Model later
+elif _IS_PYDANTIC_V1:
+    # For Pydantic v1 data models, we rely on the docstring to get descriptions
 
-    # Mixing field types should be ok
-    arg_int: int = pydantic.dataclasses.Field(description="some integer")
-    arg_bool: bool = pydantic.dataclasses.Field(default=True)
-    arg_list: Optional[List[str]] = pydantic.Field(default=None, description="some list of strings")
+    @_monkeypatch_eq
+    @pydantic.dataclasses.dataclass
+    class DataclassPydantic:
+        """
+        Dataclass (pydantic v1)
 
+        :param arg_int: some integer
+        :param arg_list: some list of strings
+        """
 
-@_monkeypatch_eq
-@pydantic.dataclasses.dataclass
-class DataclassPydanticV1:  # for Pydantic v1 data models, we rely on the docstring to get descriptions
-    """
-    Dataclass (pydantic v1)
+        arg_int: int
+        arg_bool: bool = True
+        arg_list: Optional[List[str]] = None
 
-    :param arg_int: some integer
-    :param arg_list: some list of strings
-    """
+    @_monkeypatch_eq
+    class Model(pydantic.BaseModel):
+        """
+        Pydantic model (pydantic v1)
 
-    arg_int: int
-    arg_bool: bool = True
-    arg_list: Optional[List[str]] = None
+        :param arg_int: some integer
+        :param arg_list: some list of strings
+        """
 
+        arg_int: int
+        arg_bool: bool = True
+        arg_list: Optional[List[str]] = None
 
-@_monkeypatch_eq
-class Model(pydantic.BaseModel):
-    """
-    Pydantic model
-    """
+else:
+    # For pydantic v2 data models, we check the docstring and Field for the description
 
-    # Mixing field types should be ok
-    arg_int: int = pydantic.Field(description="some integer")
-    arg_bool: bool = pydantic.Field(default=True)
-    arg_list: Optional[List[str]] = pydantic.dataclasses.Field(default=None, description="some list of strings")
+    @_monkeypatch_eq
+    @pydantic.dataclasses.dataclass
+    class DataclassPydantic:
+        """
+        Dataclass (pydantic)
 
+        :param arg_list: some list of strings
+        """
 
-@_monkeypatch_eq
-class ModelV1(pydantic.BaseModel):  # for Pydantic v1 data models, we rely on the docstring to get descriptions
-    """
-    Pydantic model (pydantic v1)
+        # Mixing field types should be ok
+        arg_int: int = pydantic.dataclasses.Field(description="some integer")
+        arg_bool: bool = dataclasses.field(default=True)
+        arg_list: Optional[List[str]] = pydantic.Field(default=None)
 
-    :param arg_int: some integer
-    :param arg_list: some list of strings
-    """
+    @_monkeypatch_eq
+    class Model(pydantic.BaseModel):
+        """
+        Pydantic model
 
-    arg_int: int
-    arg_bool: bool = True
-    arg_list: Optional[List[str]] = None
+        :param arg_int: some integer
+        """
+
+        # Mixing field types should be ok
+        arg_int: int
+        arg_bool: bool = dataclasses.field(default=True)
+        arg_list: Optional[List[str]] = pydantic.dataclasses.Field(default=None, description="some list of strings")
 
 
 @pytest.fixture(
@@ -135,10 +148,9 @@ class ModelV1(pydantic.BaseModel):  # for Pydantic v1 data models, we rely on th
         DataclassBuiltin(
             1, arg_bool=False, arg_list=["these", "values", "don't", "matter"]
         ),  # to_tap_class also works on instances of data models. It ignores the attribute values
-        DataclassPydantic if not _IS_PYDANTIC_V1 else DataclassPydanticV1,
-        Model if not _IS_PYDANTIC_V1 else ModelV1,
-        # We can test instances of DataclassPydantic and Model for pydantic v2 but not v1
-    ],
+    ]
+    + ([] if _IS_PYDANTIC_V1 is None else [DataclassPydantic, Model]),
+    # NOTE: instances of DataclassPydantic and Model can be tested for pydantic v2 but not v1
 )
 def data_model(request: pytest.FixtureRequest):
     """

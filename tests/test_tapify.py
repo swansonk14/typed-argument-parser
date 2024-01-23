@@ -9,9 +9,15 @@ from typing import Dict, List, Optional, Tuple, Any
 import unittest
 from unittest import TestCase
 
-import pydantic
-
 from tap import tapify
+
+
+try:
+    import pydantic
+except ModuleNotFoundError:
+    _IS_PYDANTIC_V1 = None
+else:
+    _IS_PYDANTIC_V1 = pydantic.__version__ < "2.0.0"
 
 
 # Suppress prints from SystemExit
@@ -27,7 +33,7 @@ class Person:
     def __init__(self, name: str):
         self.name = name
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f"Person({self.name})"
 
 
@@ -36,7 +42,7 @@ class Problems:
         self.problem_1 = problem_1
         self.problem_2 = problem_2
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f"Problems({self.problem_1}, {self.problem_2})"
 
 
@@ -54,16 +60,22 @@ class TapifyTests(TestCase):
             def __eq__(self, other: float) -> bool:
                 return other == pie()
 
-        @pydantic.dataclasses.dataclass
-        class PieDataclassPydantic:
-            def __eq__(self, other: float) -> bool:
-                return other == pie()
+        if _IS_PYDANTIC_V1 is not None:
 
-        class PieModel(pydantic.BaseModel):
-            def __eq__(self, other: float) -> bool:
-                return other == pie()
+            @pydantic.dataclasses.dataclass
+            class PieDataclassPydantic:
+                def __eq__(self, other: float) -> bool:
+                    return other == pie()
 
-        for class_or_function in [pie, Pie, PieDataclass, PieDataclassPydantic, PieModel]:
+            class PieModel(pydantic.BaseModel):
+                def __eq__(self, other: float) -> bool:
+                    return other == pie()
+
+            pydantic_data_models = [PieDataclassPydantic, PieModel]
+        else:
+            pydantic_data_models = []
+
+        for class_or_function in [pie, Pie, PieDataclass] + pydantic_data_models:
             self.assertEqual(tapify(class_or_function, command_line_args=[]), 3.14)
 
     def test_tapify_simple_types(self):
@@ -88,28 +100,34 @@ class TapifyTests(TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(self.a, self.simple, self.test, self.of, self.types)
 
-        @pydantic.dataclasses.dataclass
-        class ConcatDataclassPydantic:
-            a: int
-            simple: str
-            test: float
-            of: float
-            types: bool
+        if _IS_PYDANTIC_V1 is not None:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.a, self.simple, self.test, self.of, self.types)
+            @pydantic.dataclasses.dataclass
+            class ConcatDataclassPydantic:
+                a: int
+                simple: str
+                test: float
+                of: float
+                types: bool
 
-        class ConcatModel(pydantic.BaseModel):
-            a: int
-            simple: str
-            test: float
-            of: float
-            types: bool
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.a, self.simple, self.test, self.of, self.types)
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.a, self.simple, self.test, self.of, self.types)
+            class ConcatModel(pydantic.BaseModel):
+                a: int
+                simple: str
+                test: float
+                of: float
+                types: bool
 
-        for class_or_function in [concat, Concat, ConcatDataclass, ConcatDataclassPydantic, ConcatModel]:
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.a, self.simple, self.test, self.of, self.types)
+
+            pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
+        else:
+            pydantic_data_models = []
+
+        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
             output = tapify(
                 class_or_function,
                 command_line_args=["--a", "1", "--simple", "simple", "--test", "3.14", "--of", "2.718", "--types"],
@@ -142,30 +160,37 @@ class TapifyTests(TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(self.a, self.simple, self.test, self.of, self.types, self.wow)
 
-        @pydantic.dataclasses.dataclass
-        class ConcatDataclassPydantic:
-            a: int
-            simple: str
-            test: float
-            of: float = -0.3
-            types: bool = pydantic.dataclasses.Field(False)
-            wow: str = pydantic.Field("abc")  # mixing field types should be ok
+        if _IS_PYDANTIC_V1 is not None:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.a, self.simple, self.test, self.of, self.types, self.wow)
+            @pydantic.dataclasses.dataclass
+            class ConcatDataclassPydantic:
+                a: int
+                simple: str
+                test: float
+                of: float = -0.3
+                types: bool = False
+                wow: str = "abc"
 
-        class ConcatModel(pydantic.BaseModel):
-            a: int
-            simple: str
-            test: float
-            of: float = -0.3
-            types: bool = pydantic.Field(False)
-            wow: str = pydantic.dataclasses.Field("abc")  # mixing field types should be ok
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.a, self.simple, self.test, self.of, self.types, self.wow)
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.a, self.simple, self.test, self.of, self.types, self.wow)
+            class ConcatModel(pydantic.BaseModel):
+                a: int
+                simple: str
+                test: float
+                of: float = -0.3
+                types: bool = False
+                wow: str = "abc"
 
-        for class_or_function in [concat, Concat, ConcatDataclass, ConcatDataclassPydantic, ConcatModel]:
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.a, self.simple, self.test, self.of, self.types, self.wow)
+
+            pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
+        else:
+            pydantic_data_models = []
+
+        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
+            print(class_or_function.__name__)
             output = tapify(
                 class_or_function,
                 command_line_args=["--a", "1", "--simple", "simple", "--test", "3.14", "--types", "--wow", "wee"],
@@ -193,26 +218,38 @@ class TapifyTests(TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(self.complexity, self.requires, self.intelligence)
 
-        @pydantic.dataclasses.dataclass(config=dict(arbitrary_types_allowed=True))  # for Person
-        class ConcatDataclassPydantic:
-            complexity: List[str]
-            requires: Tuple[int, int]
-            intelligence: Person
+        if _IS_PYDANTIC_V1 is not None:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.complexity, self.requires, self.intelligence)
+            @pydantic.dataclasses.dataclass(config=dict(arbitrary_types_allowed=True))  # for Person
+            class ConcatDataclassPydantic:
+                complexity: List[str]
+                requires: Tuple[int, int]
+                intelligence: Person
 
-        class ConcatModel(pydantic.BaseModel):
-            model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)  # for Person
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.complexity, self.requires, self.intelligence)
 
-            complexity: List[str]
-            requires: Tuple[int, int]
-            intelligence: Person
+            class ConcatModel(pydantic.BaseModel):
+                if _IS_PYDANTIC_V1:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.complexity, self.requires, self.intelligence)
+                    class Config:
+                        arbitrary_types_allowed = True  # for Person
 
-        for class_or_function in [concat, Concat, ConcatDataclass, ConcatDataclassPydantic, ConcatModel]:
+                else:
+                    model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)  # for Person
+
+                complexity: List[str]
+                requires: Tuple[int, int]
+                intelligence: Person
+
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.complexity, self.requires, self.intelligence)
+
+            pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
+        else:
+            pydantic_data_models = []
+
+        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
             output = tapify(
                 class_or_function,
                 command_line_args=[
@@ -253,26 +290,38 @@ class TapifyTests(TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(self.complexity, self.requires, self.intelligence)
 
-        @pydantic.dataclasses.dataclass(config=dict(arbitrary_types_allowed=True))  # for Person
-        class ConcatDataclassPydantic:
-            complexity: list[int]
-            requires: tuple[int, int]
-            intelligence: Person
+        if _IS_PYDANTIC_V1 is not None:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.complexity, self.requires, self.intelligence)
+            @pydantic.dataclasses.dataclass(config=dict(arbitrary_types_allowed=True))  # for Person
+            class ConcatDataclassPydantic:
+                complexity: list[int]
+                requires: tuple[int, int]
+                intelligence: Person
 
-        class ConcatModel(pydantic.BaseModel):
-            model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)  # for Person
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.complexity, self.requires, self.intelligence)
 
-            complexity: list[int]
-            requires: tuple[int, int]
-            intelligence: Person
+            class ConcatModel(pydantic.BaseModel):
+                if _IS_PYDANTIC_V1:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.complexity, self.requires, self.intelligence)
+                    class Config:
+                        arbitrary_types_allowed = True  # for Person
 
-        for class_or_function in [concat, Concat, ConcatDataclass, ConcatDataclassPydantic, ConcatModel]:
+                else:
+                    model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)  # for Person
+
+                complexity: list[int]
+                requires: tuple[int, int]
+                intelligence: Person
+
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.complexity, self.requires, self.intelligence)
+
+            pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
+        else:
+            pydantic_data_models = []
+
+        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
             output = tapify(
                 class_or_function,
                 command_line_args=[
@@ -331,30 +380,42 @@ class TapifyTests(TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(self.complexity, self.requires, self.intelligence, self.maybe, self.possibly)
 
-        @pydantic.dataclasses.dataclass(config=dict(arbitrary_types_allowed=True))  # for Person
-        class ConcatDataclassPydantic:
-            complexity: List[str]
-            requires: Tuple[int, int] = (2, 5)
-            intelligence: Person = Person("kyle")
-            maybe: Optional[str] = None
-            possibly: Optional[str] = None
+        if _IS_PYDANTIC_V1 is not None:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.complexity, self.requires, self.intelligence, self.maybe, self.possibly)
+            @pydantic.dataclasses.dataclass(config=dict(arbitrary_types_allowed=True))  # for Person
+            class ConcatDataclassPydantic:
+                complexity: List[str]
+                requires: Tuple[int, int] = (2, 5)
+                intelligence: Person = Person("kyle")
+                maybe: Optional[str] = None
+                possibly: Optional[str] = None
 
-        class ConcatModel(pydantic.BaseModel):
-            model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)  # for Person
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.complexity, self.requires, self.intelligence, self.maybe, self.possibly)
 
-            complexity: List[str]
-            requires: Tuple[int, int] = (2, 5)
-            intelligence: Person = Person("kyle")
-            maybe: Optional[str] = None
-            possibly: Optional[str] = None
+            class ConcatModel(pydantic.BaseModel):
+                if _IS_PYDANTIC_V1:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.complexity, self.requires, self.intelligence, self.maybe, self.possibly)
+                    class Config:
+                        arbitrary_types_allowed = True  # for Person
 
-        for class_or_function in [concat, Concat, ConcatDataclass, ConcatDataclassPydantic, ConcatModel]:
+                else:
+                    model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)  # for Person
+
+                complexity: List[str]
+                requires: Tuple[int, int] = (2, 5)
+                intelligence: Person = Person("kyle")
+                maybe: Optional[str] = None
+                possibly: Optional[str] = None
+
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.complexity, self.requires, self.intelligence, self.maybe, self.possibly)
+
+            pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
+        else:
+            pydantic_data_models = []
+
+        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
             output = tapify(
                 class_or_function,
                 command_line_args=[
@@ -392,24 +453,30 @@ class TapifyTests(TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(self.so, self.many, self.args)
 
-        @pydantic.dataclasses.dataclass
-        class ConcatDataclassPydantic:
-            so: int
-            many: float
-            args: str
+        if _IS_PYDANTIC_V1 is not None:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.so, self.many, self.args)
+            @pydantic.dataclasses.dataclass
+            class ConcatDataclassPydantic:
+                so: int
+                many: float
+                args: str
 
-        class ConcatModel(pydantic.BaseModel):
-            so: int
-            many: float
-            args: str
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.so, self.many, self.args)
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.so, self.many, self.args)
+            class ConcatModel(pydantic.BaseModel):
+                so: int
+                many: float
+                args: str
 
-        for class_or_function in [concat, Concat, ConcatDataclass, ConcatDataclassPydantic, ConcatModel]:
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.so, self.many, self.args)
+
+            pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
+        else:
+            pydantic_data_models = []
+
+        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
             with self.assertRaises(SystemExit):
                 tapify(class_or_function, command_line_args=["--so", "23", "--many", "9.3"])
 
@@ -432,24 +499,36 @@ class TapifyTests(TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(self.so, self.few)
 
-        @pydantic.dataclasses.dataclass
-        class ConcatDataclassPydantic:
-            so: int
-            few: float
+        if _IS_PYDANTIC_V1 is not None:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.so, self.few)
+            @pydantic.dataclasses.dataclass
+            class ConcatDataclassPydantic:
+                so: int
+                few: float
 
-        class ConcatModel(pydantic.BaseModel):
-            model_config = pydantic.ConfigDict(extra="forbid")  # by default, pydantic ignores extra arguments
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.so, self.few)
 
-            so: int
-            few: float
+            class ConcatModel(pydantic.BaseModel):
+                if _IS_PYDANTIC_V1:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.so, self.few)
+                    class Config:
+                        extra = pydantic.Extra.forbid  # by default, pydantic ignores extra arguments
 
-        for class_or_function in [concat, Concat, ConcatDataclass, ConcatDataclassPydantic, ConcatModel]:
+                else:
+                    model_config = pydantic.ConfigDict(extra="forbid")  # by default, pydantic ignores extra arguments
+
+                so: int
+                few: float
+
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.so, self.few)
+
+            pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
+        else:
+            pydantic_data_models = []
+
+        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
             with self.assertRaises(SystemExit):
                 tapify(class_or_function, command_line_args=["--so", "23", "--few", "9.3", "--args", "wow"])
 
@@ -472,22 +551,28 @@ class TapifyTests(TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(self.so, self.few)
 
-        @pydantic.dataclasses.dataclass
-        class ConcatDataclassPydantic:
-            so: int
-            few: float
+        if _IS_PYDANTIC_V1 is not None:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.so, self.few)
+            @pydantic.dataclasses.dataclass
+            class ConcatDataclassPydantic:
+                so: int
+                few: float
 
-        class ConcatModel(pydantic.BaseModel):
-            so: int
-            few: float
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.so, self.few)
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.so, self.few)
+            class ConcatModel(pydantic.BaseModel):
+                so: int
+                few: float
 
-        for class_or_function in [concat, Concat, ConcatDataclass, ConcatDataclassPydantic, ConcatModel]:
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.so, self.few)
+
+            pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
+        else:
+            pydantic_data_models = []
+
+        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
             output = tapify(
                 class_or_function, command_line_args=["--so", "23", "--few", "9.3", "--args", "wow"], known_only=True
             )
@@ -517,30 +602,36 @@ class TapifyTests(TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(self.i, self.like, self.k, self.w, self.args, self.always)
 
-        @pydantic.dataclasses.dataclass
-        class ConcatDataclassPydantic:
-            i: int
-            like: float
-            k: int
-            w: str = "w"
-            args: str = "argy"
-            always: bool = False
+        if _IS_PYDANTIC_V1 is not None:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.i, self.like, self.k, self.w, self.args, self.always)
+            @pydantic.dataclasses.dataclass
+            class ConcatDataclassPydantic:
+                i: int
+                like: float
+                k: int
+                w: str = "w"
+                args: str = "argy"
+                always: bool = False
 
-        class ConcatModel(pydantic.BaseModel):
-            i: int
-            like: float
-            k: int
-            w: str = "w"
-            args: str = "argy"
-            always: bool = False
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.i, self.like, self.k, self.w, self.args, self.always)
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.i, self.like, self.k, self.w, self.args, self.always)
+            class ConcatModel(pydantic.BaseModel):
+                i: int
+                like: float
+                k: int
+                w: str = "w"
+                args: str = "argy"
+                always: bool = False
 
-        for class_or_function in [concat, Concat, ConcatDataclass, ConcatDataclassPydantic, ConcatModel]:
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.i, self.like, self.k, self.w, self.args, self.always)
+
+            pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
+        else:
+            pydantic_data_models = []
+
+        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
             output = tapify(
                 class_or_function,
                 command_line_args=[
@@ -583,32 +674,44 @@ class TapifyTests(TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(self.i, self.like, self.k, self.w, self.args, self.always)
 
-        @pydantic.dataclasses.dataclass
-        class ConcatDataclassPydantic:
-            i: int
-            like: float
-            k: int
-            w: str = "w"
-            args: str = "argy"
-            always: bool = False
+        if _IS_PYDANTIC_V1 is not None:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.i, self.like, self.k, self.w, self.args, self.always)
+            @pydantic.dataclasses.dataclass
+            class ConcatDataclassPydantic:
+                i: int
+                like: float
+                k: int
+                w: str = "w"
+                args: str = "argy"
+                always: bool = False
 
-        class ConcatModel(pydantic.BaseModel):
-            model_config = pydantic.ConfigDict(extra="forbid")  # by default, pydantic ignores extra arguments
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.i, self.like, self.k, self.w, self.args, self.always)
 
-            i: int
-            like: float
-            k: int
-            w: str = "w"
-            args: str = "argy"
-            always: bool = False
+            class ConcatModel(pydantic.BaseModel):
+                if _IS_PYDANTIC_V1:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.i, self.like, self.k, self.w, self.args, self.always)
+                    class Config:
+                        extra = pydantic.Extra.forbid  # by default, pydantic ignores extra arguments
 
-        for class_or_function in [concat, Concat, ConcatDataclass, ConcatDataclassPydantic, ConcatModel]:
+                else:
+                    model_config = pydantic.ConfigDict(extra="forbid")  # by default, pydantic ignores extra arguments
+
+                i: int
+                like: float
+                k: int
+                w: str = "w"
+                args: str = "argy"
+                always: bool = False
+
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.i, self.like, self.k, self.w, self.args, self.always)
+
+            pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
+        else:
+            pydantic_data_models = []
+
+        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
             with self.assertRaises(ValueError):
                 tapify(
                     class_or_function,
@@ -644,22 +747,34 @@ class TapifyTests(TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(self.problems)
 
-        @pydantic.dataclasses.dataclass(config=dict(arbitrary_types_allowed=True))
-        class ConcatDataclassPydantic:
-            problems: Problems
+        if _IS_PYDANTIC_V1 is not None:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.problems)
+            @pydantic.dataclasses.dataclass(config=dict(arbitrary_types_allowed=True))
+            class ConcatDataclassPydantic:
+                problems: Problems
 
-        class ConcatModel(pydantic.BaseModel):
-            model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)  # for Problems
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.problems)
 
-            problems: Problems
+            class ConcatModel(pydantic.BaseModel):
+                if _IS_PYDANTIC_V1:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.problems)
+                    class Config:
+                        arbitrary_types_allowed = True  # for Problems
 
-        for class_or_function in [concat, Concat, ConcatDataclass, ConcatDataclassPydantic, ConcatModel]:
+                else:
+                    model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)  # for Problems
+
+                problems: Problems
+
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.problems)
+
+            pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
+        else:
+            pydantic_data_models = []
+
+        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
             output = tapify(class_or_function, command_line_args=[], problems=Problems("oh", "no!"))
 
             self.assertEqual(output, "Problems(oh, no!)")
@@ -703,34 +818,40 @@ class TapifyTests(TestCase):
                     self.untyped_1, self.typed_1, self.untyped_2, self.typed_2, self.untyped_3, self.typed_3
                 )
 
-        @pydantic.dataclasses.dataclass
-        class ConcatDataclassPydantic:
-            untyped_1: Any
-            typed_1: int
-            untyped_2: Any = 5
-            typed_2: str = "now"
-            untyped_3: Any = "hi"
-            typed_3: bool = False
+        if _IS_PYDANTIC_V1 is not None:
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(
-                    self.untyped_1, self.typed_1, self.untyped_2, self.typed_2, self.untyped_3, self.typed_3
-                )
+            @pydantic.dataclasses.dataclass
+            class ConcatDataclassPydantic:
+                untyped_1: Any
+                typed_1: int
+                untyped_2: Any = 5
+                typed_2: str = "now"
+                untyped_3: Any = "hi"
+                typed_3: bool = False
 
-        class ConcatModel(pydantic.BaseModel):
-            untyped_1: Any
-            typed_1: int
-            untyped_2: Any = 5
-            typed_2: str = "now"
-            untyped_3: Any = "hi"
-            typed_3: bool = False
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(
+                        self.untyped_1, self.typed_1, self.untyped_2, self.typed_2, self.untyped_3, self.typed_3
+                    )
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(
-                    self.untyped_1, self.typed_1, self.untyped_2, self.typed_2, self.untyped_3, self.typed_3
-                )
+            class ConcatModel(pydantic.BaseModel):
+                untyped_1: Any
+                typed_1: int
+                untyped_2: Any = 5
+                typed_2: str = "now"
+                untyped_3: Any = "hi"
+                typed_3: bool = False
 
-        for class_or_function in [concat, Concat, ConcatDataclass, ConcatDataclassPydantic, ConcatModel]:
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(
+                        self.untyped_1, self.typed_1, self.untyped_2, self.typed_2, self.untyped_3, self.typed_3
+                    )
+
+            pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
+        else:
+            pydantic_data_models = []
+
+        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
             output = tapify(
                 class_or_function,
                 command_line_args=[
@@ -773,28 +894,33 @@ class TapifyTests(TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(self.a, self.b, self.c)
 
-        @pydantic.dataclasses.dataclass
-        class ConcatDataclassPydantic:
-            """Concatenate three numbers."""
+        if _IS_PYDANTIC_V1 is not None:
 
-            a: int
-            b: int
-            c: int
+            @pydantic.dataclasses.dataclass
+            class ConcatDataclassPydantic:
+                """Concatenate three numbers."""
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.a, self.b, self.c)
+                a: int
+                b: int
+                c: int
 
-        class ConcatModel(pydantic.BaseModel):
-            """Concatenate three numbers."""
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.a, self.b, self.c)
 
-            a: int
-            b: int
-            c: int
+            class ConcatModel(pydantic.BaseModel):
+                """Concatenate three numbers."""
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.a, self.b, self.c)
+                a: int
+                b: int
+                c: int
 
-        for class_or_function in [concat, Concat, ConcatDataclass, ConcatDataclassPydantic, ConcatModel]:
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.a, self.b, self.c)
+
+            pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
+        else:
+            pydantic_data_models = []
+        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
             output_1 = tapify(class_or_function, command_line_args=["--a", "1", "--b", "2", "--c", "3"])
             output_2 = tapify(class_or_function, command_line_args=["--a", "4", "--b", "5", "--c", "6"])
 
@@ -858,84 +984,54 @@ class TapifyTests(TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(self.a, self.b, self.c)
 
-        @pydantic.dataclasses.dataclass
-        class ConcatDataclassPydanticDocstring:
-            """Concatenate three numbers.
+        if _IS_PYDANTIC_V1 is not None:
 
-            :param a: The first number.
-            :param b: The second number.
-            :param c: The third number.
-            """
+            @pydantic.dataclasses.dataclass
+            class ConcatDataclassPydantic:
+                """Concatenate three numbers.
 
-            a: int
-            b: int
-            c: int
+                :param a: The first number.
+                :param b: The second number.
+                :param c: The third number.
+                """
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.a, self.b, self.c)
+                a: int
+                b: int
+                c: int
 
-        @pydantic.dataclasses.dataclass
-        class ConcatDataclassPydanticFields:
-            """Concatenate three numbers.
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.a, self.b, self.c)
 
-            :param a: The first number.
-            """
+            class ConcatModel(pydantic.BaseModel):
+                """Concatenate three numbers.
 
-            # Mixing field types should be ok
-            a: int
-            b: int = pydantic.Field(description="The second number.")
-            c: int = pydantic.dataclasses.Field(description="The third number.")
+                :param a: The first number.
+                :param b: The second number.
+                :param c: The third number.
+                """
 
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.a, self.b, self.c)
+                a: int
+                b: int
+                c: int
 
-        class ConcatModelDocstring(pydantic.BaseModel):
-            """Concatenate three numbers.
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.a, self.b, self.c)
 
-            :param a: The first number.
-            :param b: The second number.
-            :param c: The third number.
-            """
+            pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
+        else:
+            pydantic_data_models = []
 
-            a: int
-            b: int
-            c: int
-
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.a, self.b, self.c)
-
-        class ConcatModelFields(pydantic.BaseModel):
-            """Concatenate three numbers.
-
-            :param a: The first number.
-            """
-
-            # Mixing field types should be ok
-            a: int
-            b: int = pydantic.dataclasses.Field(description="The second number.")
-            c: int = field(metadata={"description": "The third number."})
-
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.a, self.b, self.c)
-
-        for class_or_function in [
-            concat,
-            Concat,
-            ConcatDataclass,
-            ConcatDataclassPydanticDocstring,
-            ConcatDataclassPydanticFields,
-            ConcatModelDocstring,
-            ConcatModelFields,
-        ]:
+        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
             f = io.StringIO()
             with contextlib.redirect_stdout(f):
                 with self.assertRaises(SystemExit):
                     tapify(class_or_function, command_line_args=["-h"])
 
-            self.assertIn("Concatenate three numbers.", f.getvalue())
-            self.assertIn("--a A       (int, required) The first number.", f.getvalue())
-            self.assertIn("--b B       (int, required) The second number.", f.getvalue())
-            self.assertIn("--c C       (int, required) The third number.", f.getvalue())
+            stdout = f.getvalue()
+            self.assertIn("Concatenate three numbers.", stdout)
+            self.assertIn("--a A       (int, required) The first number.", stdout)
+            self.assertIn("--b B       (int, required) The second number.", stdout)
+            self.assertIn("--c C       (int, required) The third number.", stdout)
 
 
 class TestTapifyExplicitBool(unittest.TestCase):
