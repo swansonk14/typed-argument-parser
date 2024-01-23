@@ -11,6 +11,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Un
 import pytest
 
 from tap import to_tap_class, Tap
+from tap.utils import type_to_str
 
 
 try:
@@ -346,7 +347,7 @@ usage: pytest --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST {_ARG_LIST_DO
   --arg_int ARG_INT     (int, required) some integer
   --arg_bool            (bool, default=True)
   --arg_list [ARG_LIST {_ARG_LIST_DOTS}]
-                        ({str(Optional[List[str]]).replace('typing.', '')}, default=None) some list of strings
+                        ({type_to_str(Optional[List[str]])}, default=None) some list of strings
   -h, --help            show this help message and exit
 """.lstrip(
         "\n"
@@ -425,7 +426,7 @@ usage: pytest [-arg ARGUMENT_WITH_REALLY_LONG_NAME] --arg_int ARG_INT [--arg_boo
   --arg_int ARG_INT     (int, required) some integer
   --arg_bool            (bool, default=True)
   --arg_list [ARG_LIST {_ARG_LIST_DOTS}]
-                        ({str(Optional[List[str]]).replace('typing.', '')}, default=None) some list of strings
+                        ({type_to_str(Optional[List[str]])}, default=None) some list of strings
   -h, --help            show this help message and exit
 """.lstrip(
         "\n"
@@ -516,7 +517,7 @@ positional arguments:
   --arg_int ARG_INT     (int, required) some integer
   --arg_bool            (bool, default=True)
   --arg_list [ARG_LIST {_ARG_LIST_DOTS}]
-                        ({str(Optional[List[str]]).replace('typing.', '')}, default=None) some list of strings
+                        ({type_to_str(Optional[List[str]])}, default=None) some list of strings
   -h, --help            show this help message and exit
 """,
         ),
