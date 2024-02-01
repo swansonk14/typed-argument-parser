@@ -717,7 +717,7 @@ Pydantic [Models](https://docs.pydantic.dev/latest/concepts/models/) and
 [dataclasses](https://docs.pydantic.dev/latest/concepts/dataclasses/) can be `tapify`d.
 
 ```python
-# square_dataclass.py
+# square_pydantic.py
 from pydantic import BaseModel, Field
 
 from tap import tapify
@@ -841,12 +841,14 @@ Running `python person.py --name Jesse --age 1` prints `My name is Jesse.` follo
 ### Explicit boolean arguments
 Tapify supports explicit specification of boolean arguments (see [bool](#bool) for more details). By default, `explicit_bool=False` and it can be set with `tapify(..., explicit_bool=True)`. 
 
-## to_tap_class
+## Convert to a `Tap` class
 
 `to_tap_class` turns a function or class into a `Tap` class. The returned class can be [subclassed](#subclassing) to add
 special argument behavior. For example, you can override [`configure`](#configuring-arguments) and
-[`process_args`](#argument-processing). If the object can be `tapify`d, then it can be `to_tap_class`d, and vice-versa.
-`to_tap_class` provides full control over argument parsing.
+[`process_args`](#argument-processing).
+
+If the object can be `tapify`d, then it can be `to_tap_class`d, and vice-versa. `to_tap_class` provides full control
+over argument parsing.
 
 ### Examples
 
@@ -878,6 +880,13 @@ if __name__ == "__main__":
 Running `python main.py --package tap` will print `Project instance: package='tap' is_cool=True stars=5`.
 
 ### Complex
+
+The general pattern is:
+
+```python
+class MyCustomTap(to_tap_class(my_class_or_function)):
+    # Special argument behavior, e.g., override configure and/or process_args
+```
 
 Please see `demo_data_model.py` for an example of overriding [`configure`](#configuring-arguments) and
 [`process_args`](#argument-processing).
