@@ -1,6 +1,7 @@
 """
 Tests `tap.to_tap_class`.
 """
+
 from contextlib import redirect_stdout, redirect_stderr
 import dataclasses
 import io
@@ -255,28 +256,24 @@ def _test_subclasser(
     args_string, arg_to_expected_value = args_string_and_arg_to_expected_value
     TapSubclass = subclasser(class_or_function)
     assert issubclass(TapSubclass, Tap)
-    tap = TapSubclass(description="Script description")  # description is a kwarg for argparse.ArgumentParser
+    tap = TapSubclass(description="Script description")
 
-    # args_string is an invalid argument combo
     if isinstance(arg_to_expected_value, SystemExit):
-        # We need to get the error message by reading stdout
         stderr = _test_raises_system_exit(tap, args_string)
         assert str(arg_to_expected_value) in stderr
-        return
-    if isinstance(arg_to_expected_value, BaseException):
+    elif isinstance(arg_to_expected_value, BaseException):
         expected_exception = arg_to_expected_value.__class__
         expected_error_message = str(arg_to_expected_value) or None
         with pytest.raises(expected_exception=expected_exception, match=expected_error_message):
             args = tap.parse_args(args_string.split())
-        return
-
-    # args_string is a valid argument combo
-    # Test that parsing works correctly
-    args = tap.parse_args(args_string.split())
-    assert arg_to_expected_value == args.as_dict()
-    if test_call and callable(class_or_function):
-        result = class_or_function(**args.as_dict())
-        assert result == _Args(**arg_to_expected_value)
+    else:
+        # args_string is a valid argument combo
+        # Test that parsing works correctly
+        args = tap.parse_args(args_string.split())
+        assert arg_to_expected_value == args.as_dict()
+        if test_call and callable(class_or_function):
+            result = class_or_function(**args.as_dict())
+            assert result == _Args(**arg_to_expected_value)
 
 
 def _test_subclasser_message(

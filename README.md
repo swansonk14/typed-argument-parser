@@ -839,6 +839,7 @@ if __name__ == '__main__':
 Running `python person.py --name Jesse --age 1` prints `My name is Jesse.` followed by `My age is 1.`. Without `known_only=True`, the `tapify` calls would raise an error due to the extra argument.
 
 ### Explicit boolean arguments
+
 Tapify supports explicit specification of boolean arguments (see [bool](#bool) for more details). By default, `explicit_bool=False` and it can be set with `tapify(..., explicit_bool=True)`. 
 
 ## Convert to a `Tap` class
@@ -884,6 +885,8 @@ Running `python main.py --package tap` will print `Project instance: package='ta
 The general pattern is:
 
 ```python
+from tap import to_tap_class
+
 class MyCustomTap(to_tap_class(my_class_or_function)):
     # Special argument behavior, e.g., override configure and/or process_args
 ```
