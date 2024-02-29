@@ -746,7 +746,7 @@ docstring is used. In the example below, the description is provided in the docs
 For Pydantic v1 models and dataclasses, the argument's description must be provided in the class docstring:
 
 ```python
-# square_dataclass.py
+# square_pydantic.py
 from pydantic import BaseModel
 
 from tap import tapify

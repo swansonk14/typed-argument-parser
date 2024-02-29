@@ -1,6 +1,7 @@
 """
 Tests `tap.tapify`. Currently requires Pydantic v2.
 """
+
 import contextlib
 from dataclasses import dataclass
 import io
@@ -510,14 +511,6 @@ class TapifyTests(TestCase):
                     return other == concat(self.so, self.few)
 
             class ConcatModel(pydantic.BaseModel):
-                if _IS_PYDANTIC_V1:
-
-                    class Config:
-                        extra = pydantic.Extra.forbid  # by default, pydantic ignores extra arguments
-
-                else:
-                    model_config = pydantic.ConfigDict(extra="forbid")  # by default, pydantic ignores extra arguments
-
                 so: int
                 few: float
 
@@ -689,14 +682,6 @@ class TapifyTests(TestCase):
                     return other == concat(self.i, self.like, self.k, self.w, self.args, self.always)
 
             class ConcatModel(pydantic.BaseModel):
-                if _IS_PYDANTIC_V1:
-
-                    class Config:
-                        extra = pydantic.Extra.forbid  # by default, pydantic ignores extra arguments
-
-                else:
-                    model_config = pydantic.ConfigDict(extra="forbid")  # by default, pydantic ignores extra arguments
-
                 i: int
                 like: float
                 k: int
@@ -1097,7 +1082,45 @@ class TestTapifyKwargs(unittest.TestCase):
             """
             return f'{a}_{b}_{"-".join(f"{k}={v}" for k, v in kwargs.items())}'
 
-        self.concat_function = concat
+        if _IS_PYDANTIC_V1 is not None:
+
+            class ConcatModel(pydantic.BaseModel):
+                """Concatenate three numbers.
+
+                :param a: The first number.
+                :param b: The second number.
+                """
+
+                if _IS_PYDANTIC_V1:
+
+                    class Config:
+                        extra = pydantic.Extra.allow  # by default, pydantic ignores extra arguments
+
+                else:
+                    model_config = pydantic.ConfigDict(extra="allow")  # by default, pydantic ignores extra arguments
+
+                a: int
+                b: int = 2
+
+                def __eq__(self, other: str) -> bool:
+                    if _IS_PYDANTIC_V1:
+                        # Get the kwarg names in the correct order by parsing other
+                        kwargs_str = other.split("_")[-1]
+                        if not kwargs_str:
+                            kwarg_names = []
+                        else:
+                            kwarg_names = [kv_str.split("=")[0] for kv_str in kwargs_str.split("-")]
+                        kwargs = {name: getattr(self, name) for name in kwarg_names}
+                        # Need to explictly check that the extra names from other are identical to what's stored in self
+                        # Checking other == concat(...) isn't sufficient b/c self could have more extra fields
+                        assert set(kwarg_names) == set(self.__dict__.keys()) - set(self.__fields__.keys())
+                    else:
+                        kwargs = self.model_extra
+                    return other == concat(self.a, self.b, **kwargs)
+
+            pydantic_data_models = [ConcatModel]
+        else:
+            pydantic_data_models = []
 
         class Concat:
             def __init__(self, a: int, b: int = 2, **kwargs: Dict[str, str]):
@@ -1113,22 +1136,22 @@ class TestTapifyKwargs(unittest.TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(self.a, self.b, **self.kwargs)
 
-        self.concat_class = Concat
+        self.class_or_functions = [concat, Concat] + pydantic_data_models
 
     def test_tapify_empty_kwargs(self) -> None:
-        for class_or_function in [self.concat_function, self.concat_class]:
+        for class_or_function in self.class_or_functions:
             output = tapify(class_or_function, command_line_args=["--a", "1"])
 
             self.assertEqual(output, "1_2_")
 
     def test_tapify_has_kwargs(self) -> None:
-        for class_or_function in [self.concat_function, self.concat_class]:
+        for class_or_function in self.class_or_functions:
             output = tapify(class_or_function, command_line_args=["--a", "1", "--c", "3", "--d", "4"])
 
             self.assertEqual(output, "1_2_c=3-d=4")
 
     def test_tapify_has_kwargs_replace_default(self) -> None:
-        for class_or_function in [self.concat_function, self.concat_class]:
+        for class_or_function in self.class_or_functions:
             output = tapify(class_or_function, command_line_args=["--a", "1", "--c", "3", "--b", "5", "--d", "4"])
 
             self.assertEqual(output, "1_5_c=3-d=4")

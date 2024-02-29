@@ -154,9 +154,9 @@ else:
     + ([] if _IS_PYDANTIC_V1 is None else [DataclassPydantic, Model]),
     # NOTE: instances of DataclassPydantic and Model can be tested for pydantic v2 but not v1
 )
-def data_model(request: pytest.FixtureRequest):
+def class_or_function_(request: pytest.FixtureRequest):
     """
-    Same meaning as class_or_function. Only difference is that data_model is parametrized.
+    Parametrized class_or_function.
     """
     return request.param
 
@@ -327,13 +327,13 @@ def _test_subclasser_message(
     ],
 )
 def test_subclasser_simple(
-    data_model: Any, args_string_and_arg_to_expected_value: Tuple[str, Union[Dict[str, Any], BaseException]]
+    class_or_function_: Any, args_string_and_arg_to_expected_value: Tuple[str, Union[Dict[str, Any], BaseException]]
 ):
-    _test_subclasser(subclasser_simple, data_model, args_string_and_arg_to_expected_value)
+    _test_subclasser(subclasser_simple, class_or_function_, args_string_and_arg_to_expected_value)
 
 
 # @pytest.mark.skipif(sys.version_info < (3, 10), reason="argparse is different. Need to fix help_message_expected")
-def test_subclasser_simple_help_message(data_model: Any):
+def test_subclasser_simple_help_message(class_or_function_: Any):
     description = "Script description"
     help_message_expected = f"""
 usage: pytest --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST {_ARG_LIST_DOTS}]] [-h]
@@ -349,7 +349,7 @@ usage: pytest --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST {_ARG_LIST_DO
 """.lstrip(
         "\n"
     )
-    _test_subclasser_message(subclasser_simple, data_model, help_message_expected, description=description)
+    _test_subclasser_message(subclasser_simple, class_or_function_, help_message_expected, description=description)
 
 
 # Test subclasser_complex
@@ -403,14 +403,14 @@ usage: pytest --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST {_ARG_LIST_DO
     ],
 )
 def test_subclasser_complex(
-    data_model: Any, args_string_and_arg_to_expected_value: Tuple[str, Union[Dict[str, Any], BaseException]]
+    class_or_function_: Any, args_string_and_arg_to_expected_value: Tuple[str, Union[Dict[str, Any], BaseException]]
 ):
     # Currently setting test_call=False b/c all data models except the pydantic Model don't accept extra args
-    _test_subclasser(subclasser_complex, data_model, args_string_and_arg_to_expected_value, test_call=False)
+    _test_subclasser(subclasser_complex, class_or_function_, args_string_and_arg_to_expected_value, test_call=False)
 
 
 # @pytest.mark.skipif(sys.version_info < (3, 10), reason="argparse is different. Need to fix help_message_expected")
-def test_subclasser_complex_help_message(data_model: Any):
+def test_subclasser_complex_help_message(class_or_function_: Any):
     description = "Script description"
     help_message_expected = f"""
 usage: pytest [-arg ARGUMENT_WITH_REALLY_LONG_NAME] --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST {_ARG_LIST_DOTS}]] [-h]
@@ -428,7 +428,7 @@ usage: pytest [-arg ARGUMENT_WITH_REALLY_LONG_NAME] --arg_int ARG_INT [--arg_boo
 """.lstrip(
         "\n"
     )
-    _test_subclasser_message(subclasser_complex, data_model, help_message_expected, description=description)
+    _test_subclasser_message(subclasser_complex, class_or_function_, help_message_expected, description=description)
 
 
 # Test subclasser_subparser
@@ -485,10 +485,10 @@ usage: pytest [-arg ARGUMENT_WITH_REALLY_LONG_NAME] --arg_int ARG_INT [--arg_boo
     ],
 )
 def test_subclasser_subparser(
-    data_model: Any, args_string_and_arg_to_expected_value: Tuple[str, Union[Dict[str, Any], BaseException]]
+    class_or_function_: Any, args_string_and_arg_to_expected_value: Tuple[str, Union[Dict[str, Any], BaseException]]
 ):
     # Currently setting test_call=False b/c all data models except the pydantic Model don't accept extra args
-    _test_subclasser(subclasser_subparser, data_model, args_string_and_arg_to_expected_value, test_call=False)
+    _test_subclasser(subclasser_subparser, class_or_function_, args_string_and_arg_to_expected_value, test_call=False)
 
 
 # @pytest.mark.skipif(sys.version_info < (3, 10), reason="argparse is different. Need to fix help_message_expected")
@@ -545,9 +545,9 @@ usage: pytest b --baz {{X,Y,Z}} [-h]
     ],
 )
 def test_subclasser_subparser_help_message(
-    data_model: Any, args_string_and_description_and_expected_message: Tuple[str, str]
+    class_or_function_: Any, args_string_and_description_and_expected_message: Tuple[str, str]
 ):
     args_string, description, expected_message = args_string_and_description_and_expected_message
     _test_subclasser_message(
-        subclasser_subparser, data_model, expected_message, description=description, args_string=args_string
+        subclasser_subparser, class_or_function_, expected_message, description=description, args_string=args_string
     )

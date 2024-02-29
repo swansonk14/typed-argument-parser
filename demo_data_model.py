@@ -85,8 +85,7 @@ if __name__ == "__main__":
     # args = ModelTapWithSubparsing(description="Script description").parse_args()
     print("Parsed args:")
     print(args)
-    # Run the main function. Pydantic BaseModels ignore arguments which aren't one of their fields instead of raising an
-    # error
+    # Run the main function
     model = Model(**args.as_dict())
     main(model)
 

@@ -4,6 +4,7 @@
 `to_tap_class`: convert a class or function into a `Tap` class, which can then be subclassed to add special argument
 handling
 """
+
 import dataclasses
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Sequence, Type, TypeVar, Union
@@ -121,6 +122,8 @@ def _tap_data_from_data_model(
 
     def arg_data_from_pydantic(name: str, field: _PydanticField, annotation: Optional[Type] = None) -> _ArgData:
         annotation = field.annotation if annotation is None else annotation
+        # Prefer the description from param_to_description (from the data model / class docstring) over the
+        # field.description b/c a docstring can be modified on the fly w/o causing real issues
         description = param_to_description.get(name, field.description)
         return _ArgData(name, annotation, field.is_required(), field.default, description)
 
@@ -131,7 +134,9 @@ def _tap_data_from_data_model(
         known_only = False
     elif _is_pydantic_base_model(data_model):
         name_to_field = data_model.model_fields
-        is_extra_ok = data_model.model_config.get("extra", "ignore") != "forbid"
+        # For backwards compatibility, only allow new kwargs to get assigned if the model is explicitly configured to do
+        # so via extra="allow". See https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.extra
+        is_extra_ok = data_model.model_config.get("extra", "ignore") == "allow"
         has_kwargs = is_extra_ok
         known_only = is_extra_ok
     else:
