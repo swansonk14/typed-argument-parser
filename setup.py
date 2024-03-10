@@ -12,6 +12,11 @@ with open(version_file) as fd:
 with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
 
+test_requirements = [
+    "pydantic >= 2.5.0",
+    "pytest",
+]
+
 setup(
     name="typed-argument-parser",
     version=__version__,
@@ -26,7 +31,8 @@ setup(
     packages=find_packages(),
     package_data={"tap": ["py.typed"]},
     install_requires=["typing-inspect >= 0.7.1", "docstring-parser >= 0.15"],
-    tests_require=["pytest"],
+    tests_require=test_requirements,
+    extras_require={"dev": test_requirements},
     python_requires=">=3.8",
     classifiers=[
         "Programming Language :: Python :: 3",
