@@ -42,17 +42,41 @@ Running `python square.py --num 2` will print `The square of your number is 4.0.
 Tap requires Python 3.8+
 
 To install Tap from PyPI run: 
+
 ```
 pip install typed-argument-parser
 ```
 
-To install Tap from source, run the following commands:
+<details>
+<summary>To install Tap from source, run the following commands:</summary>
 
 ```
 git clone https://github.com/swansonk14/typed-argument-parser.git
 cd typed-argument-parser
 pip install -e .
 ```
+
+</details>
+
+<details>
+<summary>To develop this package, install development requirements (in a virtual environment):</summary>
+
+```
+python -m pip install -e ".[dev]"
+```
+
+Style:
+- Please use [`black`](https://github.com/psf/black) formatting
+- Set your vertical line ruler to 121
+- Use [`flake8`](https://github.com/PyCQA/flake8) linting.
+
+To run tests, run:
+
+```
+pytest
+```
+
+</details>
 
 ## Table of Contents
 
@@ -81,6 +105,10 @@ pip install -e .
   + [tapify help](#tapify-help)
   + [Command line vs explicit arguments](#command-line-vs-explicit-arguments)
   + [Known args](#known-args)
+* [Convert to a `Tap` class](#convert-to-a-tap-class)
+  + [`to_tap_class` examples](#to_tap_class-examples)
+    - [Simple](#simple)
+    - [Complex](#complex)
 
 ## Tap is Python-native
 
@@ -851,7 +879,7 @@ special argument behavior. For example, you can override [`configure`](#configur
 If the object can be `tapify`d, then it can be `to_tap_class`d, and vice-versa. `to_tap_class` provides full control
 over argument parsing.
 
-### Examples
+### `to_tap_class` examples
 
 #### Simple
 
