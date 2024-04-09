@@ -13,9 +13,11 @@ with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
 
 test_requirements = [
-    "pydantic >= 2.5.0",
     "pytest",
+    "pytest-cov",
+    "flake8",
 ]
+test_requirements_with_pydantic_v2 = test_requirements + ["pydantic >= 2.5.0"]
 
 setup(
     name="typed-argument-parser",
@@ -32,7 +34,10 @@ setup(
     package_data={"tap": ["py.typed"]},
     install_requires=["typing-inspect >= 0.7.1", "docstring-parser >= 0.15"],
     tests_require=test_requirements,
-    extras_require={"dev": test_requirements},
+    extras_require={
+        "dev-no-pydantic": test_requirements,
+        "dev": test_requirements_with_pydantic_v2,
+    },
     python_requires=">=3.8",
     classifiers=[
         "Programming Language :: Python :: 3",

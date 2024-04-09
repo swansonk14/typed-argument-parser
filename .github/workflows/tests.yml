@@ -35,8 +35,7 @@ jobs:
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
         python -m pip install --upgrade pip
-        python -m pip install flake8 pytest
-        python -m pip install -e .
+        python -m pip install -e ".[dev-no-pydantic]"
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -45,12 +44,18 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test without pydantic
       run: |
-        pytest
+        pytest --cov=tap
     - name: Test with pydantic v1
       run: |
         python -m pip install "pydantic < 2"
-        pytest
+        pytest --cov=tap --cov-append
     - name: Test with pydantic v2
       run: |
         python -m pip install "pydantic >= 2"
-        pytest
+        pytest --cov=tap --cov-append
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        verbose: true
