@@ -259,7 +259,7 @@ def _tap_data(class_or_function: _ClassOrFunction, param_to_description: Dict[st
 
 def _tap_class(args_data: Sequence[_ArgData], all_args_named: bool = True) -> Type[Tap]:
     """
-    Transfers argument data to a :class:`tap.Tap` class.
+    Transfers argument data to a :class:`tap.Tap` class. Arguments will be added to the parser on initialization.
     """
 
     class ArgParser(Tap):
@@ -273,12 +273,17 @@ def _tap_class(args_data: Sequence[_ArgData], all_args_named: bool = True) -> Ty
                 self.class_variables[variable] = {"comment": arg_data.description or ""}
 
                 # Add the argument to the parser
-                if not all_args_named and (arg_data.is_positional_only or arg_data.is_required):
+                # Determine whether the class/function arg will be positional vs named / an option in the command line
+                if not all_args_named and arg_data.is_required and arg_data.annotation != bool:
+                    # Positional (and therefore required) command line arg
                     name_or_flags = (variable,)
                 else:
+                    # Named command line arg
                     name_or_flags = (f"--{variable}",)
-                kwargs = {}
-                if not arg_data.is_required:
+                # If the argument is not required, mark it as such with its default value
+                if arg_data.is_required:
+                    kwargs = {}
+                else:
                     kwargs = dict(required=False, default=arg_data.default)
                 self.add_argument(*name_or_flags, **kwargs)
 
@@ -292,9 +297,9 @@ def to_tap_class(class_or_function: _ClassOrFunction, all_args_named: bool = Tru
     instantiated to create a typed argument parser.
 
     :param class_or_function: The class or function to run with the provided arguments.
-    :param all_args_named: Whether or not to require all command line arguments to be named. If `False`, then required or
-                           positional-only arguments will be positional command line arguments, and other arguments will
-                           be named command line arguments. Defaults to `True`.
+    :param all_args_named: Whether or not to require all command line arguments to be named. If `False`, then non-boolean
+                           arguments which are required by `class_or_function` will be positional command line arguments,
+                           and other arguments will be options, i.e., named command line arguments. Defaults to `True`.
     """
     docstring = _docstring(class_or_function)
     param_to_description = {param.arg_name: param.description for param in docstring.params}
@@ -315,17 +320,17 @@ def tapify(
 
     :param class_or_function: The class or function to run with the provided arguments.
     :param known_only: If true, ignores extra arguments and only parses known arguments.
-    :param command_line_args: A list of command line style arguments to parse (e.g., ['--arg', 'value']).
-                              If None, arguments are parsed from the command line (default behavior).
-    :param explicit_bool: Booleans can be specified on the command line as "--arg True" or "--arg False"
-                          rather than "--arg". Additionally, booleans can be specified by prefixes of True and False
-                          with any capitalization as well as 1 or 0.
-    :param all_args_named: Whether or not to require all command line arguments to be named. If `False`, then required or
-                           positional-only arguments will be positional command line arguments, and other arguments will
-                           be named command line arguments. Defaults to `True`.
-    :param func_kwargs: Additional keyword arguments for the function. These act as default values when
-                        parsing the command line arguments and overwrite the function defaults but
-                        are overwritten by the parsed command line arguments.
+    :param command_line_args: A list of command line style arguments to parse (e.g., ['--arg', 'value']). If None,
+                              arguments are parsed from the command line (default behavior).
+    :param explicit_bool: Booleans can be specified on the command line as "--arg True" or "--arg False" rather than
+                          "--arg". Additionally, booleans can be specified by prefixes of True and False with any
+                          capitalization as well as 1 or 0.
+    :param all_args_named: Whether or not to require all command line arguments to be named. If `False`, then non-boolean
+                           arguments which are required by `class_or_function` will be positional command line arguments,
+                           and other arguments will be options, i.e., named command line arguments. Defaults to `True`.
+    :param func_kwargs: Additional keyword arguments for the function. These act as default values when parsing the
+                        command line arguments and overwrite the function defaults but are overwritten by the parsed
+                        command line arguments.
     """
     # We don't directly call to_tap_class b/c we need tap_data, not just tap_class
     docstring = _docstring(class_or_function)
