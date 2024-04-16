@@ -83,8 +83,18 @@ class TapifyTests(TestCase):
         def concat(a: int, simple: str, test: float, of: float, types: bool) -> str:
             return f"{a} {simple} {test} {of} {types}"
 
+        def concat_with_positionals(a: int, simple: str, test: float, of: float, types: bool, /) -> str:
+            return f"{a} {simple} {test} {of} {types}"
+
         class Concat:
             def __init__(self, a: int, simple: str, test: float, of: float, types: bool):
+                self.kwargs = {"a": a, "simple": simple, "test": test, "of": of, "types": types}
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(**self.kwargs)
+
+        class ConcatWithPositionals:
+            def __init__(self, a: int, simple: str, test: float, of: float, types: bool, /):
                 self.kwargs = {"a": a, "simple": simple, "test": test, "of": of, "types": types}
 
             def __eq__(self, other: str) -> bool:
@@ -128,7 +138,13 @@ class TapifyTests(TestCase):
         else:
             pydantic_data_models = []
 
-        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
+        for class_or_function in [
+            concat,
+            concat_with_positionals,
+            Concat,
+            ConcatWithPositionals,
+            ConcatDataclass,
+        ] + pydantic_data_models:
             output = tapify(
                 class_or_function,
                 command_line_args=["--a", "1", "--simple", "simple", "--test", "3.14", "--of", "2.718", "--types"],
@@ -140,9 +156,23 @@ class TapifyTests(TestCase):
         def concat(a: int, simple: str, test: float, of: float = -0.3, types: bool = False, wow: str = "abc") -> str:
             return f"{a} {simple} {test} {of} {types} {wow}"
 
+        def concat_with_positionals(
+            a: int, simple: str, test: float, /, of: float = -0.3, types: bool = False, wow: str = "abc"
+        ) -> str:
+            return f"{a} {simple} {test} {of} {types} {wow}"
+
         class Concat:
             def __init__(
                 self, a: int, simple: str, test: float, of: float = -0.3, types: bool = False, wow: str = "abc"
+            ):
+                self.kwargs = {"a": a, "simple": simple, "test": test, "of": of, "types": types, "wow": wow}
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(**self.kwargs)
+
+        class ConcatWithPositionals:
+            def __init__(
+                self, a: int, simple: str, test: float, /, of: float = -0.3, types: bool = False, wow: str = "abc"
             ):
                 self.kwargs = {"a": a, "simple": simple, "test": test, "of": of, "types": types, "wow": wow}
 
@@ -190,8 +220,13 @@ class TapifyTests(TestCase):
         else:
             pydantic_data_models = []
 
-        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
-            print(class_or_function.__name__)
+        for class_or_function in [
+            concat,
+            concat_with_positionals,
+            Concat,
+            ConcatWithPositionals,
+            ConcatDataclass,
+        ] + pydantic_data_models:
             output = tapify(
                 class_or_function,
                 command_line_args=["--a", "1", "--simple", "simple", "--test", "3.14", "--types", "--wow", "wee"],
@@ -203,8 +238,18 @@ class TapifyTests(TestCase):
         def concat(complexity: List[str], requires: Tuple[int, int], intelligence: Person) -> str:
             return f'{" ".join(complexity)} {requires[0]} {requires[1]} {intelligence}'
 
+        def concat_with_positionals(complexity: List[str], /, requires: Tuple[int, int], intelligence: Person) -> str:
+            return f'{" ".join(complexity)} {requires[0]} {requires[1]} {intelligence}'
+
         class Concat:
             def __init__(self, complexity: List[str], requires: Tuple[int, int], intelligence: Person):
+                self.kwargs = {"complexity": complexity, "requires": requires, "intelligence": intelligence}
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(**self.kwargs)
+
+        class ConcatWithPositionals:
+            def __init__(self, complexity: List[str], /, requires: Tuple[int, int], intelligence: Person):
                 self.kwargs = {"complexity": complexity, "requires": requires, "intelligence": intelligence}
 
             def __eq__(self, other: str) -> bool:
@@ -250,7 +295,13 @@ class TapifyTests(TestCase):
         else:
             pydantic_data_models = []
 
-        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
+        for class_or_function in [
+            concat,
+            concat_with_positionals,
+            Concat,
+            ConcatWithPositionals,
+            ConcatDataclass,
+        ] + pydantic_data_models:
             output = tapify(
                 class_or_function,
                 command_line_args=[
@@ -275,8 +326,18 @@ class TapifyTests(TestCase):
         def concat(complexity: list[int], requires: tuple[int, int], intelligence: Person) -> str:
             return f'{" ".join(map(str, complexity))} {requires[0]} {requires[1]} {intelligence}'
 
+        def concat_with_positionals(complexity: list[int], requires: tuple[int, int], /, intelligence: Person) -> str:
+            return f'{" ".join(map(str, complexity))} {requires[0]} {requires[1]} {intelligence}'
+
         class Concat:
             def __init__(self, complexity: list[int], requires: tuple[int, int], intelligence: Person):
+                self.kwargs = {"complexity": complexity, "requires": requires, "intelligence": intelligence}
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(**self.kwargs)
+
+        class ConcatWithPositionals:
+            def __init__(self, complexity: list[int], requires: tuple[int, int], /, intelligence: Person):
                 self.kwargs = {"complexity": complexity, "requires": requires, "intelligence": intelligence}
 
             def __eq__(self, other: str) -> bool:
@@ -322,7 +383,13 @@ class TapifyTests(TestCase):
         else:
             pydantic_data_models = []
 
-        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
+        for class_or_function in [
+            concat,
+            concat_with_positionals,
+            Concat,
+            ConcatWithPositionals,
+            ConcatDataclass,
+        ] + pydantic_data_models:
             output = tapify(
                 class_or_function,
                 command_line_args=[
@@ -350,6 +417,16 @@ class TapifyTests(TestCase):
         ) -> str:
             return f'{" ".join(complexity)} {requires[0]} {requires[1]} {intelligence} {maybe} {possibly}'
 
+        def concat_with_positionals(
+            complexity: List[str],
+            requires: Tuple[int, int] = (2, 5),
+            intelligence: Person = Person("kyle"),
+            maybe: Optional[str] = None,
+            possibly: Optional[str] = None,
+            /,
+        ) -> str:
+            return f'{" ".join(complexity)} {requires[0]} {requires[1]} {intelligence} {maybe} {possibly}'
+
         class Concat:
             def __init__(
                 self,
@@ -358,6 +435,27 @@ class TapifyTests(TestCase):
                 intelligence: Person = Person("kyle"),
                 maybe: Optional[str] = None,
                 possibly: Optional[str] = None,
+            ):
+                self.kwargs = {
+                    "complexity": complexity,
+                    "requires": requires,
+                    "intelligence": intelligence,
+                    "maybe": maybe,
+                    "possibly": possibly,
+                }
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(**self.kwargs)
+
+        class ConcatWithPositionals:
+            def __init__(
+                self,
+                complexity: List[str],
+                requires: Tuple[int, int] = (2, 5),
+                intelligence: Person = Person("kyle"),
+                maybe: Optional[str] = None,
+                possibly: Optional[str] = None,
+                /,
             ):
                 self.kwargs = {
                     "complexity": complexity,
@@ -416,7 +514,13 @@ class TapifyTests(TestCase):
         else:
             pydantic_data_models = []
 
-        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
+        for class_or_function in [
+            concat,
+            concat_with_positionals,
+            Concat,
+            ConcatWithPositionals,
+            ConcatDataclass,
+        ] + pydantic_data_models:
             output = tapify(
                 class_or_function,
                 command_line_args=[
@@ -438,8 +542,18 @@ class TapifyTests(TestCase):
         def concat(so: int, many: float, args: str) -> str:
             return f"{so} {many} {args}"
 
+        def concat_with_positionals(so: int, many: float, /, args: str) -> str:
+            return f"{so} {many} {args}"
+
         class Concat:
             def __init__(self, so: int, many: float, args: str):
+                self.kwargs = {"so": so, "many": many, "args": args}
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(**self.kwargs)
+
+        class ConcatWithPositionals:
+            def __init__(self, so: int, many: float, /, args: str):
                 self.kwargs = {"so": so, "many": many, "args": args}
 
             def __eq__(self, other: str) -> bool:
@@ -477,7 +591,13 @@ class TapifyTests(TestCase):
         else:
             pydantic_data_models = []
 
-        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
+        for class_or_function in [
+            concat,
+            concat_with_positionals,
+            Concat,
+            ConcatWithPositionals,
+            ConcatDataclass,
+        ] + pydantic_data_models:
             with self.assertRaises(SystemExit):
                 tapify(class_or_function, command_line_args=["--so", "23", "--many", "9.3"])
 
@@ -485,48 +605,7 @@ class TapifyTests(TestCase):
         def concat(so: int, few: float) -> str:
             return f"{so} {few}"
 
-        class Concat:
-            def __init__(self, so: int, few: float):
-                self.kwargs = {"so": so, "few": few}
-
-            def __eq__(self, other: str) -> bool:
-                return other == concat(**self.kwargs)
-
-        @dataclass
-        class ConcatDataclass:
-            so: int
-            few: float
-
-            def __eq__(self, other: str) -> bool:
-                return other == concat(self.so, self.few)
-
-        if _IS_PYDANTIC_V1 is not None:
-
-            @pydantic.dataclasses.dataclass
-            class ConcatDataclassPydantic:
-                so: int
-                few: float
-
-                def __eq__(self, other: str) -> bool:
-                    return other == concat(self.so, self.few)
-
-            class ConcatModel(pydantic.BaseModel):
-                so: int
-                few: float
-
-                def __eq__(self, other: str) -> bool:
-                    return other == concat(self.so, self.few)
-
-            pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
-        else:
-            pydantic_data_models = []
-
-        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
-            with self.assertRaises(SystemExit):
-                tapify(class_or_function, command_line_args=["--so", "23", "--few", "9.3", "--args", "wow"])
-
-    def test_tapify_too_many_args_known_only(self):
-        def concat(so: int, few: float) -> str:
+        def concat_with_positionals(so: int, few: float, /) -> str:
             return f"{so} {few}"
 
         class Concat:
@@ -536,6 +615,13 @@ class TapifyTests(TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(**self.kwargs)
 
+        class ConcatWithPositionals:
+            def __init__(self, so: int, few: float):
+                self.kwargs = {"so": so, "few": few}
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(**self.kwargs)
+
         @dataclass
         class ConcatDataclass:
             so: int
@@ -565,7 +651,73 @@ class TapifyTests(TestCase):
         else:
             pydantic_data_models = []
 
-        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
+        for class_or_function in [
+            concat,
+            concat_with_positionals,
+            Concat,
+            ConcatWithPositionals,
+            ConcatDataclass,
+        ] + pydantic_data_models:
+            with self.assertRaises(SystemExit):
+                tapify(class_or_function, command_line_args=["--so", "23", "--few", "9.3", "--args", "wow"])
+
+    def test_tapify_too_many_args_known_only(self):
+        def concat(so: int, few: float) -> str:
+            return f"{so} {few}"
+
+        def concat_with_positionals(so: int, few: float, /) -> str:
+            return f"{so} {few}"
+
+        class Concat:
+            def __init__(self, so: int, few: float):
+                self.kwargs = {"so": so, "few": few}
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(**self.kwargs)
+
+        class ConcatWithPositionals:
+            def __init__(self, so: int, few: float, /):
+                self.kwargs = {"so": so, "few": few}
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(**self.kwargs)
+
+        @dataclass
+        class ConcatDataclass:
+            so: int
+            few: float
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(self.so, self.few)
+
+        if _IS_PYDANTIC_V1 is not None:
+
+            @pydantic.dataclasses.dataclass
+            class ConcatDataclassPydantic:
+                so: int
+                few: float
+
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.so, self.few)
+
+            class ConcatModel(pydantic.BaseModel):
+                so: int
+                few: float
+
+                def __eq__(self, other: str) -> bool:
+                    return other == concat(self.so, self.few)
+
+            pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
+        else:
+            pydantic_data_models = []
+
+        for class_or_function in [
+            concat,
+            concat_with_positionals,
+            Concat,
+            ConcatWithPositionals,
+            ConcatDataclass,
+        ] + pydantic_data_models:
             output = tapify(
                 class_or_function, command_line_args=["--so", "23", "--few", "9.3", "--args", "wow"], known_only=True
             )
@@ -576,8 +728,22 @@ class TapifyTests(TestCase):
         def concat(i: int, like: float, k: int, w: str = "w", args: str = "argy", always: bool = False) -> str:
             return f"{i} {like} {k} {w} {args} {always}"
 
+        def concat_with_positionals(
+            i: int, like: float, k: int, w: str = "w", /, args: str = "argy", *, always: bool = False
+        ) -> str:
+            return f"{i} {like} {k} {w} {args} {always}"
+
         class Concat:
             def __init__(self, i: int, like: float, k: int, w: str = "w", args: str = "argy", always: bool = False):
+                self.kwargs = {"i": i, "like": like, "k": k, "w": w, "args": args, "always": always}
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(**self.kwargs)
+
+        class ConcatWithPositionals:
+            def __init__(
+                self, i: int, like: float, k: int, w: str = "w", /, args: str = "argy", *, always: bool = False
+            ):
                 self.kwargs = {"i": i, "like": like, "k": k, "w": w, "args": args, "always": always}
 
             def __eq__(self, other: str) -> bool:
@@ -624,7 +790,13 @@ class TapifyTests(TestCase):
         else:
             pydantic_data_models = []
 
-        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
+        for class_or_function in [
+            concat,
+            concat_with_positionals,
+            Concat,
+            ConcatWithPositionals,
+            ConcatDataclass,
+        ] + pydantic_data_models:
             output = tapify(
                 class_or_function,
                 command_line_args=[
@@ -648,8 +820,22 @@ class TapifyTests(TestCase):
         def concat(i: int, like: float, k: int, w: str = "w", args: str = "argy", always: bool = False) -> str:
             return f"{i} {like} {k} {w} {args} {always}"
 
+        def concat_with_positionals(
+            i: int, like: float, k: int, /, *, w: str = "w", args: str = "argy", always: bool = False
+        ) -> str:
+            return f"{i} {like} {k} {w} {args} {always}"
+
         class Concat:
             def __init__(self, i: int, like: float, k: int, w: str = "w", args: str = "argy", always: bool = False):
+                self.kwargs = {"i": i, "like": like, "k": k, "w": w, "args": args, "always": always}
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(**self.kwargs)
+
+        class ConcatWithPositionals:
+            def __init__(
+                self, i: int, like: float, k: int, /, *, w: str = "w", args: str = "argy", always: bool = False
+            ):
                 self.kwargs = {"i": i, "like": like, "k": k, "w": w, "args": args, "always": always}
 
             def __eq__(self, other: str) -> bool:
@@ -696,7 +882,13 @@ class TapifyTests(TestCase):
         else:
             pydantic_data_models = []
 
-        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
+        for class_or_function in [
+            concat,
+            concat_with_positionals,
+            Concat,
+            ConcatWithPositionals,
+            ConcatDataclass,
+        ] + pydantic_data_models:
             with self.assertRaises(ValueError):
                 tapify(
                     class_or_function,
@@ -718,8 +910,18 @@ class TapifyTests(TestCase):
         def concat(problems: Problems) -> str:
             return f"{problems}"
 
+        def concat_with_positionals(problems: Problems, /) -> str:
+            return f"{problems}"
+
         class Concat:
             def __init__(self, problems: Problems):
+                self.problems = problems
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(self.problems)
+
+        class ConcatWithPositionals:
+            def __init__(self, problems: Problems, /):
                 self.problems = problems
 
             def __eq__(self, other: str) -> bool:
@@ -759,7 +961,13 @@ class TapifyTests(TestCase):
         else:
             pydantic_data_models = []
 
-        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
+        for class_or_function in [
+            concat,
+            concat_with_positionals,
+            Concat,
+            ConcatWithPositionals,
+            ConcatDataclass,
+        ] + pydantic_data_models:
             output = tapify(class_or_function, command_line_args=[], problems=Problems("oh", "no!"))
 
             self.assertEqual(output, "Problems(oh, no!)")
@@ -773,9 +981,37 @@ class TapifyTests(TestCase):
         ) -> str:
             return f"{untyped_1} {typed_1} {untyped_2} {typed_2} {untyped_3} {typed_3}"
 
+        def concat_with_positionals(
+            untyped_1, typed_1: int, untyped_2=5, typed_2: str = "now", untyped_3="hi", /, typed_3: bool = False
+        ) -> str:
+            return f"{untyped_1} {typed_1} {untyped_2} {typed_2} {untyped_3} {typed_3}"
+
         class Concat:
             def __init__(
                 self, untyped_1, typed_1: int, untyped_2=5, typed_2: str = "now", untyped_3="hi", typed_3: bool = False
+            ):
+                self.kwargs = {
+                    "untyped_1": untyped_1,
+                    "typed_1": typed_1,
+                    "untyped_2": untyped_2,
+                    "typed_2": typed_2,
+                    "untyped_3": untyped_3,
+                    "typed_3": typed_3,
+                }
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(**self.kwargs)
+
+        class ConcatWithPositionals:
+            def __init__(
+                self,
+                untyped_1,
+                typed_1: int,
+                untyped_2=5,
+                typed_2: str = "now",
+                untyped_3="hi",
+                /,
+                typed_3: bool = False,
             ):
                 self.kwargs = {
                     "untyped_1": untyped_1,
@@ -836,7 +1072,13 @@ class TapifyTests(TestCase):
         else:
             pydantic_data_models = []
 
-        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
+        for class_or_function in [
+            concat,
+            concat_with_positionals,
+            Concat,
+            ConcatWithPositionals,
+            ConcatDataclass,
+        ] + pydantic_data_models:
             output = tapify(
                 class_or_function,
                 command_line_args=[
@@ -858,10 +1100,24 @@ class TapifyTests(TestCase):
             """Concatenate three numbers."""
             return f"{a} {b} {c}"
 
+        def concat_with_positionals(a: int, b: int, c: int, /) -> str:
+            """Concatenate three numbers."""
+            return f"{a} {b} {c}"
+
         class Concat:
             """Concatenate three numbers."""
 
             def __init__(self, a: int, b: int, c: int):
+                """Concatenate three numbers."""
+                self.kwargs = {"a": a, "b": b, "c": c}
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(**self.kwargs)
+
+        class ConcatWithPositionals:
+            """Concatenate three numbers."""
+
+            def __init__(self, a: int, b: int, c: int, /):
                 """Concatenate three numbers."""
                 self.kwargs = {"a": a, "b": b, "c": c}
 
@@ -905,7 +1161,13 @@ class TapifyTests(TestCase):
             pydantic_data_models = [ConcatDataclassPydantic, ConcatModel]
         else:
             pydantic_data_models = []
-        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
+        for class_or_function in [
+            concat,
+            concat_with_positionals,
+            Concat,
+            ConcatWithPositionals,
+            ConcatDataclass,
+        ] + pydantic_data_models:
             output_1 = tapify(class_or_function, command_line_args=["--a", "1", "--b", "2", "--c", "3"])
             output_2 = tapify(class_or_function, command_line_args=["--a", "4", "--b", "5", "--c", "6"])
 
@@ -914,6 +1176,9 @@ class TapifyTests(TestCase):
 
     def test_tapify_args_kwargs(self):
         def concat(a: int, *args, b: int, **kwargs) -> str:
+            return f"{a} {args} {b} {kwargs}"
+
+        def concat_with_positionals(a: int, /, *args, b: int, **kwargs) -> str:
             return f"{a} {args} {b} {kwargs}"
 
         class Concat:
@@ -926,12 +1191,31 @@ class TapifyTests(TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(a=self.a, *self.args, b=self.b, **self.kwargs)
 
-        for class_or_function in [concat, Concat]:
+        class ConcatWithPositionals:
+            def __init__(self, a: int, /, *args, b: int, **kwargs):
+                self.a = a
+                self.args = args
+                self.b = b
+                self.kwargs = kwargs
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(a=self.a, *self.args, b=self.b, **self.kwargs)
+
+        for class_or_function in [concat, concat_with_positionals, Concat, ConcatWithPositionals]:
             with self.assertRaises(SystemExit):
                 tapify(class_or_function, command_line_args=["--a", "1", "--b", "2"])
 
     def test_tapify_help(self):
         def concat(a: int, b: int, c: int) -> str:
+            """Concatenate three numbers.
+
+            :param a: The first number.
+            :param b: The second number.
+            :param c: The third number.
+            """
+            return f"{a} {b} {c}"
+
+        def concat_with_positionals(a: int, b: int, /, c: int) -> str:
             """Concatenate three numbers.
 
             :param a: The first number.
@@ -953,6 +1237,19 @@ class TapifyTests(TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(**self.kwargs)
 
+        class ConcatWithPositionals:
+            def __init__(self, a: int, b: int, /, c: int):
+                """Concatenate three numbers.
+
+                :param a: The first number.
+                :param b: The second number.
+                :param c: The third number.
+                """
+                self.kwargs = {"a": a, "b": b, "c": c}
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(**self.kwargs)
+
         @dataclass
         class ConcatDataclass:
             """Concatenate three numbers.
@@ -1006,7 +1303,13 @@ class TapifyTests(TestCase):
         else:
             pydantic_data_models = []
 
-        for class_or_function in [concat, Concat, ConcatDataclass] + pydantic_data_models:
+        for class_or_function in [
+            concat,
+            concat_with_positionals,
+            Concat,
+            ConcatWithPositionals,
+            ConcatDataclass,
+        ] + pydantic_data_models:
             f = io.StringIO()
             with contextlib.redirect_stdout(f):
                 with self.assertRaises(SystemExit):
@@ -1028,7 +1331,12 @@ class TestTapifyExplicitBool(unittest.TestCase):
             """
             return Cool(is_cool)
 
-        self.cool_fun = cool
+        def cool_with_positionals(is_cool: bool = False, /) -> "Cool":
+            """cool.
+
+            :param is_cool: is it cool?
+            """
+            return Cool(is_cool)
 
         class Cool:
             def __init__(self, is_cool: bool = False):
@@ -1041,10 +1349,26 @@ class TestTapifyExplicitBool(unittest.TestCase):
             def __eq__(self, other: "Cool") -> bool:
                 return other.is_cool == cool(self.is_cool).is_cool
 
-        self.cool_class = Cool
+        class CoolWithPositionals:
+            def __init__(self, is_cool: bool = False, /):
+                """cool.
+
+                :param is_cool: is it cool?
+                """
+                self.is_cool = is_cool
+
+            def __eq__(self, other: "Cool") -> bool:
+                return other.is_cool == cool(self.is_cool).is_cool
+
+        self.class_or_functions = [
+            cool,
+            cool_with_positionals,
+            Cool,
+            CoolWithPositionals,
+        ]
 
     def test_explicit_bool_true(self):
-        for class_or_function in [self.cool_fun, self.cool_class]:
+        for class_or_function in self.class_or_functions:
             # Since the boolean argument is_cool is set to False by default and explicit_bool is False,
             # the argument is_cool is False.
             a_cool = tapify(class_or_function, command_line_args=[], explicit_bool=False)
@@ -1075,6 +1399,14 @@ class TestTapifyExplicitBool(unittest.TestCase):
 class TestTapifyKwargs(unittest.TestCase):
     def setUp(self) -> None:
         def concat(a: int, b: int = 2, **kwargs) -> str:
+            """Concatenate three numbers.
+
+            :param a: The first number.
+            :param b: The second number.
+            """
+            return f'{a}_{b}_{"-".join(f"{k}={v}" for k, v in kwargs.items())}'
+
+        def concat_with_positionals(a: int, b: int = 2, /, **kwargs) -> str:
             """Concatenate three numbers.
 
             :param a: The first number.
@@ -1136,7 +1468,26 @@ class TestTapifyKwargs(unittest.TestCase):
             def __eq__(self, other: str) -> bool:
                 return other == concat(self.a, self.b, **self.kwargs)
 
-        self.class_or_functions = [concat, Concat] + pydantic_data_models
+        class ConcatWithPositionals:
+            def __init__(self, a: int, /, b: int = 2, **kwargs: Dict[str, str]):
+                """Concatenate three numbers.
+
+                :param a: The first number.
+                :param b: The second number.
+                """
+                self.a = a
+                self.b = b
+                self.kwargs = kwargs
+
+            def __eq__(self, other: str) -> bool:
+                return other == concat(self.a, self.b, **self.kwargs)
+
+        self.class_or_functions = [
+            concat,
+            concat_with_positionals,
+            Concat,
+            ConcatWithPositionals,
+        ] + pydantic_data_models
 
     def test_tapify_empty_kwargs(self) -> None:
         for class_or_function in self.class_or_functions:
