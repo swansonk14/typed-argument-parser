@@ -32,7 +32,11 @@ setup(
     license="MIT",
     packages=find_packages(),
     package_data={"tap": ["py.typed"]},
-    install_requires=["typing-inspect >= 0.7.1", "docstring-parser >= 0.15"],
+    install_requires=[
+        "docstring-parser >= 0.15",
+        "packaging",
+        "typing-inspect >= 0.7.1",
+    ],
     tests_require=test_requirements,
     extras_require={
         "dev-no-pydantic": test_requirements,

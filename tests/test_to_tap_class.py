@@ -9,6 +9,7 @@ import re
 import sys
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
+from packaging.version import Version
 import pytest
 
 from tap import to_tap_class, Tap
@@ -20,7 +21,7 @@ try:
 except ModuleNotFoundError:
     _IS_PYDANTIC_V1 = None
 else:
-    _IS_PYDANTIC_V1 = pydantic.__version__ < "2.0.0"
+    _IS_PYDANTIC_V1 = Version(pydantic.__version__) < Version("2.0.0")
 
 
 # To properly test the help message, we need to know how argparse formats it. It changed from 3.8 -> 3.9 -> 3.10
