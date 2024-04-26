@@ -53,10 +53,13 @@ class _ArgData:
     "Whether or not the argument must be passed in"
 
     default: Any
-    "Value of the argument if the argument isn't passed in. This gets ignored if is_required"
+    "Value of the argument if the argument isn't passed in. This gets ignored if `is_required`"
 
     description: Optional[str] = ""
     "Human-readable description of the argument"
+
+    is_positional_only: bool = False
+    "Whether or not the argument must be provided positionally"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -218,6 +221,7 @@ def _tap_data_from_class_or_function(
             is_required=is_required,
             default=default,
             description=param_to_description.get(param.name),
+            is_positional_only=param.kind == inspect.Parameter.POSITIONAL_ONLY,
         )
         args_data.append(arg_data)
     return _TapData(args_data, has_kwargs, known_only)
@@ -255,6 +259,10 @@ def _tap_data(class_or_function: _ClassOrFunction, param_to_description: Dict[st
 
 
 def _tap_class(args_data: Sequence[_ArgData]) -> Type[Tap]:
+    """
+    Transfers argument data to a :class:`tap.Tap` class. Arguments will be added to the parser on initialization.
+    """
+
     class ArgParser(Tap):
         # Overwriting configure would force a user to remember to call super().configure if they want to overwrite it
         # Instead, overwrite _configure
@@ -298,14 +306,14 @@ def tapify(
 
     :param class_or_function: The class or function to run with the provided arguments.
     :param known_only: If true, ignores extra arguments and only parses known arguments.
-    :param command_line_args: A list of command line style arguments to parse (e.g., ['--arg', 'value']).
-                              If None, arguments are parsed from the command line (default behavior).
-    :param explicit_bool: Booleans can be specified on the command line as "--arg True" or "--arg False"
-                        rather than "--arg". Additionally, booleans can be specified by prefixes of True and False
-                        with any capitalization as well as 1 or 0.
-    :param func_kwargs: Additional keyword arguments for the function. These act as default values when
-                        parsing the command line arguments and overwrite the function defaults but
-                        are overwritten by the parsed command line arguments.
+    :param command_line_args: A list of command line style arguments to parse (e.g., ['--arg', 'value']). If None,
+                              arguments are parsed from the command line (default behavior).
+    :param explicit_bool: Booleans can be specified on the command line as "--arg True" or "--arg False" rather than
+                          "--arg". Additionally, booleans can be specified by prefixes of True and False with any
+                          capitalization as well as 1 or 0.
+    :param func_kwargs: Additional keyword arguments for the function. These act as default values when parsing the
+                        command line arguments and overwrite the function defaults but are overwritten by the parsed
+                        command line arguments.
     """
     # We don't directly call to_tap_class b/c we need tap_data, not just tap_class
     docstring = _docstring(class_or_function)
@@ -324,13 +332,21 @@ def tapify(
     # Parse command line arguments
     command_line_args: Tap = tap.parse_args(args=command_line_args, known_only=known_only)
 
-    # Get command line arguments as a dictionary
+    # Prepare command line arguments for class_or_function, respecting positional-only args
+    class_or_function_args: list[Any] = []
+    class_or_function_kwargs: Dict[str, Any] = {}
     command_line_args_dict = command_line_args.as_dict()
+    for arg_data in tap_data.args_data:
+        arg_value = command_line_args_dict[arg_data.name]
+        if arg_data.is_positional_only:
+            class_or_function_args.append(arg_value)
+        else:
+            class_or_function_kwargs[arg_data.name] = arg_value
 
     # Get **kwargs from extra command line arguments
     if tap_data.has_kwargs:
         kwargs = {tap.extra_args[i].lstrip("-"): tap.extra_args[i + 1] for i in range(0, len(tap.extra_args), 2)}
-        command_line_args_dict.update(kwargs)
+        class_or_function_kwargs.update(kwargs)
 
     # Initialize the class or run the function with the parsed arguments
-    return class_or_function(**command_line_args_dict)
+    return class_or_function(*class_or_function_args, **class_or_function_kwargs)

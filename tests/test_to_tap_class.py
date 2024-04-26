@@ -333,23 +333,20 @@ def test_subclasser_simple(
     _test_subclasser(subclasser_simple, class_or_function_, args_string_and_arg_to_expected_value)
 
 
-# @pytest.mark.skipif(sys.version_info < (3, 10), reason="argparse is different. Need to fix help_message_expected")
 def test_subclasser_simple_help_message(class_or_function_: Any):
     description = "Script description"
     help_message_expected = f"""
-usage: pytest --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST {_ARG_LIST_DOTS}]] [-h]
+    usage: pytest --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST {_ARG_LIST_DOTS}]] [-h]
 
-{description}
+    {description}
 
-{_OPTIONS_TITLE}:
-  --arg_int ARG_INT     (int, required) some integer
-  --arg_bool            (bool, default=True)
-  --arg_list [ARG_LIST {_ARG_LIST_DOTS}]
-                        ({type_to_str(Optional[List[str]])}, default=None) some list of strings
-  -h, --help            show this help message and exit
-""".lstrip(
-        "\n"
-    )
+    {_OPTIONS_TITLE}:
+    --arg_int ARG_INT     (int, required) some integer
+    --arg_bool            (bool, default=True)
+    --arg_list [ARG_LIST {_ARG_LIST_DOTS}]
+                            ({type_to_str(Optional[List[str]])}, default=None) some list of strings
+    -h, --help            show this help message and exit
+    """
     _test_subclasser_message(subclasser_simple, class_or_function_, help_message_expected, description=description)
 
 
@@ -410,25 +407,24 @@ def test_subclasser_complex(
     _test_subclasser(subclasser_complex, class_or_function_, args_string_and_arg_to_expected_value, test_call=False)
 
 
-# @pytest.mark.skipif(sys.version_info < (3, 10), reason="argparse is different. Need to fix help_message_expected")
 def test_subclasser_complex_help_message(class_or_function_: Any):
     description = "Script description"
     help_message_expected = f"""
-usage: pytest [-arg ARGUMENT_WITH_REALLY_LONG_NAME] --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST {_ARG_LIST_DOTS}]] [-h]
+    usage: pytest [-arg ARGUMENT_WITH_REALLY_LONG_NAME] --arg_int ARG_INT [--arg_bool]
+                  [--arg_list [ARG_LIST {_ARG_LIST_DOTS}]] [-h]
 
-{description}
+    {description}
 
-{_OPTIONS_TITLE}:
-  -arg ARGUMENT_WITH_REALLY_LONG_NAME, --argument_with_really_long_name ARGUMENT_WITH_REALLY_LONG_NAME
-                        (Union[float, int], default=3) This argument has a long name and will be aliased with a short one
-  --arg_int ARG_INT     (int, required) some integer
-  --arg_bool            (bool, default=True)
-  --arg_list [ARG_LIST {_ARG_LIST_DOTS}]
-                        ({type_to_str(Optional[List[str]])}, default=None) some list of strings
-  -h, --help            show this help message and exit
-""".lstrip(
-        "\n"
-    )
+    {_OPTIONS_TITLE}:
+    -arg ARGUMENT_WITH_REALLY_LONG_NAME, --argument_with_really_long_name ARGUMENT_WITH_REALLY_LONG_NAME
+                            (Union[float, int], default=3) This argument has a long name and will be aliased with a short
+                            one
+    --arg_int ARG_INT     (int, required) some integer
+    --arg_bool            (bool, default=True)
+    --arg_list [ARG_LIST {_ARG_LIST_DOTS}]
+                            ({type_to_str(Optional[List[str]])}, default=None) some list of strings
+    -h, --help            show this help message and exit
+    """
     _test_subclasser_message(subclasser_complex, class_or_function_, help_message_expected, description=description)
 
 
@@ -501,47 +497,48 @@ def test_subclasser_subparser(
             "Script description",
             # foo help likely missing b/c class nesting. In a demo in a Python 3.8 env, foo help appears in -h
             f"""
-usage: pytest [--foo] --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST {_ARG_LIST_DOTS}]] [-h] {{a,b}} ...
+            usage: pytest [--foo] --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST {_ARG_LIST_DOTS}]] [-h]
+                          {{a,b}} ...
 
-Script description
+            Script description
 
-positional arguments:
-  {{a,b}}               sub-command help
-    a                   a help
-    b                   b help
+            positional arguments:
+            {{a,b}}               sub-command help
+                a                   a help
+                b                   b help
 
-{_OPTIONS_TITLE}:
-  --foo                 (bool, default=False) {'' if sys.version_info < (3, 9) else 'foo help'}
-  --arg_int ARG_INT     (int, required) some integer
-  --arg_bool            (bool, default=True)
-  --arg_list [ARG_LIST {_ARG_LIST_DOTS}]
-                        ({type_to_str(Optional[List[str]])}, default=None) some list of strings
-  -h, --help            show this help message and exit
-""",
+            {_OPTIONS_TITLE}:
+            --foo                 (bool, default=False) {'' if sys.version_info < (3, 9) else 'foo help'}
+            --arg_int ARG_INT     (int, required) some integer
+            --arg_bool            (bool, default=True)
+            --arg_list [ARG_LIST {_ARG_LIST_DOTS}]
+                                    ({type_to_str(Optional[List[str]])}, default=None) some list of strings
+            -h, --help            show this help message and exit
+            """,
         ),
         (
             "a -h",
             "Description (a)",
             f"""
-usage: pytest a --bar BAR [-h]
+            usage: pytest a --bar BAR [-h]
 
-Description (a)
+            Description (a)
 
-{_OPTIONS_TITLE}:
-  --bar BAR   (int, required) bar help
-  -h, --help  show this help message and exit
-""",
+            {_OPTIONS_TITLE}:
+            --bar BAR   (int, required) bar help
+            -h, --help  show this help message and exit
+            """,
         ),
         (
             "b -h",
-            "",
+            "",  # no description
             f"""
-usage: pytest b --baz {{X,Y,Z}} [-h]
+            usage: pytest b --baz {{X,Y,Z}} [-h]
 
-{_OPTIONS_TITLE}:
-  --baz {{X,Y,Z}}  (Literal['X', 'Y', 'Z'], required) baz help
-  -h, --help     show this help message and exit
-""",
+            {_OPTIONS_TITLE}:
+            --baz {{X,Y,Z}}  (Literal['X', 'Y', 'Z'], required) baz help
+            -h, --help     show this help message and exit
+            """,
         ),
     ],
 )
