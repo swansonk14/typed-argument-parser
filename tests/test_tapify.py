@@ -1217,6 +1217,15 @@ class TapifyTests(TestCase):
             """
             return f"{a} {b} {c}"
 
+        def concat_without_docstring_description(a: int, b: int, c: int) -> str:
+            """
+            :param a: The first number.
+            :param b: The second number.
+            :param c: The third number.
+            """
+            # For this function, docstring.short_description and docstring.long_description are None
+            return f"{a} {b} {c}"
+
         def concat_with_positionals(a: int, b: int, /, c: int) -> str:
             """Concatenate three numbers.
 
@@ -1305,6 +1314,7 @@ class TapifyTests(TestCase):
         else:
             pydantic_data_models = []
 
+        expected_description = "Concatenate three numbers."
         for class_or_function in [
             concat,
             concat_with_positionals,
@@ -1315,10 +1325,14 @@ class TapifyTests(TestCase):
             f = io.StringIO()
             with contextlib.redirect_stdout(f):
                 with self.assertRaises(SystemExit):
-                    tapify(class_or_function, command_line_args=["-h"])
+                    if class_or_function == concat_without_docstring_description:
+                        tapify(class_or_function, command_line_args=["-h"], description=expected_description)
+                    else:
+                        tapify(class_or_function, command_line_args=["-h"])
 
+            # TODO: change the assertIn checks to instead check exact match like in test_to_tap_class
             stdout = f.getvalue()
-            self.assertIn("Concatenate three numbers.", stdout)
+            self.assertIn(expected_description, stdout)
             self.assertIn("--a A       (int, required) The first number.", stdout)
             self.assertIn("--b B       (int, required) The second number.", stdout)
             self.assertIn("--c C       (int, required) The third number.", stdout)
