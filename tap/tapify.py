@@ -300,17 +300,21 @@ def tapify(
     known_only: bool = False,
     command_line_args: Optional[List[str]] = None,
     explicit_bool: bool = False,
+    description: Optional[str] = None,
     **func_kwargs,
 ) -> OutputType:
     """Tapify initializes a class or runs a function by parsing arguments from the command line.
 
     :param class_or_function: The class or function to run with the provided arguments.
     :param known_only: If true, ignores extra arguments and only parses known arguments.
-    :param command_line_args: A list of command line style arguments to parse (e.g., ['--arg', 'value']). If None,
+    :param command_line_args: A list of command line style arguments to parse (e.g., `['--arg', 'value']`). If None,
                               arguments are parsed from the command line (default behavior).
-    :param explicit_bool: Booleans can be specified on the command line as "--arg True" or "--arg False" rather than
-                          "--arg". Additionally, booleans can be specified by prefixes of True and False with any
+    :param explicit_bool: Booleans can be specified on the command line as `--arg True` or `--arg False` rather than
+                          `--arg`. Additionally, booleans can be specified by prefixes of True and False with any
                           capitalization as well as 1 or 0.
+    :param description: The description displayed in the help message—the same description passed in
+                        `argparse.ArgumentParser(description=...)`. By default, it's extracted from `class_or_function`'s
+                        docstring.
     :param func_kwargs: Additional keyword arguments for the function. These act as default values when parsing the
                         command line arguments and overwrite the function defaults but are overwritten by the parsed
                         command line arguments.
@@ -320,8 +324,9 @@ def tapify(
     param_to_description = {param.arg_name: param.description for param in docstring.params}
     tap_data = _tap_data(class_or_function, param_to_description, func_kwargs)
     tap_class = _tap_class(tap_data.args_data)
-    # Create a Tap object with a description from the docstring of the class or function
-    description = "\n".join(filter(None, (docstring.short_description, docstring.long_description)))
+    # Create a Tap object
+    if description is None:
+        description = "\n".join(filter(None, (docstring.short_description, docstring.long_description)))
     tap = tap_class(description=description, explicit_bool=explicit_bool)
 
     # If any func_kwargs remain, they are not used in the function, so raise an error
