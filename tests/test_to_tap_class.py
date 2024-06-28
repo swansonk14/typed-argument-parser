@@ -302,9 +302,6 @@ def _test_subclasser_message(
     assert replace_whitespace(message) == replace_whitespace(message_expected)
 
 
-# Test sublcasser_simple
-
-
 @pytest.mark.parametrize(
     "args_string_and_arg_to_expected_value",
     [
@@ -348,9 +345,6 @@ def test_subclasser_simple_help_message(class_or_function_: Any):
     -h, --help            show this help message and exit
     """
     _test_subclasser_message(subclasser_simple, class_or_function_, help_message_expected, description=description)
-
-
-# Test subclasser_complex
 
 
 @pytest.mark.parametrize(
@@ -426,9 +420,6 @@ def test_subclasser_complex_help_message(class_or_function_: Any):
     -h, --help            show this help message and exit
     """
     _test_subclasser_message(subclasser_complex, class_or_function_, help_message_expected, description=description)
-
-
-# Test subclasser_subparser
 
 
 @pytest.mark.parametrize(

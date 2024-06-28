@@ -102,6 +102,7 @@ pytest
     - [Function](#function)
     - [Class](#class)
     - [Dataclass](#dataclass)
+    - [Pydantic](#pydantic)
   + [tapify help](#tapify-help)
   + [Command line vs explicit arguments](#command-line-vs-explicit-arguments)
   + [Known args](#known-args)

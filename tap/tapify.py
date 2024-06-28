@@ -6,6 +6,7 @@ handling
 """
 
 import dataclasses
+from functools import partial
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Sequence, Type, TypeVar, Union
 
@@ -355,3 +356,52 @@ def tapify(
 
     # Initialize the class or run the function with the parsed arguments
     return class_or_function(*class_or_function_args, **class_or_function_kwargs)
+
+
+def tapify_with_subparsers(class_: Type):
+    # Create a Tap class with subparsers defined by the class_'s methods
+    docstring = _docstring(class_)
+    param_to_description = {param.arg_name: param.description for param in docstring.params}
+    args_data = _tap_data(class_, param_to_description, func_kwargs={}).args_data
+
+    subparser_dest = "_tap_subparser_dest"
+
+    class TapWithSubparsers(_tap_class(args_data)):
+        def configure(self):  # TODO: understand why overriding _configure is wrong
+            self.add_subparsers(
+                help="sub-command help",  # TODO: prolly should be user-inputted instead
+                required=True,  # If not required just use tapify
+                dest=subparser_dest,  # Need to know which subparser (i.e., which method) is being hit by the CLI
+            )
+            for method_name in dir(class_):
+                method = getattr(class_, method_name)
+                if method_name.startswith("_") or not callable(method):
+                    # TODO: maybe the user can input their own function (method_name: str -> bool) for deciding whether
+                    # or not a method_name should be included as a subparser or not.
+                    continue
+                subparser_tap = to_tap_class(partial(method, None))
+                # TODO: the partial part is a stupid fix for getting rid of self. Need to also handle static and class
+                # methods
+                self.add_subparser(
+                    method_name,
+                    subparser_tap,
+                    help=f"{method_name} help",  # TODO: think about how to set
+                    description=f"{method_name} description",  # TODO: think about how to set
+                )
+
+    # Parse the user's command
+    cli_args = TapWithSubparsers().parse_args()
+
+    # Create the class_ object
+    # TODO: maybe figure out how to not do this step so that the input class_ can be a module or any collection of things
+    # where calling dir on it gives a bunch of functions
+    args_for_init = {arg_data.name for arg_data in args_data}
+    # TODO: handle args and kwargs like we did for tapify
+    init_kwargs = {name: value for name, value in cli_args.as_dict().items() if name in args_for_init}
+    object_ = class_(**init_kwargs)
+
+    # Call the method
+    method = getattr(object_, getattr(cli_args, subparser_dest))
+    # TODO: handle args and kwargs like we did for tapify
+    method_kwargs = {name: value for name, value in cli_args.as_dict().items() if name not in args_for_init}
+    return method(**method_kwargs)  # TODO: also return the object?
