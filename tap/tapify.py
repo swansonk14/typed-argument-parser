@@ -392,6 +392,8 @@ def tapify_with_subparsers(class_: Type):
     # Parse the user's command
     cli_args = TapWithSubparsers().parse_args()
 
+    # TODO: think about how to avoid name collisions b/t the init and method args / avoid loading everything into as_dict
+
     # Create the class_ object
     # TODO: maybe figure out how to not do this step so that the input class_ can be a module or any collection of things
     # where calling dir on it gives a bunch of functions
