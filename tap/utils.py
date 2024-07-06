@@ -124,7 +124,7 @@ def type_to_str(type_annotation: Union[type, Any]) -> str:
     :return: A string representation of the type annotation.
     """
     # Built-in type
-    if type(type_annotation) == type:
+    if type(type_annotation) is type:
         return type_annotation.__name__
 
     # Typing type
@@ -309,7 +309,7 @@ class TupleTypeEnforcer:
     """The type argument to argparse for checking and applying types to Tuples."""
 
     def __init__(self, types: List[type], loop: bool = False):
-        self.types = [boolean_type if t == bool else t for t in types]
+        self.types = [boolean_type if t is bool else t for t in types]
         self.loop = loop
         self.index = 0
 

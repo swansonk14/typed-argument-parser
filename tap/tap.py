@@ -188,7 +188,7 @@ class Tap(ArgumentParser):
                         var_args = (str, type(None))
 
                     # Raise error if type function is not explicitly provided for Union types (not including Optionals)
-                    if get_origin(var_type) in UNION_TYPES and not (len(var_args) == 2 and var_args[1] == type(None)):
+                    if get_origin(var_type) in UNION_TYPES and not (len(var_args) == 2 and var_args[1] is type(None)):
                         raise ArgumentTypeError(
                             "For Union types, you must include an explicit type function in the configure method. "
                             "For example,\n\n"
@@ -265,11 +265,11 @@ class Tap(ArgumentParser):
                         var_type = arg_types[0]
 
                     # Handle the cases of List[bool], Set[bool], Tuple[bool]
-                    if var_type == bool:
+                    if var_type is bool:
                         var_type = boolean_type
 
                 # If bool then set action, otherwise set type
-                if var_type == bool:
+                if var_type is bool:
                     if explicit_bool:
                         kwargs["type"] = boolean_type
                         kwargs["choices"] = [True, False]  # this makes the help message more helpful
@@ -454,7 +454,7 @@ class Tap(ArgumentParser):
         for variable, value in vars(default_namespace).items():
             # Conversion from list to set or tuple
             if variable in self._annotations:
-                if type(value) == list:
+                if type(value) is list:
                     var_type = get_origin(self._annotations[variable])
 
                     # Unpack nested boxed types such as Optional[List[int]]
