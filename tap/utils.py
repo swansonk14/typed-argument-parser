@@ -24,7 +24,7 @@ from typing import (
     Union,
     TypedDict,
 )
-a
+
 from typing import get_args, get_origin as typing_get_origin
 
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
