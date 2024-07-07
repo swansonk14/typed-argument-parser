@@ -11,14 +11,12 @@ from pprint import pformat
 from shlex import quote, split
 from types import MethodType
 from typing import Any, Callable, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
-from typing_inspect import is_literal_type
+from typing_inspect import is_literal_type, get_origin, get_args
 
 from tap.utils import (
     get_class_variables,
-    get_args,
     get_argument_name,
     get_dest,
-    get_origin,
     GitInfo,
     is_option_arg,
     is_positional_arg,
