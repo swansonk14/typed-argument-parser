@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from argparse import ArgumentParser, ArgumentTypeError
 from base64 import b64encode, b64decode
+from dataclasses import dataclass
 import inspect
 from io import StringIO
 from json import JSONEncoder
@@ -39,12 +40,11 @@ def check_output(command: list[str], suppress_stderr: bool = True, **kwargs) -> 
         output = subprocess.check_output(command, stderr=devnull, **kwargs).decode("utf-8").strip()
     return output
 
-
+@dataclass
 class GitInfo:
     """Class with helper methods for extracting information about a git repo."""
 
-    def __init__(self, repo_path: PathLike):
-        self.repo_path = repo_path
+    repo_path: PathLike
 
     def has_git(self) -> bool:
         """Returns whether git is installed.
@@ -175,7 +175,7 @@ def is_positional_arg(*name_or_flags) -> bool:
     return not is_option_arg(*name_or_flags)
 
 
-def tokenize_source(obj: object) -> Generator:
+def tokenize_source(obj: object) -> Generator[tokenize.TokenInfo]:
     """Returns a generator for the tokens of the object's source code."""
     source = inspect.getsource(obj)
     token_generator = tokenize.generate_tokens(StringIO(source).readline)
@@ -183,20 +183,48 @@ def tokenize_source(obj: object) -> Generator:
     return token_generator
 
 
-def get_class_column(obj: type) -> int:
+def get_class_column(obj: object) -> int:
     """Determines the column number for class variables in a class."""
-    first_line = 1
-    for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(obj):
-        if token.strip() == "@":
-            first_line += 1
-        if start_line <= first_line or token.strip() == "":
-            continue
+    # A class looks like:
+    # @decorator
+    # class ClassName:
+    #     some code
+    #     class_variable = 1
+    #
+    # so we only need to find the column number of the first
+    # line in the body of the class
 
+    first_line = 1
+    start_column: None | int = None
+    for token_info in tokenize_source(obj):
+        token = token_info.string.strip()
+        start_line, start_column = token_info.start
+
+        # Skip if the line is a decorator
+        if token == "@":
+            first_line += 1
+
+        # the class definition is over, the start_column is the good one
+        if start_line > first_line or token == "":
+            return start_column
+
+    if start_column is not None:
         return start_column
 
     raise ValueError("Could not find class column")
 
-def source_line_to_tokens(obj: object) -> dict[int, list[dict[str, str | int]]]:
+class TokenInfoDict(TypedDict):
+    # Almost a copy of tokenize.TokenInfo, but a TypedDict instead of a NamedTuple
+    # and start and end are directly accessible instead of being in a tuple
+    token_type: int
+    token: str
+    start_line: int
+    start_column: int
+    end_line: int
+    end_column: int
+    line: str
+
+def source_line_to_tokens(obj: object) -> dict[int, list[TokenInfoDict]]:
     """Gets a dictionary mapping from line number to a dictionary of tokens on that line for an object's source code."""
     line_to_tokens = {}
     for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(obj):
@@ -214,8 +242,13 @@ def source_line_to_tokens(obj: object) -> dict[int, list[dict[str, str | int]]]:
 
     return line_to_tokens
 
+class ClassVariableInfo(TypedDict):
+    comment: str
 
-def get_class_variables(cls: type) -> dict[str, dict[str, str]]:
+class ClassVariableContainer(TypedDict):
+    class_variables: dict[str, ClassVariableInfo]
+
+def get_class_variables(cls: type) -> ClassVariableContainer:
     """Returns a dictionary mapping class variables to their additional information (currently just comments)."""
     # Get mapping from line number to tokens
     line_to_tokens = source_line_to_tokens(cls)
@@ -225,7 +258,7 @@ def get_class_variables(cls: type) -> dict[str, dict[str, str]]:
 
     # Extract class variables
     class_variable = None
-    variable_to_comment = {}
+    variable_to_comment = ClassVariableContainer(class_variables={})
     for tokens in line_to_tokens.values():
         for i, token in enumerate(tokens):
 
