@@ -11,7 +11,6 @@ import os
 import pickle
 import re
 import subprocess
-import sys
 import tokenize
 from typing import (
     Any,
@@ -19,7 +18,9 @@ from typing import (
     Generator,
     Iterator,
     Literal,
+    Protocol,
     Union,
+    TypedDict,
 )
 from typing_inspect import get_args
 
@@ -302,22 +303,27 @@ def boolean_type(flag_value: str) -> bool:
     raise ArgumentTypeError('Value has to be a prefix of "True" or "False" (case insensitive) or "1" or "0".')
 
 
+class _ConverterFromStr(Protocol):
+    def __call__(self, arg: str, /) -> Any:
+        ...
+
 class TupleTypeEnforcer:
     """The type argument to argparse for checking and applying types to Tuples."""
 
-    def __init__(self, types: list[type], loop: bool = False):
+
+    def __init__(self, types: list[_ConverterFromStr], loop: bool = False):
         self.types = [boolean_type if t is bool else t for t in types]
         self.loop = loop
         self.index = 0
 
     def __call__(self, arg: str) -> Any:
-        arg = self.types[self.index](arg)
+        converted_arg = self.types[self.index](arg)
         self.index += 1
 
         if self.loop:
             self.index %= len(self.types)
 
-        return arg
+        return converted_arg
 
 
 class MockTuple:
@@ -448,9 +454,22 @@ def fix_py36_copy(func: Callable) -> Callable:
 
     return wrapper
 
+class _ReproducibilityInfo(TypedDict):
+    command_line: str
+    time: str
+
+
+class ReproducibilityInfoWithGit(_ReproducibilityInfo):
+    git_root: str
+    git_url: str
+    git_has_uncommitted_changes: bool
+
+
+ReproducibilityInfo = Union[_ReproducibilityInfo, ReproducibilityInfoWithGit]
+
 
 def enforce_reproducibility(
-    saved_reproducibility_data: dict[str, str] | None, current_reproducibility_data: dict[str, str], path: PathLike
+    saved_reproducibility_data: ReproducibilityInfo | None, current_reproducibility_data: ReproducibilityInfo, path: PathLike
 ) -> None:
     """Checks if reproducibility has failed and raises the appropriate error.
 

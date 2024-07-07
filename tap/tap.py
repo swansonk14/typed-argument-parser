@@ -29,6 +29,7 @@ from tap.utils import (
     fix_py36_copy,
     enforce_reproducibility,
     PathLike,
+    ReproducibilityInfo
 )
 
 if sys.version_info >= (3, 10):
@@ -368,7 +369,7 @@ class Tap(ArgumentParser):
         """
 
     @staticmethod
-    def get_reproducibility_info(repo_path: PathLike | None = None) -> dict[str, str]:
+    def get_reproducibility_info(repo_path: PathLike | None = None) -> ReproducibilityInfo:
         """Gets a dictionary of reproducibility information.
 
         Reproducibility information always includes:
@@ -686,7 +687,7 @@ class Tap(ArgumentParser):
 
         return self
 
-    def _load_from_config_files(self, config_files: list[str] | None) -> list[str]:
+    def _load_from_config_files(self, config_files: list[PathLike] | None) -> list[str]:
         """Loads arguments from a list of configuration files containing command line arguments.
 
         :param config_files: A list of paths to configuration files containing the command line arguments
