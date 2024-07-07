@@ -719,7 +719,7 @@ class Tap(ArgumentParser):
         return pformat(self.as_dict())
 
     @fix_py36_copy
-    def __deepcopy__(self, memo: dict[int, Any] = None) -> TapType:
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> TapType:
         """Deepcopy the Tap object."""
         copied = type(self).__new__(type(self))
 

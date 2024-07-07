@@ -430,9 +430,6 @@ def fix_py36_copy(func: Callable) -> Callable:
 
     Based on https://stackoverflow.com/questions/6279305/typeerror-cannot-deepcopy-this-pattern-object
     """
-    if sys.version_info[:2] > (3, 6):
-        return func
-
     @wraps(func)
     def wrapper(*args, **kwargs):
         re_type = type(re.compile(""))
