@@ -31,14 +31,15 @@ NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
 PRIMITIVES = (str, int, float, bool)
 PathLike = Union[str, os.PathLike]
 
-def is_literal_type(tp: type) -> bool:
-    """Returns whether the type is a literal type."""
-    return tp is Literal or getattr(tp, "__origin__", None) is Literal
-
 def get_origin(tp: type) -> type:
     """Same as typing.get_origin but returns the type itself if the origin is None."""
     origin = typing_get_origin(tp)
     return origin if origin is not None else tp
+
+def is_literal_type(tp: type) -> bool:
+    """Returns whether the type is a literal type."""
+    return tp is Literal or get_origin(tp) is Literal
+
 
 def check_output(command: List[str], suppress_stderr: bool = True, **kwargs) -> str:
     """Runs subprocess.check_output and returns the result as a string.
