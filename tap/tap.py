@@ -323,10 +323,9 @@ class Tap(ArgumentParser):
 
     def process_args(self) -> None:
         """Perform additional argument processing and/or validation."""
-        pass
 
     def add_subparser(self, flag: str, subparser_type: type, **kwargs) -> None:
-        """Add a subparser to the collection of subparsers"""
+        """Add a subparser to the collection of subparsers."""
         help_desc = kwargs.get("help", subparser_type.__doc__)
         kwargs["help"] = help_desc
 
@@ -369,7 +368,6 @@ class Tap(ArgumentParser):
             self.add_subparsers(help='sub-command help')
             self.add_subparser('a', SubparserA, help='a help')
         """
-        pass
 
     @staticmethod
     def get_reproducibility_info(repo_path: PathLike | None = None) -> dict[str, str]:
@@ -531,9 +529,7 @@ class Tap(ArgumentParser):
             if not (
                 var.startswith("_")
                 or callable(val)
-                or isinstance(val, staticmethod)
-                or isinstance(val, classmethod)
-                or isinstance(val, property)
+                or isinstance(val, (staticmethod, classmethod, property))
             )
         }
 
@@ -598,7 +594,7 @@ class Tap(ArgumentParser):
         stored_dict = {
             var: getattr(self, var)
             for var, val in stored_dict.items()
-            if not (var.startswith("_") or isinstance(val, MethodType) or isinstance(val, staticmethod))
+            if not (var.startswith("_") or isinstance(val, (MethodType, staticmethod)))
         }
 
         tap_class_dict_keys = Tap().__dict__.keys() | Tap.__dict__.keys()
@@ -626,16 +622,16 @@ class Tap(ArgumentParser):
             )
 
         # Load all arguments
-        for key, value in args_dict.items():
-            try:
+        try:
+            for key, value in args_dict.items():
                 setattr(self, key, value)
-            except AttributeError:
-                if not skip_unsettable:
-                    raise AttributeError(
+        except AttributeError as e:
+            if not skip_unsettable:
+                raise AttributeError(
                         f'Cannot set attribute "{key}" to "{value}". '
                         f"To skip arguments that cannot be set \n"
                         f'\t"skip_unsettable = True"'
-                    )
+                    ) from e
 
         self._parsed = True
 
@@ -706,8 +702,8 @@ class Tap(ArgumentParser):
         if config_files is not None:
             # Read arguments from all configs from the lowest precedence config to the highest
             for file in config_files:
-                with open(file) as f:
-                    args_from_config.append(f.read().strip())
+                text = Path(file).read_text(encoding="utf-8").strip()
+                args_from_config.append(text)
 
         return args_from_config
 

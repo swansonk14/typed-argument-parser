@@ -57,9 +57,10 @@ class GitInfo:
         """
         try:
             output = check_output(["git", "rev-parse", "--is-inside-work-tree"], cwd=self.repo_path)
-            return output == "true"
         except (FileNotFoundError, subprocess.CalledProcessError):
             return False
+        else:
+            return output == "true"
 
     def get_git_root(self) -> str:
         """Gets the root directory of the git repo where the command is run.
@@ -196,6 +197,8 @@ def get_class_column(obj: type) -> int:
             continue
 
         return start_column
+
+    raise ValueError("Could not find class column")
 
 def source_line_to_tokens(obj: object) -> dict[int, list[dict[str, str | int]]]:
     """Gets a dictionary mapping from line number to a dictionary of tokens on that line for an object's source code."""
@@ -385,7 +388,7 @@ def define_python_object_encoder(skip_unpicklable: bool = False) -> "PythonObjec
                         f"Could not pickle this object: Failed with exception {e}\n"
                         f"If you would like to ignore unpicklable attributes set "
                         f"skip_unpicklable = True in save."
-                    )
+                    ) from e
                 else:
                     return {"_type": f"unpicklable_object {obj.__class__.__name__}", "_value": None}
 
@@ -393,7 +396,7 @@ def define_python_object_encoder(skip_unpicklable: bool = False) -> "PythonObjec
 
 
 class UnpicklableObject:
-    """A class that serves as a placeholder for an object that could not be pickled. """
+    """A class that serves as a placeholder for an object that could not be pickled."""
 
     def __eq__(self, other):
         return isinstance(other, UnpicklableObject)
