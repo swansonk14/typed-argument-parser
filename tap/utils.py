@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from argparse import ArgumentParser, ArgumentTypeError
 from base64 import b64encode, b64decode
 import copy
@@ -14,13 +16,9 @@ import tokenize
 from typing import (
     Any,
     Callable,
-    Dict,
     Generator,
     Iterator,
-    List,
     Literal,
-    Optional,
-    Tuple,
     Union,
 )
 from typing_inspect import get_args as typing_inspect_get_args, get_origin as typing_inspect_get_origin
@@ -33,7 +31,7 @@ PRIMITIVES = (str, int, float, bool)
 PathLike = Union[str, os.PathLike]
 
 
-def check_output(command: List[str], suppress_stderr: bool = True, **kwargs) -> str:
+def check_output(command: list[str], suppress_stderr: bool = True, **kwargs) -> str:
     """Runs subprocess.check_output and returns the result as a string.
 
     :param command: A list of strings representing the command to run on the command line.
@@ -117,7 +115,7 @@ class GitInfo:
         return not status.endswith(NO_CHANGES_STATUS)
 
 
-def type_to_str(type_annotation: Union[type, Any]) -> str:
+def type_to_str(type_annotation: type | Any) -> str:
     """Gets a string representation of the provided type.
 
     :param type_annotation: A type annotation, which is either a built-in type or a typing type.
@@ -199,8 +197,7 @@ def get_class_column(obj: type) -> int:
 
         return start_column
 
-
-def source_line_to_tokens(obj: object) -> Dict[int, List[Dict[str, Union[str, int]]]]:
+def source_line_to_tokens(obj: object) -> dict[int, list[dict[str, str | int]]]:
     """Gets a dictionary mapping from line number to a dictionary of tokens on that line for an object's source code."""
     line_to_tokens = {}
     for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(obj):
@@ -219,7 +216,7 @@ def source_line_to_tokens(obj: object) -> Dict[int, List[Dict[str, Union[str, in
     return line_to_tokens
 
 
-def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
+def get_class_variables(cls: type) -> dict[str, dict[str, str]]:
     """Returns a dictionary mapping class variables to their additional information (currently just comments)."""
     # Get mapping from line number to tokens
     line_to_tokens = source_line_to_tokens(cls)
@@ -271,7 +268,7 @@ def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
     return variable_to_comment
 
 
-def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any], List[str]]:
+def get_literals(literal: type[Literal], variable: str) -> tuple[Callable[[str], Any], list[str]]:
     """Extracts the values from a Literal type and ensures that the values are all primitive types."""
     literals = list(get_args(literal))
 
@@ -308,7 +305,7 @@ def boolean_type(flag_value: str) -> bool:
 class TupleTypeEnforcer:
     """The type argument to argparse for checking and applying types to Tuples."""
 
-    def __init__(self, types: List[type], loop: bool = False):
+    def __init__(self, types: list[type], loop: bool = False):
         self.types = [boolean_type if t is bool else t for t in types]
         self.loop = loop
         self.index = 0
@@ -387,7 +384,7 @@ def define_python_object_encoder(skip_unpicklable: bool = False) -> "PythonObjec
                     raise ValueError(
                         f"Could not pickle this object: Failed with exception {e}\n"
                         f"If you would like to ignore unpicklable attributes set "
-                        f"skip_unpickleable = True in save."
+                        f"skip_unpicklable = True in save."
                     )
                 else:
                     return {"_type": f"unpicklable_object {obj.__class__.__name__}", "_value": None}
@@ -456,7 +453,7 @@ def fix_py36_copy(func: Callable) -> Callable:
 
 
 def enforce_reproducibility(
-    saved_reproducibility_data: Optional[Dict[str, str]], current_reproducibility_data: Dict[str, str], path: PathLike
+    saved_reproducibility_data: dict[str, str] | None, current_reproducibility_data: dict[str, str], path: PathLike
 ) -> None:
     """Checks if reproducibility has failed and raises the appropriate error.
 
@@ -495,7 +492,7 @@ def enforce_reproducibility(
 # https://github.com/ilevkivskyi/typing_inspect/issues/64
 # https://github.com/ilevkivskyi/typing_inspect/issues/65
 def get_origin(tp: Any) -> Any:
-    """Same as typing_inspect.get_origin but fixes unparameterized generic types like Set."""
+    """Same as typing_inspect.get_origin but fixes parameterized generic types like Set."""
     origin = typing_inspect_get_origin(tp)
 
     if origin is None:
@@ -508,7 +505,7 @@ def get_origin(tp: Any) -> Any:
 
 
 # TODO: remove this once typing_inspect.get_args is fixed for Python 3.10 union types
-def get_args(tp: Any) -> Tuple[type, ...]:
+def get_args(tp: Any) -> tuple[type, ...]:
     """Same as typing_inspect.get_args but fixes Python 3.10 union types."""
     if sys.version_info >= (3, 10) and isinstance(tp, UnionType):
         return tp.__args__
