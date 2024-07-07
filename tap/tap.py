@@ -20,8 +20,6 @@ from typing import (
     TypeVar,
     Union,
     get_type_hints,
-    get_args,
-    get_origin,
 )
 
 from tap.utils import (
@@ -33,14 +31,16 @@ from tap.utils import (
     is_positional_arg,
     type_to_str,
     get_literals,
+    is_literal_type,
     boolean_type,
     TupleTypeEnforcer,
     define_python_object_encoder,
     as_python_object,
     enforce_reproducibility,
     PathLike,
+    get_args,
+    get_origin,
 )
-
 if sys.version_info >= (3, 10):
     from types import UnionType
 
@@ -630,16 +630,16 @@ class Tap(ArgumentParser):
             )
 
         # Load all arguments
-        try:
-            for key, value in args_dict.items():
+        for key, value in args_dict.items():
+            try:
                 setattr(self, key, value)
-        except AttributeError as e:
-            if not skip_unsettable:
-                raise AttributeError(
-                        f'Cannot set attribute "{key}" to "{value}". '
-                        f"To skip arguments that cannot be set \n"
-                        f'\t"skip_unsettable = True"'
-                    ) from e
+            except AttributeError as e:
+                if not skip_unsettable:
+                    raise AttributeError(
+                            f'Cannot set attribute "{key}" to "{value}". '
+                            f"To skip arguments that cannot be set \n"
+                            f'\t"skip_unsettable = True"'
+                        ) from e
 
         self._parsed = True
 
@@ -722,7 +722,6 @@ class Tap(ArgumentParser):
         """
         return pformat(self.as_dict())
 
-    @fix_py36_copy
     def __deepcopy__(self, memo: Optional[Dict[int, Any]] = None) -> TapType:
         """Deepcopy the Tap object."""
         copied = type(self).__new__(type(self))

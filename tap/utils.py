@@ -23,13 +23,22 @@ from typing import (
     Protocol,
     Union,
     TypedDict,
-    get_args,
 )
+a
+from typing import get_args, get_origin as typing_get_origin
 
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
 PRIMITIVES = (str, int, float, bool)
 PathLike = Union[str, os.PathLike]
 
+def is_literal_type(tp: type) -> bool:
+    """Returns whether the type is a literal type."""
+    return tp is Literal or getattr(tp, "__origin__", None) is Literal
+
+def get_origin(tp: type) -> type:
+    """Same as typing.get_origin but returns the type itself if the origin is None."""
+    origin = typing_get_origin(tp)
+    return origin if origin is not None else tp
 
 def check_output(command: List[str], suppress_stderr: bool = True, **kwargs) -> str:
     """Runs subprocess.check_output and returns the result as a string.
@@ -178,7 +187,7 @@ def is_positional_arg(*name_or_flags) -> bool:
     return not is_option_arg(*name_or_flags)
 
 
-def tokenize_source(obj: object) -> Generator[tokenize.TokenInfo]:
+def tokenize_source(obj: object) -> Generator[tokenize.TokenInfo, None, None]:
     """Returns a generator for the tokens of the object's source code."""
     source = inspect.getsource(obj)
     token_generator = tokenize.generate_tokens(StringIO(source).readline)
@@ -198,7 +207,6 @@ def get_class_column(obj: object) -> int:
     # line in the body of the class
 
     first_line = 1
-    start_column: None | int = None
     for token_info in tokenize_source(obj):
         token = token_info.string.strip()
         start_line, start_column = token_info.start
@@ -208,12 +216,9 @@ def get_class_column(obj: object) -> int:
             first_line += 1
 
         # the class definition is over, the start_column is the good one
-        if start_line > first_line or token == "":
-            return start_column
-
-    if start_column is not None:
+        if start_line <= first_line or token == "":
+            continue
         return start_column
-
     raise ValueError("Could not find class column")
 
 
@@ -263,7 +268,7 @@ def get_class_variables(cls: type) -> ClassVariableContainer:
 
     # Extract class variables
     class_variable = None
-    variable_to_comment = ClassVariableContainer(class_variables={})
+    variable_to_comment: ClassVariableContainer = {}
     for tokens in line_to_tokens.values():
         for i, token in enumerate(tokens):
 
@@ -340,13 +345,14 @@ def boolean_type(flag_value: str) -> bool:
 
 
 class _ConverterFromStr(Protocol):
+    """Protocol for a callable that converts a string to a specific type."""
     def __call__(self, arg: str, /) -> Any:
         ...
 
 class TupleTypeEnforcer:
     """The type argument to argparse for checking and applying types to Tuples."""
 
-    def __init__(self, types: List[type], loop: bool = False):
+    def __init__(self, types: List[_ConverterFromStr], loop: bool = False):
         self.types = [boolean_type if t is bool else t for t in types]
         self.loop = loop
         self.index = 0
@@ -396,11 +402,30 @@ def _nested_replace_type(obj: Any, find_type: type, replace_type: type) -> Any:
 
     return obj
 
-class _PythonObjectEncoderProto(Protocol):
+class _TypedJSONEncoder(JSONEncoder):
+    def __new__(cls, *args, **kwargs):
+        raise TypeError(
+            "_TypedJSONEncoder is only for type hinting and should not be instantiated. "
+            "Use JSONEncoder instead."
+            )
+
+    def __init__(
+        self, *,
+        skipkeys: bool = False,
+        ensure_ascii: bool = True,
+        check_circular: bool = True,
+        allow_nan: bool = True,
+        sort_keys: bool = False,
+        indent: Optional[int] = None,
+        separators: Optional[Tuple[str, str]] = None,
+        default: Optional[Callable[[Any], Any]] = None,
+    ) -> None: ...
+
+    def encode(self, o: Any) -> str: ...
     def iterencode(self, o: Any, _one_shot: bool = False) -> Iterator[str]: ...
     def default(self, obj: Any) -> Any: ...
 
-def define_python_object_encoder(skip_unpicklable: bool = False) -> Type[_PythonObjectEncoderProto]:
+def define_python_object_encoder(skip_unpicklable: bool = False) -> Type[_TypedJSONEncoder]:
     class PythonObjectEncoder(JSONEncoder):
         """Stores parameters that are not JSON serializable as pickle dumps.
 
