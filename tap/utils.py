@@ -16,6 +16,7 @@ from typing import (
     Generator,
     Iterator,
     List,
+    Type,
     Literal,
     Optional,
     Tuple,
@@ -395,8 +396,11 @@ def _nested_replace_type(obj: Any, find_type: type, replace_type: type) -> Any:
 
     return obj
 
+class _PythonObjectEncoderProto(Protocol):
+    def iterencode(self, o: Any, _one_shot: bool = False) -> Iterator[str]: ...
+    def default(self, obj: Any) -> Any: ...
 
-def define_python_object_encoder(skip_unpicklable: bool = False) -> "PythonObjectEncoder":  # noqa F821
+def define_python_object_encoder(skip_unpicklable: bool = False) -> Type[_PythonObjectEncoderProto]:
     class PythonObjectEncoder(JSONEncoder):
         """Stores parameters that are not JSON serializable as pickle dumps.
 
@@ -480,7 +484,9 @@ ReproducibilityInfo = Union[_ReproducibilityInfo, ReproducibilityInfoWithGit]
 
 
 def enforce_reproducibility(
-    saved_reproducibility_data: Optional[ReproducibilityInfo], current_reproducibility_data: Dict[str, str], path: PathLike
+    saved_reproducibility_data: Optional[ReproducibilityInfo],
+    current_reproducibility_data: ReproducibilityInfo,
+    path: PathLike,
 ) -> None:
     """Checks if reproducibility has failed and raises the appropriate error.
 
