@@ -65,4 +65,3 @@ tap = ["py.typed"]
 [project.urls]
 Homepage = "https://github.com/swansonk14/typed-argument-parser"
 Issues = "https://github.com/swansonk14/typed-argument-parser/issues"
-# download_url=f"https://github.com/swansonk14/typed-argument-parser/archive/refs/tags/v_{__version__}.tar.gz"
