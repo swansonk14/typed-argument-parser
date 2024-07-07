@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from argparse import ArgumentParser, ArgumentTypeError
 from base64 import b64encode, b64decode
 from dataclasses import dataclass
@@ -14,9 +12,13 @@ import tokenize
 from typing import (
     Any,
     Callable,
+    Dict,
     Generator,
     Iterator,
+    List,
     Literal,
+    Optional,
+    Tuple,
     Protocol,
     Union,
     TypedDict,
@@ -28,7 +30,7 @@ PRIMITIVES = (str, int, float, bool)
 PathLike = Union[str, os.PathLike]
 
 
-def check_output(command: list[str], suppress_stderr: bool = True, **kwargs) -> str:
+def check_output(command: List[str], suppress_stderr: bool = True, **kwargs) -> str:
     """Runs subprocess.check_output and returns the result as a string.
 
     :param command: A list of strings representing the command to run on the command line.
@@ -112,7 +114,7 @@ class GitInfo:
         return not status.endswith(NO_CHANGES_STATUS)
 
 
-def type_to_str(type_annotation: type | Any) -> str:
+def type_to_str(type_annotation: Union[type, Any]) -> str:
     """Gets a string representation of the provided type.
 
     :param type_annotation: A type annotation, which is either a built-in type or a typing type.
@@ -213,6 +215,7 @@ def get_class_column(obj: object) -> int:
 
     raise ValueError("Could not find class column")
 
+
 class TokenInfoDict(TypedDict):
     # Almost a copy of tokenize.TokenInfo, but a TypedDict instead of a NamedTuple
     # and start and end are directly accessible instead of being in a tuple
@@ -224,7 +227,8 @@ class TokenInfoDict(TypedDict):
     end_column: int
     line: str
 
-def source_line_to_tokens(obj: object) -> dict[int, list[TokenInfoDict]]:
+
+def source_line_to_tokens(obj: object) -> Dict[int, List[TokenInfoDict]]:
     """Gets a dictionary mapping from line number to a dictionary of tokens on that line for an object's source code."""
     line_to_tokens = {}
     for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(obj):
@@ -300,7 +304,7 @@ def get_class_variables(cls: type) -> ClassVariableContainer:
     return variable_to_comment
 
 
-def get_literals(literal: type[Literal], variable: str) -> tuple[Callable[[str], Any], list[str]]:
+def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any], List[str]]:
     """Extracts the values from a Literal type and ensures that the values are all primitive types."""
     literals = list(get_args(literal))
 
@@ -341,8 +345,7 @@ class _ConverterFromStr(Protocol):
 class TupleTypeEnforcer:
     """The type argument to argparse for checking and applying types to Tuples."""
 
-
-    def __init__(self, types: list[_ConverterFromStr], loop: bool = False):
+    def __init__(self, types: List[type], loop: bool = False):
         self.types = [boolean_type if t is bool else t for t in types]
         self.loop = loop
         self.index = 0
@@ -477,7 +480,7 @@ ReproducibilityInfo = Union[_ReproducibilityInfo, ReproducibilityInfoWithGit]
 
 
 def enforce_reproducibility(
-    saved_reproducibility_data: ReproducibilityInfo | None, current_reproducibility_data: ReproducibilityInfo, path: PathLike
+    saved_reproducibility_data: Optional[ReproducibilityInfo], current_reproducibility_data: dict[str, str], path: PathLike
 ) -> None:
     """Checks if reproducibility has failed and raises the appropriate error.
 

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 import sys
 import time
@@ -10,7 +8,7 @@ from pathlib import Path
 from pprint import pformat
 from shlex import quote, split
 from types import MethodType
-from typing import Any, Callable, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
+from typing import Any, Callable, List, Dict, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
 from typing_inspect import is_literal_type, get_origin, get_args
 
 from tap.utils import (
@@ -54,7 +52,7 @@ class Tap(ArgumentParser):
         *args,
         underscores_to_dashes: bool = False,
         explicit_bool: bool = False,
-        config_files: list[PathLike] | None = None,
+        config_files: Optional[List[PathLike]] = None,
         **kwargs,
     ):
         """Initializes the Tap instance.
@@ -89,7 +87,7 @@ class Tap(ArgumentParser):
         self.argument_buffer = {}
 
         # Create a place to put the subparsers
-        self._subparser_buffer: list[tuple[str, type, dict[str, Any]]] = []
+        self._subparser_buffer: List[Tuple[str, type, Dict[str, Any]]] = []
 
         # Get class variables help strings from the comments
         self.class_variables = self._get_class_variables()
@@ -330,7 +328,7 @@ class Tap(ArgumentParser):
         self._subparser_buffer.append((flag, subparser_type, kwargs))
 
     def _add_subparsers(self) -> None:
-        """Add each of the subparsers to the Tap object."""
+        """Add each of the subparsers to the Tap object. """
         # Initialize the _subparsers object if not already created
         if self._subparsers is None and len(self._subparser_buffer) > 0:
             self._subparsers = super(Tap, self).add_subparsers()
@@ -344,7 +342,7 @@ class Tap(ArgumentParser):
         self._subparsers = super().add_subparsers(**kwargs)
 
     def _configure(self) -> None:
-        """Executes the user-defined configuration."""
+        """Executes the user-defined configuration. """
         # Call the user-defined configuration
         self.configure()
 
@@ -368,7 +366,7 @@ class Tap(ArgumentParser):
         """
 
     @staticmethod
-    def get_reproducibility_info(repo_path: PathLike | None = None) -> ReproducibilityInfo:
+    def get_reproducibility_info(repo_path: Optional[PathLike] = None) -> dict[str, str]:
         """Gets a dictionary of reproducibility information.
 
         Reproducibility information always includes:
@@ -403,7 +401,7 @@ class Tap(ArgumentParser):
 
         return reproducibility
 
-    def _log_all(self, repo_path: PathLike | None = None) -> dict[str, Any]:
+    def _log_all(self, repo_path: Optional[PathLike] = None) -> Dict[str, Any]:
         """Gets all arguments along with reproducibility information.
 
         :param repo_path: Path to the git repo to examine for reproducibility info.
@@ -416,7 +414,7 @@ class Tap(ArgumentParser):
         return arg_log
 
     def parse_args(
-        self: TapType, args: Sequence[str] | None = None, known_only: bool = False, legacy_config_parsing=False
+        self: TapType, args: Optional[Sequence[str]] = None, known_only: bool = False, legacy_config_parsing=False
     ) -> TapType:
         """Parses arguments, sets attributes of self equal to the parsed arguments, and processes arguments.
 
@@ -481,7 +479,7 @@ class Tap(ArgumentParser):
         return self
 
     @classmethod
-    def _get_from_self_and_super(cls, extract_func: Callable[[type], dict]) -> dict[str, Any] | dict:
+    def _get_from_self_and_super(cls, extract_func: Callable[[type], dict]) -> Union[Dict[str, Any], Dict]:
         """Returns a dictionary mapping variable names to values.
 
         Variables and values are extracted from classes using key starting
@@ -516,7 +514,7 @@ class Tap(ArgumentParser):
 
         return dictionary
 
-    def _get_class_dict(self) -> dict[str, Any]:
+    def _get_class_dict(self) -> Dict[str, Any]:
         """Returns a dictionary mapping class variable names to values from the class dict."""
         class_dict = self._get_from_self_and_super(
             extract_func=lambda super_class: dict(getattr(super_class, "__dict__", dict()))
@@ -533,7 +531,7 @@ class Tap(ArgumentParser):
 
         return class_dict
 
-    def _get_annotations(self) -> dict[str, Any]:
+    def _get_annotations(self) -> Dict[str, Any]:
         """Returns a dictionary mapping variable names to their type annotations."""
         return self._get_from_self_and_super(extract_func=lambda super_class: dict(get_type_hints(super_class)))
 
@@ -563,7 +561,7 @@ class Tap(ArgumentParser):
 
         return class_variables
 
-    def _get_argument_names(self) -> set[str]:
+    def _get_argument_names(self) -> Set[str]:
         """Returns a list of variable names corresponding to the arguments."""
         return (
             {get_dest(*name_or_flags, **kwargs) for name_or_flags, kwargs in self.argument_buffer.values()}
@@ -571,7 +569,7 @@ class Tap(ArgumentParser):
             | set(self._annotations.keys())
         ) - {"help"}
 
-    def as_dict(self) -> dict[str, Any]:
+    def as_dict(self) -> Dict[str, Any]:
         """Returns the member variables corresponding to the parsed arguments.
 
         Note: This does not include attributes set directly on an instance
@@ -600,7 +598,7 @@ class Tap(ArgumentParser):
 
         return stored_dict
 
-    def from_dict(self, args_dict: dict[str, Any], skip_unsettable: bool = False) -> TapType:
+    def from_dict(self, args_dict: Dict[str, Any], skip_unsettable: bool = False) -> TapType:
         """Loads arguments from a dictionary, ensuring all required arguments are set.
 
         :param args_dict: A dictionary from argument names to the values of the arguments.
@@ -640,7 +638,7 @@ class Tap(ArgumentParser):
         path: PathLike,
         with_reproducibility: bool = True,
         skip_unpicklable: bool = False,
-        repo_path: PathLike | None = None,
+        repo_path: Optional[PathLike] = None,
     ) -> None:
         """Saves the arguments and reproducibility information in JSON format, pickling what can't be encoded.
 
@@ -660,7 +658,7 @@ class Tap(ArgumentParser):
         path: PathLike,
         check_reproducibility: bool = False,
         skip_unsettable: bool = False,
-        repo_path: PathLike | None = None,
+        repo_path: Optional[PathLike] = None,
     ) -> TapType:
         """Loads the arguments in JSON format. Note: Due to JSON, tuples are loaded as lists.
 
@@ -686,7 +684,7 @@ class Tap(ArgumentParser):
 
         return self
 
-    def _load_from_config_files(self, config_files: list[PathLike] | None) -> list[str]:
+    def _load_from_config_files(self, config_files: Optional[list[PathLike]]) -> list[str]:
         """Loads arguments from a list of configuration files containing command line arguments.
 
         :param config_files: A list of paths to configuration files containing the command line arguments
@@ -712,7 +710,8 @@ class Tap(ArgumentParser):
         """
         return pformat(self.as_dict())
 
-    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> TapType:
+    @fix_py36_copy
+    def __deepcopy__(self, memo: Optional[Dict[int, Any]] = None) -> TapType:
         """Deepcopy the Tap object."""
         copied = type(self).__new__(type(self))
 
@@ -721,16 +720,16 @@ class Tap(ArgumentParser):
 
         memo[id(self)] = copied
 
-        for k, v in self.__dict__.items():
+        for (k, v) in self.__dict__.items():
             copied.__dict__[k] = deepcopy(v, memo)
 
         return copied
 
-    def __getstate__(self) -> dict[str, Any]:
+    def __getstate__(self) -> Dict[str, Any]:
         """Gets the state of the object for pickling."""
         return self.as_dict()
 
-    def __setstate__(self, d: dict[str, Any]) -> None:
+    def __setstate__(self, d: Dict[str, Any]) -> None:
         """
         Initializes the object with the provided dictionary of arguments for unpickling.
 
