@@ -431,29 +431,6 @@ def as_python_object(dct: Any) -> Any:
     return dct
 
 
-def fix_py36_copy(func: Callable) -> Callable:
-    """Decorator that fixes functions using Python 3.6 deepcopy of ArgumentParsers.
-
-    Based on https://stackoverflow.com/questions/6279305/typeerror-cannot-deepcopy-this-pattern-object
-    """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        re_type = type(re.compile(""))
-        has_prev_val = re_type in copy._deepcopy_dispatch
-        prev_val = copy._deepcopy_dispatch.get(re_type, None)
-        copy._deepcopy_dispatch[type(re.compile(""))] = lambda r, _: r
-
-        result = func(*args, **kwargs)
-
-        if has_prev_val:
-            copy._deepcopy_dispatch[re_type] = prev_val
-        else:
-            del copy._deepcopy_dispatch[re_type]
-
-        return result
-
-    return wrapper
-
 class _ReproducibilityInfo(TypedDict):
     command_line: str
     time: str

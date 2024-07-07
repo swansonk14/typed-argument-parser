@@ -26,7 +26,6 @@ from tap.utils import (
     TupleTypeEnforcer,
     define_python_object_encoder,
     as_python_object,
-    fix_py36_copy,
     enforce_reproducibility,
     PathLike,
     ReproducibilityInfo
@@ -713,7 +712,6 @@ class Tap(ArgumentParser):
         """
         return pformat(self.as_dict())
 
-    @fix_py36_copy
     def __deepcopy__(self, memo: dict[int, Any] | None = None) -> TapType:
         """Deepcopy the Tap object."""
         copied = type(self).__new__(type(self))
