@@ -22,8 +22,8 @@ from typing import (
     Protocol,
     Union,
     TypedDict,
+    get_args,
 )
-from typing_inspect import get_args
 
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
 PRIMITIVES = (str, int, float, bool)
@@ -250,7 +250,7 @@ class ClassVariableInfo(TypedDict):
     comment: str
 
 class ClassVariableContainer(TypedDict):
-    class_variables: dict[str, ClassVariableInfo]
+    class_variables: Dict[str, ClassVariableInfo]
 
 def get_class_variables(cls: type) -> ClassVariableContainer:
     """Returns a dictionary mapping class variables to their additional information (currently just comments)."""
@@ -480,7 +480,7 @@ ReproducibilityInfo = Union[_ReproducibilityInfo, ReproducibilityInfoWithGit]
 
 
 def enforce_reproducibility(
-    saved_reproducibility_data: Optional[ReproducibilityInfo], current_reproducibility_data: dict[str, str], path: PathLike
+    saved_reproducibility_data: Optional[ReproducibilityInfo], current_reproducibility_data: Dict[str, str], path: PathLike
 ) -> None:
     """Checks if reproducibility has failed and raises the appropriate error.
 

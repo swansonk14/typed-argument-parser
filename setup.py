@@ -35,7 +35,6 @@ setup(
     install_requires=[
         "docstring-parser >= 0.15",
         "packaging",
-        "typing-inspect >= 0.9.0",
     ],
     tests_require=test_requirements,
     extras_require={

@@ -8,8 +8,21 @@ from pathlib import Path
 from pprint import pformat
 from shlex import quote, split
 from types import MethodType
-from typing import Any, Callable, List, Dict, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
-from typing_inspect import is_literal_type, get_origin, get_args
+from typing import (
+    Any,
+    Callable,
+    List,
+    Dict,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+    get_type_hints,
+    get_args,
+    get_origin,
+)
 
 from tap.utils import (
     get_class_variables,
@@ -26,7 +39,6 @@ from tap.utils import (
     as_python_object,
     enforce_reproducibility,
     PathLike,
-    ReproducibilityInfo
 )
 
 if sys.version_info >= (3, 10):
@@ -366,7 +378,7 @@ class Tap(ArgumentParser):
         """
 
     @staticmethod
-    def get_reproducibility_info(repo_path: Optional[PathLike] = None) -> dict[str, str]:
+    def get_reproducibility_info(repo_path: Optional[PathLike] = None) -> Dict[str, str]:
         """Gets a dictionary of reproducibility information.
 
         Reproducibility information always includes:
@@ -684,7 +696,7 @@ class Tap(ArgumentParser):
 
         return self
 
-    def _load_from_config_files(self, config_files: Optional[list[PathLike]]) -> list[str]:
+    def _load_from_config_files(self, config_files: Optional[List[PathLike]]) -> List[str]:
         """Loads arguments from a list of configuration files containing command line arguments.
 
         :param config_files: A list of paths to configuration files containing the command line arguments
