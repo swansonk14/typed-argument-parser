@@ -1,24 +1,24 @@
-from argparse import ArgumentTypeError
 import json
 import os
 import subprocess
-from tempfile import TemporaryDirectory
-from typing import Any, Callable, List, Literal, Dict, Set, Tuple, Union
 import unittest
+from argparse import ArgumentTypeError
+from tempfile import TemporaryDirectory
+from typing import Any, Callable, Dict, List, Literal, Set, Tuple, Union
 from unittest import TestCase
 
 from tap.utils import (
+    GitInfo,
+    TupleTypeEnforcer,
+    UnpicklableObject,
+    _nested_replace_type,
+    as_python_object,
+    define_python_object_encoder,
+    enforce_reproducibility,
     get_class_column,
     get_class_variables,
-    GitInfo,
-    type_to_str,
     get_literals,
-    TupleTypeEnforcer,
-    _nested_replace_type,
-    define_python_object_encoder,
-    UnpicklableObject,
-    as_python_object,
-    enforce_reproducibility,
+    type_to_str,
 )
 
 
@@ -330,6 +330,28 @@ T
 
         class_variables = {"arg": {"comment": ""}}
         self.assertEqual(get_class_variables(DataclassColumn), class_variables)
+
+    def test_multiline_argument(self):
+        class MultilineArgument:
+            bar: str = (
+                "This is a multiline argument"
+                " that should not be included in the docstring"
+            )
+            """biz baz"""
+
+        class_variables = {"bar": {"comment": "biz baz"}}
+        self.assertEqual(get_class_variables(MultilineArgument), class_variables)
+
+    def test_comments_with_quotes(self):
+        class MultiquoteMultiline:
+            bar: int = 0
+            '\'\'biz baz\''
+
+            hi: str
+            "\"Hello there\"\""
+
+        class_variables = {"bar": {"comment": "''biz baz"}, "hi": {"comment": '"Hello there""'}}
+        self.assertEqual(get_class_variables(MultiquoteMultiline), class_variables)
 
 
 class GetLiteralsTests(TestCase):

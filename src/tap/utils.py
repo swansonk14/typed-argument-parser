@@ -1,16 +1,20 @@
-from argparse import ArgumentParser, ArgumentTypeError
-from base64 import b64encode, b64decode
+import ast
 import copy
-from functools import wraps
 import inspect
-from io import StringIO
-from json import JSONEncoder
+import io
 import os
 import pickle
 import re
 import subprocess
 import sys
+import textwrap
 import tokenize
+import warnings
+from argparse import ArgumentParser, ArgumentTypeError
+from base64 import b64decode, b64encode
+from functools import wraps
+from io import StringIO
+from json import JSONEncoder
 from typing import (
     Any,
     Callable,
@@ -19,11 +23,14 @@ from typing import (
     Iterator,
     List,
     Literal,
+    NamedTuple,
     Optional,
     Tuple,
     Union,
 )
-from typing_inspect import get_args as typing_inspect_get_args, get_origin as typing_inspect_get_origin
+
+from typing_inspect import get_args as typing_inspect_get_args
+from typing_inspect import get_origin as typing_inspect_get_origin
 
 if sys.version_info >= (3, 10):
     from types import UnionType
@@ -219,56 +226,154 @@ def source_line_to_tokens(obj: object) -> Dict[int, List[Dict[str, Union[str, in
     return line_to_tokens
 
 
+class _ClassVariableInfo(NamedTuple):
+    name: str
+    doc: str
+    start_line: int
+    end_line: int
+
+
+def _get_comments(source_code: str) -> Dict[int, str]:
+    """Get comments from a source code, with line numbers as keys."""
+    source_io = io.StringIO(source_code)
+    tokens = tokenize.generate_tokens(source_io.readline)
+    # dict with line numbers as keys and comments as values
+    return {
+        token.start[0]: token.string
+        for token in tokens
+        if token.type == tokenize.COMMENT
+    }
+
+
+def _get_class_variable(
+    assign_node: Union[ast.AnnAssign, ast.Assign], comments: Dict[int, str]
+) -> Optional[_ClassVariableInfo]:
+    # The node looks like:
+    #
+    # Assign(
+    #     targets=[
+    #         Name(id=name, ctx=Store())],
+    #     value=value,
+    #     lineno=lineno,
+    #     end_lineno=end_lineno)
+    # ...
+    #
+    # or
+    #
+    # AnnAssign(
+    #     target=Name(id=name, ctx=Store()),
+    #     annotation=annotation,
+    #     value=value,
+    #     lineno=lineno,
+    #     end_lineno=end_lineno)
+    # ...
+    #
+    # We do not need the annotation and value: it is obtained
+    # easily with getattr and typing.get_type_hints without the
+    # need of parsing the source code
+
+    if isinstance(assign_node, ast.Assign):
+        target = assign_node.targets[0]
+        if len(assign_node.targets) > 1:
+            # TODO: know if it is possible to have multiple targets at this point
+            # and if yes, handle this case
+            warnings.warn(
+                "Found multiple targets in a single assignment."
+                f"Only the first one will be considered (line {assign_node.lineno})",
+                stacklevel=3,
+            )
+    else: # is an AnnAssign
+        target = assign_node.target
+
+    if not isinstance(target, ast.Name):
+        # TODO: know if it is possible to have a non-name target at this point
+        # and if yes, handle this case
+        warnings.warn(
+            f"Found unexpected target {target}. It will be silently ignored",
+            stacklevel=3,
+        )
+        return None
+
+    name, first_line, last_line = target.id, assign_node.lineno, assign_node.end_lineno
+    if last_line is None:
+        last_line = first_line
+
+    # remove the comment character and remove leading/trailing whitespaces
+    # so that "# comment" becomes "comment"
+    comment = comments.get(last_line, "")[1:].strip()
+    return _ClassVariableInfo(name, comment, first_line, last_line)
+
+
+def _add_possible_doc(
+    node: ast.stmt, cls_var: _ClassVariableInfo, comments
+) -> _ClassVariableInfo:
+    # Check if it is a string expression
+    if not isinstance(node, ast.Expr) or not isinstance(
+        constant_ast := node.value, ast.Constant
+    ):
+        return cls_var
+
+    # check if it is a string
+    value = constant_ast.value
+    if not isinstance(value, str):
+        return cls_var
+    # Now we are sure that the node is a single string constant expression
+
+    # we already know that the ast object just above is the node of cls_var
+    # so we can only check if there is a comment between the two
+    # (only thing ast does not register)
+    for lineno in range(cls_var.end_line + 1, node.lineno):
+        if lineno in comments:
+            return cls_var
+
+    # remove the 4 spaces indentation done in the beggining of _get_class_variables
+    value = value.strip().replace("\n    ", "\n")
+    new_doc = f"{cls_var.doc} {value}".strip()
+    return cls_var._replace(doc=new_doc)
+
+
+def _get_class_variables(cls: type) -> List[_ClassVariableInfo]:
+    # ! This where lot of the time is spent: inspect.getsource is expensive
+    # because it reads the file of the class
+    source = inspect.getsource(cls)
+
+    # workaround to avoid any indentation issue
+    # ! Each line of the source code is now indented by 4 spaces
+    source = "if True:\n" + textwrap.indent(source, 4 * " ")
+    comments = _get_comments(source)
+    body: List[ast.stmt] = ast.parse(source).body[0].body
+
+    if len(body) != 1 or not isinstance(cls_ast := body[0], ast.ClassDef):
+        msg = "Expected a single class definition"
+        raise ValueError(msg)
+
+    class_variables: List[_ClassVariableInfo] = []
+    previous: Union[_ClassVariableInfo, None] = None
+
+    # search for assignments in the class body; it can only be
+    # a class variable assignment
+    for node in cls_ast.body:
+        assign = isinstance(node, (ast.AnnAssign, ast.Assign))
+        if previous is not None:
+            # No need to check if it is a docstring if we know it is already an assignment
+            result = previous if assign else _add_possible_doc(node, previous, comments)
+            class_variables.append(result)
+            previous = None
+        if assign:
+            info = _get_class_variable(node, comments)
+            previous = info
+
+    # if the very last node is a class variable
+    if previous is not None and cls_ast.body:
+        class_variables.append(_add_possible_doc(node, previous, comments))
+    return class_variables
+
+
 def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
     """Returns a dictionary mapping class variables to their additional information (currently just comments)."""
-    # Get mapping from line number to tokens
-    line_to_tokens = source_line_to_tokens(cls)
-
-    # Get class variable column number
-    class_variable_column = get_class_column(cls)
-
-    # Extract class variables
-    class_variable = None
-    variable_to_comment = {}
-    for tokens in line_to_tokens.values():
-        for i, token in enumerate(tokens):
-
-            # Skip whitespace
-            if token["token"].strip() == "":
-                continue
-
-            # Extract multiline comments
-            if (
-                class_variable is not None
-                and token["token_type"] == tokenize.STRING
-                and token["token"][:1] in {'"', "'"}
-            ):
-                sep = " " if variable_to_comment[class_variable]["comment"] else ""
-                quote_char = token["token"][:1]
-                variable_to_comment[class_variable]["comment"] += sep + token["token"].strip(quote_char).strip()
-
-            # Match class variable
-            class_variable = None
-            if (
-                token["token_type"] == tokenize.NAME
-                and token["start_column"] == class_variable_column
-                and len(tokens) > i
-                and tokens[i + 1]["token"] in ["=", ":"]
-            ):
-
-                class_variable = token["token"]
-                variable_to_comment[class_variable] = {"comment": ""}
-
-                # Find the comment (if it exists)
-                for j in range(i + 1, len(tokens)):
-                    if tokens[j]["token_type"] == tokenize.COMMENT:
-                        # Leave out "#" and whitespace from comment
-                        variable_to_comment[class_variable]["comment"] = tokens[j]["token"][1:].strip()
-                        break
-
-            break
-
-    return variable_to_comment
+    result_obj = _get_class_variables(cls)
+    # return this specific dict for backward compatibility
+    return {obj.name: {"comment": obj.doc} for obj in result_obj}
 
 
 def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any], List[str]]:
