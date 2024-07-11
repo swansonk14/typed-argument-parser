@@ -370,7 +370,7 @@ class Tap(ArgumentParser):
         pass
 
     @staticmethod
-    def get_reproducibility_info(repo_path: Optional[PathLike] = None) -> Dict[str, str]:
+    def get_reproducibility_info(repo_path: Optional[PathLike] = None) -> Dict[str, Optional[str]]:
         """Gets a dictionary of reproducibility information.
 
         Reproducibility information always includes:
@@ -380,7 +380,8 @@ class Tap(ArgumentParser):
         If git is installed, reproducibility information also includes:
         - git_root: The root of the git repo where the command is run.
         - git_url: The url of the current hash of the git repo where the command is run.
-                   Ex. https://github.com/swansonk14/rationale-alignment/tree/<hash>
+                   Ex. https://github.com/swansonk14/rationale-alignment/tree/<hash>.
+                   If it is a local repo, the url is None.
         - git_has_uncommitted_changes: Whether the current git repo has uncommitted changes.
 
         :param repo_path: Path to the git repo to examine for reproducibility info.
