@@ -70,7 +70,20 @@ class GitInfo:
         """
         return check_output(["git", "rev-parse", "--show-toplevel"], cwd=self.repo_path)
 
-    def get_git_url(self, commit_hash: bool = True) -> str:
+    def get_git_version(self) -> tuple:
+        """Gets the version of git.
+
+        :return: The version of git, as a tuple of strings.
+
+        Example:
+        >>> get_git_version()
+        (2, 17, 1) # for git version 2.17.1
+        """
+        raw = check_output(["git", "--version"])
+        number_start_index = next(i for i, c in enumerate(raw) if c.isdigit())
+        return tuple(int(num) for num in raw[number_start_index:].split("."))
+
+    def get_git_url(self, commit_hash: bool = True) -> Optional[str]:
         """Gets the https url of the git repo where the command is run.
 
         :param commit_hash: If True, the url links to the latest local git commit hash.
@@ -78,11 +91,19 @@ class GitInfo:
         :return: The https url of the current git repo.
         """
         # Get git url (either https or ssh)
+        input_remote = (
+            ["git", "remote", "get-url", "origin"]
+            if self.get_git_version() >= (2, 0)
+            else ["git", "config", "--get", "remote.origin.url"]
+        )
         try:
-            url = check_output(["git", "remote", "get-url", "origin"], cwd=self.repo_path)
-        except subprocess.CalledProcessError:
-            # For git versions <2.0
-            url = check_output(["git", "config", "--get", "remote.origin.url"], cwd=self.repo_path)
+            url = check_output(input_remote, cwd=self.repo_path)
+        except subprocess.CalledProcessError as e:
+            if e.returncode == 2:
+                # https://git-scm.com/docs/git-remote#_exit_status
+                # 2: The remote does not exist.
+                return None
+            raise e
 
         # Remove .git at end
         url = url[: -len(".git")]
