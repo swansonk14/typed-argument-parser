@@ -350,7 +350,7 @@ T
             hi: str
             "\"Hello there\"\""
 
-        class_variables = {"bar": {"comment": "''biz baz"}, "hi": {"comment": '"Hello there""'}}
+        class_variables = {"bar": {"comment": "''biz baz'"}, "hi": {"comment": '"Hello there""'}}
         self.assertEqual(get_class_variables(MultiquoteMultiline), class_variables)
 
 
