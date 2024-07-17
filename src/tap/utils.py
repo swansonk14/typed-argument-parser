@@ -229,7 +229,6 @@ def source_line_to_tokens(obj: object) -> Dict[int, List[Dict[str, Union[str, in
 class _ClassVariableInfo(NamedTuple):
     name: str
     doc: str
-    start_line: int
     end_line: int
 
 
@@ -237,9 +236,9 @@ def _get_comments(source_code: str) -> Dict[int, str]:
     """Get comments from a source code, with line numbers as keys."""
     source_io = io.StringIO(source_code)
     tokens = tokenize.generate_tokens(source_io.readline)
-    # dict with line numbers as keys and comments as values
     return {
-        token.start[0]: token.string
+        # line number : comment without the '#' and trailing whitespaces
+        token.start[0]: token.string[1:].strip()
         for token in tokens
         if token.type == tokenize.COMMENT
     }
@@ -298,10 +297,8 @@ def _get_class_variable(
     if last_line is None:
         last_line = first_line
 
-    # remove the comment character and remove leading/trailing whitespaces
-    # so that "# comment" becomes "comment"
-    comment = comments.get(last_line, "")[1:].strip()
-    return _ClassVariableInfo(name, comment, first_line, last_line)
+    comment = comments.get(last_line, "")
+    return _ClassVariableInfo(name, comment, last_line)
 
 
 def _add_possible_doc(
