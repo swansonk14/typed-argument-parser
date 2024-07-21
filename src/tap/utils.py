@@ -323,8 +323,12 @@ def _add_possible_doc(
         if lineno in comments:
             return cls_var
 
-    # remove the 4 spaces indentation done in the beggining of _get_class_variables
-    value = value.strip().replace("\n    ", "\n")
+    # Remove the one space indentation done in the beggining of _get_class_variables.
+    # Stripping is necessary for multi-line strings that do not start or end on the same
+    # line as the triple quotes.
+    value = value.strip().replace("\n ", "\n")
+
+    # final strip in case cls_var.doc or value is empty
     new_doc = f"{cls_var.doc} {value}".strip()
     return cls_var._replace(doc=new_doc)
 
@@ -335,15 +339,17 @@ def _get_class_variables(cls: type) -> List[_ClassVariableInfo]:
     source = inspect.getsource(cls)
 
     # workaround to avoid any indentation issue
-    # ! Each line of the source code is now indented by 4 spaces
-    source = "if True:\n" + textwrap.indent(source, 4 * " ")
-    comments = _get_comments(source)
-    body: List[ast.stmt] = ast.parse(source).body[0].body
+    # ! Each line of the source code is now indented by 1 spaces
+    source = "if True:\n" + textwrap.indent(source, " ")
+    if_true_body = ast.parse(source).body[0]
+    assert isinstance(if_true_body, ast.If), "Internal error: this should not happen. Please report it."
 
+    body = if_true_body.body
     if len(body) != 1 or not isinstance(cls_ast := body[0], ast.ClassDef):
         msg = "Expected a single class definition"
         raise ValueError(msg)
 
+    comments = _get_comments(source)
     class_variables: List[_ClassVariableInfo] = []
     previous: Union[_ClassVariableInfo, None] = None
 
