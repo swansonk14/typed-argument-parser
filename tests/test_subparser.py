@@ -134,8 +134,12 @@ class TestSubparser(TestCase):
                 self.add_subparsers(help="sub-command1 help")
                 self.add_subparsers(help="sub-command2 help")
 
-        with self.assertRaises(SystemExit):
-            Args().parse_args([])
+        if sys.version_info >= (3, 12, 5):
+            with self.assertRaises(ArgumentError):
+                Args().parse_args([])
+        else:
+            with self.assertRaises(SystemExit):
+                Args().parse_args([])
 
     def test_add_subparsers_with_add_argument(self):
         class SubparserA(Tap):
