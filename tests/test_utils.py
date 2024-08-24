@@ -308,7 +308,7 @@ T
             hi: str
             "\"Hello there\"\""
 
-        class_variables = OrderedDict()
+        class_variables = {}
         class_variables['bar'] = {'comment': "''biz baz'"}
         class_variables['hi'] = {'comment': '"Hello there""'}
         self.assertEqual(get_class_variables(MultiquoteMultiline), class_variables)

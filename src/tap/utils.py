@@ -205,7 +205,7 @@ def source_line_to_tokens(obj: object) -> Dict[int, List[Dict[str, Union[str, in
     for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(obj):
         line_to_tokens.setdefault(start_line, []).append({
             'token_type': token_type,
-            'token': bytes(token, encoding='ascii').decode('unicode-escape'),
+            'token': token,
             'start_line': start_line,
             'start_column': start_column,
             'end_line': end_line,
@@ -241,8 +241,21 @@ def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
                 and token["token"][:1] in {'"', "'"}
             ):
                 sep = " " if variable_to_comment[class_variable]["comment"] else ""
+
+                # Identify the quote character (single or double)
                 quote_char = token["token"][:1]
-                variable_to_comment[class_variable]["comment"] += sep + token["token"].strip(quote_char).strip()
+
+                # Identify the number of quote characters at the start of the string
+                num_quote_chars = len(token["token"]) - len(token["token"].lstrip(quote_char))
+
+                # Remove the number of quote characters at the start of the string and the end of the string
+                token["token"] = token["token"][num_quote_chars:-num_quote_chars]
+
+                # Remove the unicode escape sequences (e.g. "\"")
+                token["token"] = bytes(token["token"], encoding='ascii').decode('unicode-escape')
+
+                # Add the token to the comment, stripping whitespace
+                variable_to_comment[class_variable]["comment"] += sep + token["token"].strip()
 
             # Match class variable
             class_variable = None
