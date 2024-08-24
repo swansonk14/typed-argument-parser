@@ -203,7 +203,6 @@ def source_line_to_tokens(obj: object) -> Dict[int, List[Dict[str, Union[str, in
     """Gets a dictionary mapping from line number to a dictionary of tokens on that line for an object's source code."""
     line_to_tokens = {}
     for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(obj):
-<<<<<<< HEAD:tap/utils.py
         line_to_tokens.setdefault(start_line, []).append({
             'token_type': token_type,
             'token': bytes(token, encoding='ascii').decode('unicode-escape'),
@@ -213,19 +212,6 @@ def source_line_to_tokens(obj: object) -> Dict[int, List[Dict[str, Union[str, in
             'end_column': end_column,
             'line': line
         })
-=======
-        line_to_tokens.setdefault(start_line, []).append(
-            {
-                "token_type": token_type,
-                "token": token,
-                "start_line": start_line,
-                "start_column": start_column,
-                "end_line": end_line,
-                "end_column": end_column,
-                "line": line,
-            }
-        )
->>>>>>> main:src/tap/utils.py
 
     return line_to_tokens
 
