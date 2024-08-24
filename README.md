@@ -22,22 +22,61 @@ Tap provides the following benefits:
 
 See [this poster](https://docs.google.com/presentation/d/1AirN6gpiq4P1L8K003EsXmobVxP3A4AVEIR2KOEQN7Y/edit?usp=sharing), which we presented at [PyCon 2020](https://us.pycon.org/2020/), for a presentation of some of the relevant concepts we used to guide the development of Tap. 
 
+As of version 1.8.0, Tap includes `tapify`, which runs functions or initializes classes with arguments parsed from the command line. We show an example below.
+
+```python
+# square.py
+from tap import tapify
+
+def square(num: float) -> float:
+    return num ** 2
+
+if __name__ == '__main__':
+    print(f'The square of your number is {tapify(square)}.')
+```
+
+Running `python square.py --num 2` will print `The square of your number is 4.0.`. Please see [tapify](#tapify) for more details.
+
 ## Installation
 
-Tap requires Python 3.6+
+Tap requires Python 3.8+
 
 To install Tap from PyPI run: 
+
 ```
 pip install typed-argument-parser
 ```
 
-To install Tap from source, run the following commands:
+<details>
+<summary>To install Tap from source, run the following commands:</summary>
 
 ```
 git clone https://github.com/swansonk14/typed-argument-parser.git
 cd typed-argument-parser
 pip install -e .
 ```
+
+</details>
+
+<details>
+<summary>To develop this package, install development requirements (in a virtual environment):</summary>
+
+```
+python -m pip install -e ".[dev]"
+```
+
+Style:
+- Please use [`black`](https://github.com/psf/black) formatting
+- Set your vertical line ruler to 121
+- Use [`flake8`](https://github.com/PyCQA/flake8) linting.
+
+To run tests, run:
+
+```
+pytest
+```
+
+</details>
 
 ## Table of Contents
 
@@ -46,31 +85,30 @@ pip install -e .
 * [Tap is Python-native](#tap-is-python-native)
 * [Tap features](#tap-features)
   + [Arguments](#arguments)
-  + [Help string](#help-string)
-  + [Flexibility of `configure`](#flexibility-of--configure-)
+  + [Tap help](#tap-help)
+  + [Configuring arguments](#configuring-arguments)
     - [Adding special argument behavior](#adding-special-argument-behavior)
     - [Adding subparsers](#adding-subparsers)
   + [Types](#types)
-    - [`str`, `int`, and `float`](#-str----int---and--float-)
-    - [`bool`](#-bool-)
-    - [`Optional`](#-optional-)
-    - [`List`](#-list-)
-    - [`Set`](#-set-)
-    - [`Tuple`](#-tuple-)
-    - [`Literal`](#-literal-)
-    - [`Union`](#-union-)
-    - [Complex Types](#complex-types)
-  + [Argument processing with `process_args`](#argument-processing-with--process-args-)
+  + [Argument processing](#argument-processing)
   + [Processing known args](#processing-known-args)
   + [Subclassing](#subclassing)
   + [Printing](#printing)
   + [Reproducibility](#reproducibility)
-    - [Reproducibility info](#reproducibility-info)
   + [Saving and loading arguments](#saving-and-loading-arguments)
-    - [Save](#save)
-    - [Load](#load)
-    - [Load from dict](#load-from-dict)
   + [Loading from configuration files](#loading-from-configuration-files)
+* [tapify](#tapify)
+  + [Examples](#examples)
+    - [Function](#function)
+    - [Class](#class)
+    - [Dataclass](#dataclass)
+  + [tapify help](#tapify-help)
+  + [Command line vs explicit arguments](#command-line-vs-explicit-arguments)
+  + [Known args](#known-args)
+* [Convert to a `Tap` class](#convert-to-a-tap-class)
+  + [`to_tap_class` examples](#to_tap_class-examples)
+    - [Simple](#simple)
+    - [Complex](#complex)
 
 ## Tap is Python-native
 
@@ -143,7 +181,7 @@ class MyTap(Tap):
     default_arg: str = 'default value'
 ```
 
-### Help string
+### Tap help
 
 Single line and/or multiline comments which appear after the argument are automatically parsed into the help string provided when running `python main.py -h`. The type and default values of arguments are also provided in the help string.
 
@@ -172,7 +210,7 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 
-### Flexibility of `configure`
+### Configuring arguments
 To specify behavior beyond what can be specified using arguments as class variables, override the `configure` method.
 `configure` provides access to advanced argument parsing features such as `add_argument` and `add_subparser`.
 Since Tap is a wrapper around argparse, Tap provides all of the same functionality.
@@ -271,7 +309,7 @@ Tuples can be used to specify a fixed number of arguments with specified types u
 
 #### `Literal`
 
-Literal is analagous to argparse's [choices](https://docs.python.org/3/library/argparse.html#choices), which specifies the values that an argument can take. For example, if arg can only be one of 'H', 1, False, or 1.0078 then you would specify that `arg: Literal['H', 1, False, 1.0078]`. For instance, `--arg False` assigns arg to False and `--arg True` throws error. The `Literal` type was introduced in Python 3.8 ([PEP 586](https://www.python.org/dev/peps/pep-0586/)) and can be imported with `from typing_extensions import Literal`.
+Literal is analagous to argparse's [choices](https://docs.python.org/3/library/argparse.html#choices), which specifies the values that an argument can take. For example, if arg can only be one of 'H', 1, False, or 1.0078 then you would specify that `arg: Literal['H', 1, False, 1.0078]`. For instance, `--arg False` assigns arg to False and `--arg True` throws error.
 
 #### `Union`
 
@@ -329,7 +367,7 @@ print(f'{args.aged_person.name} is {args.aged_person.age}')  # Tapper is 27
 ```
 
 
-### Argument processing with `process_args`
+### Argument processing
 
 With complex argument parsing, arguments often end up having interdependencies. This means that it may be necessary to disallow certain combinations of arguments or to modify some arguments based on other arguments.
 
@@ -438,6 +476,33 @@ Specifically, Tap has a method called `get_reproducibility_info` that returns a 
 - Uncommitted changes
     - Whether there are any uncommitted changes in the git repo (i.e. whether the code is different from the code at the above git hash)
     - Ex. `True` or `False`
+
+### Conversion Tap to and from dictionaries
+
+Tap has methods `as_dict` and `from_dict` that convert Tap objects to and from dictionaries.
+For example,
+
+```python
+"""main.py"""
+from tap import Tap
+
+class Args(Tap):
+    package: str
+    is_cool: bool = True
+    stars: int = 5
+
+args = Args().parse_args(["--package", "Tap"])
+
+args_data = args.as_dict()
+print(args_data)  # {'package': 'Tap', 'is_cool': True, 'stars': 5}
+
+args_data['stars'] = 2000
+args = args.from_dict(args_data)
+print(args.stars)  # 2000 
+```
+
+Note that `as_dict` does not include attributes set directly on an instance (e.g., `arg` is not included even after setting `args.arg = "hi"` in the code above because `arg` is not an attribute of the `Args` class).
+Also note that `from_dict` ensures that all required arguments are set.
 
 ### Saving and loading arguments
 
@@ -565,3 +630,294 @@ args = Args(config_files=['my_config_shlex.txt']).parse_args()
 to get the resulting `args = {'arg1': 21, 'arg2': 'two three four'}`
 
 The legacy parsing behavior of using standard string split can be re-enabled by passing `legacy_config_parsing=True` to `parse_args`.
+
+## tapify
+
+`tapify` makes it possible to run functions or initialize objects via command line arguments. This is inspired by Google's [Python Fire](https://github.com/google/python-fire), but `tapify` also automatically casts command line arguments to the appropriate types based on the type hints. Under the hood, `tapify` implicitly creates a Tap object and uses it to parse the command line arguments, which it then uses to run the function or initialize the class. We show a few examples below.
+
+### Examples
+
+#### Function
+
+```python
+# square_function.py
+from tap import tapify
+
+def square(num: float) -> float:
+    """Square a number.
+
+    :param num: The number to square.
+    """
+    return num ** 2
+
+if __name__ == '__main__':
+    squared = tapify(square)
+    print(f'The square of your number is {squared}.')
+```
+
+Running `python square_function.py --num 5` prints `The square of your number is 25.0.`.
+
+#### Class
+
+```python
+# square_class.py
+from tap import tapify
+
+class Squarer:
+    def __init__(self, num: float) -> None:
+        """Initialize the Squarer with a number to square.
+
+        :param  num: The number to square.
+        """
+        self.num = num
+
+    def get_square(self) -> float:
+        """Get the square of the number."""
+        return self.num ** 2
+
+if __name__ == '__main__':
+    squarer = tapify(Squarer)
+    print(f'The square of your number is {squarer.get_square()}.')
+```
+
+Running `python square_class.py --num 2` prints `The square of your number is 4.0.`.
+
+#### Dataclass
+
+```python
+# square_dataclass.py
+from dataclasses import dataclass
+
+from tap import tapify
+
+@dataclass
+class Squarer:
+    """Squarer with a number to square.
+
+    :param num: The number to square.
+    """
+    num: float
+
+    def get_square(self) -> float:
+        """Get the square of the number."""
+        return self.num ** 2
+
+if __name__ == '__main__':
+    squarer = tapify(Squarer)
+    print(f'The square of your number is {squarer.get_square()}.')
+```
+
+Running `python square_dataclass.py --num -1` prints `The square of your number is 1.0.`.
+
+<details>
+<summary>Argument descriptions</summary>
+
+For dataclasses, the argument's description (which is displayed in the `-h` help message) can either be specified in the
+class docstring or the field's description in `metadata`. If both are specified, the description from the docstring is
+used. In the example below, the description is provided in `metadata`.
+
+```python
+# square_dataclass.py
+from dataclasses import dataclass, field
+
+from tap import tapify
+
+@dataclass
+class Squarer:
+    """Squarer with a number to square.
+    """
+    num: float = field(metadata={"description": "The number to square."})
+
+    def get_square(self) -> float:
+        """Get the square of the number."""
+        return self.num ** 2
+
+if __name__ == '__main__':
+    squarer = tapify(Squarer)
+    print(f'The square of your number is {squarer.get_square()}.')
+```
+
+</details>
+
+#### Pydantic
+
+Pydantic [Models](https://docs.pydantic.dev/latest/concepts/models/) and
+[dataclasses](https://docs.pydantic.dev/latest/concepts/dataclasses/) can be `tapify`d.
+
+```python
+# square_pydantic.py
+from pydantic import BaseModel, Field
+
+from tap import tapify
+
+class Squarer(BaseModel):
+    """Squarer with a number to square.
+    """
+    num: float = Field(description="The number to square.")
+
+    def get_square(self) -> float:
+        """Get the square of the number."""
+        return self.num ** 2
+
+if __name__ == '__main__':
+    squarer = tapify(Squarer)
+    print(f'The square of your number is {squarer.get_square()}.')
+```
+
+<details>
+<summary>Argument descriptions</summary>
+
+For Pydantic v2 models and dataclasses, the argument's description (which is displayed in the `-h` help message) can
+either be specified in the class docstring or the field's `description`. If both are specified, the description from the
+docstring is used. In the example below, the description is provided in the docstring.
+
+For Pydantic v1 models and dataclasses, the argument's description must be provided in the class docstring:
+
+```python
+# square_pydantic.py
+from pydantic import BaseModel
+
+from tap import tapify
+
+class Squarer(BaseModel):
+    """Squarer with a number to square.
+
+    :param num: The number to square.
+    """
+    num: float
+
+    def get_square(self) -> float:
+        """Get the square of the number."""
+        return self.num ** 2
+
+if __name__ == '__main__':
+    squarer = tapify(Squarer)
+    print(f'The square of your number is {squarer.get_square()}.')
+```
+
+</details>
+
+### tapify help
+
+The help string on the command line is set based on the docstring for the function or class. For example, running `python square_function.py -h` will print:
+
+```
+usage: square_function.py [-h] --num NUM
+
+Square a number.
+
+options:
+  -h, --help  show this help message and exit
+  --num NUM   (float, required) The number to square.
+```
+
+Note that for classes, if there is a docstring in the `__init__` method, then `tapify` sets the help string description to that docstring. Otherwise, it uses the docstring from the top of the class.
+
+### Command line vs explicit arguments
+
+`tapify` can simultaneously use both arguments passed from the command line and arguments passed in explicitly in the `tapify` call. Arguments provided in the `tapify` call override function defaults, and arguments provided via the command line override both arguments provided in the `tapify` call and function defaults. We show an example below.
+
+```python
+# add.py
+from tap import tapify
+
+def add(num_1: float, num_2: float = 0.0, num_3: float = 0.0) -> float:
+    """Add numbers.
+
+    :param num_1: The first number.
+    :param num_2: The second number.
+    :param num_3: The third number.
+    """
+    return num_1 + num_2 + num_3
+
+if __name__ == '__main__':
+    added = tapify(add, num_2=2.2, num_3=4.1)
+    print(f'The sum of your numbers is {added}.')
+```
+
+Running `python add.py --num_1 1.0 --num_2 0.9` prints `The sum of your numbers is 6.0.`. (Note that `add` took `num_1 = 1.0` and `num_2 = 0.9` from the command line and `num_3=4.1` from the `tapify` call due to the order of precedence.)
+
+### Known args
+
+Calling `tapify` with `known_only=True` allows `tapify` to ignore additional arguments from the command line that are not needed for the function or class. If `known_only=False` (the default), then `tapify` will raise an error when additional arguments are provided. We show an example below where `known_only=True` might be useful for running multiple `tapify` calls.
+
+```python
+# person.py
+from tap import tapify
+
+def print_name(name: str) -> None:
+    """Print a person's name.
+
+    :param name: A person's name.
+    """
+    print(f'My name is {name}.')
+
+def print_age(age: int) -> None:
+    """Print a person's age.
+
+    :param name: A person's age.
+    """
+    print(f'My age is {age}.')
+
+if __name__ == '__main__':
+    tapify(print_name, known_only=True)
+    tapify(print_age, known_only=True)
+```
+
+Running `python person.py --name Jesse --age 1` prints `My name is Jesse.` followed by `My age is 1.`. Without `known_only=True`, the `tapify` calls would raise an error due to the extra argument.
+
+### Explicit boolean arguments
+
+Tapify supports explicit specification of boolean arguments (see [bool](#bool) for more details). By default, `explicit_bool=False` and it can be set with `tapify(..., explicit_bool=True)`. 
+
+## Convert to a `Tap` class
+
+`to_tap_class` turns a function or class into a `Tap` class. The returned class can be [subclassed](#subclassing) to add
+special argument behavior. For example, you can override [`configure`](#configuring-arguments) and
+[`process_args`](#argument-processing).
+
+If the object can be `tapify`d, then it can be `to_tap_class`d, and vice-versa. `to_tap_class` provides full control
+over argument parsing.
+
+### `to_tap_class` examples
+
+#### Simple
+
+```python
+# main.py
+"""
+My script description
+"""
+
+from pydantic import BaseModel
+
+from tap import to_tap_class
+
+class Project(BaseModel):
+    package: str
+    is_cool: bool = True
+    stars: int = 5
+
+if __name__ == "__main__":
+    ProjectTap = to_tap_class(Project)
+    tap = ProjectTap(description=__doc__)  # from the top of this script
+    args = tap.parse_args()
+    project = Project(**args.as_dict())
+    print(f"Project instance: {project}")
+```
+
+Running `python main.py --package tap` will print `Project instance: package='tap' is_cool=True stars=5`.
+
+### Complex
+
+The general pattern is:
+
+```python
+from tap import to_tap_class
+
+class MyCustomTap(to_tap_class(my_class_or_function)):
+    # Special argument behavior, e.g., override configure and/or process_args
+```
+
+Please see `demo_data_model.py` for an example of overriding [`configure`](#configuring-arguments) and
+[`process_args`](#argument-processing).

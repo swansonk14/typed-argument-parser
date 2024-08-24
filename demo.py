@@ -9,12 +9,9 @@ def add_one(num: int) -> int:
 # ----- ArgumentParser -----
 
 parser = ArgumentParser()
-parser.add_argument('--rnn', type=str, required=True,
-                    help='RNN type')
-parser.add_argument('--hidden_size', type=int, default=300,
-                    help='Hidden size')
-parser.add_argument('--dropout', type=float, default=0.2,
-                    help='Dropout probability')
+parser.add_argument("--rnn", type=str, required=True, help="RNN type")
+parser.add_argument("--hidden_size", type=int, default=300, help="Hidden size")
+parser.add_argument("--dropout", type=float, default=0.2, help="Dropout probability")
 
 
 args = parser.parse_args()
@@ -25,6 +22,7 @@ add_one(args.rnn)  # no static type checking
 
 
 # ----- Tap -----
+
 
 class MyTap(Tap):
     rnn: str  # RNN type

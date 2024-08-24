@@ -16,12 +16,12 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@main
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@main
       with:
         python-version: ${{ matrix.python-version }}
     - name: Set temp directories on Windows
@@ -35,14 +35,27 @@ jobs:
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
         python -m pip install --upgrade pip
-        python -m pip install flake8 pytest
-        python -m pip install -e .
+        python -m pip install -e ".[dev-no-pydantic]"
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest
+    - name: Test without pydantic
       run: |
-        pytest
+        pytest --cov=tap
+    - name: Test with pydantic v1
+      run: |
+        python -m pip install "pydantic < 2"
+        pytest --cov=tap --cov-append
+    - name: Test with pydantic v2
+      run: |
+        python -m pip install "pydantic >= 2"
+        pytest --cov=tap --cov-append
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        verbose: true

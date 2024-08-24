@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools >= 61.0.0", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "typed-argument-parser"
+dynamic = ["version"]
+authors = [
+    {name = "Jesse Michel", email = "jessem.michel@gmail.com" },
+    {name = "Kyle Swanson", email = "swansonk.14@gmail.com" },
+]
+maintainers = [
+    {name = "Jesse Michel", email = "jessem.michel@gmail.com" },
+    {name = "Kyle Swanson", email = "swansonk.14@gmail.com" },
+]
+description = "Typed Argument Parser"
+readme = "README.md"
+license = { file = "LICENSE.txt" }
+dependencies = [
+    "docstring-parser >= 0.15",
+    "packaging",
+    "typing-inspect >= 0.7.1",
+]
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Typing :: Typed",
+]
+keywords = [
+    "typing",
+    "argument parser",
+    "python",
+]
+
+[project.optional-dependencies]
+dev-no-pydantic = [
+    "pytest",
+    "pytest-cov",
+    "flake8",
+]
+dev = [
+    "typed-argument-parser[dev-no-pydantic]",
+    "pydantic >= 2.5.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "tap.__version__"}
+
+[tool.setuptools.package-data]
+tap = ["py.typed"]
+
+[project.urls]
+Homepage = "https://github.com/swansonk14/typed-argument-parser"
+Issues = "https://github.com/swansonk14/typed-argument-parser/issues"
