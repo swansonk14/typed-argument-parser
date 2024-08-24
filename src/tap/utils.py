@@ -22,6 +22,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Set,
     Tuple,
     Union,
 )
@@ -219,7 +220,7 @@ def source_line_to_tokens(obj: object) -> Dict[int, List[Dict[str, Union[str, in
     return line_to_tokens
 
 
-def get_subsequent_assign_lines(cls: type) -> set[int]:
+def get_subsequent_assign_lines(cls: type) -> Set[int]:
     """For all multiline assign statements, get the line numbers after the first line of the assignment."""
     # Get source code of class
     source = inspect.getsource(cls)
