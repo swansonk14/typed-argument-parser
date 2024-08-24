@@ -300,6 +300,30 @@ T
         class_variables = {"bar": {"comment": "biz baz"}, "hi": {"comment": "Hello there"}}
         self.assertEqual(get_class_variables(TripleQuoteMultiline), class_variables)
 
+    def test_comments_with_quotes(self):
+        class MultiquoteMultiline:
+            bar: int = 0
+            '\'\'biz baz\''
+
+            hi: str
+            "\"Hello there\"\""
+
+        class_variables = {}
+        class_variables['bar'] = {'comment': "''biz baz'"}
+        class_variables['hi'] = {'comment': '"Hello there""'}
+        self.assertEqual(get_class_variables(MultiquoteMultiline), class_variables)
+
+    def test_multiline_argument(self):
+        class MultilineArgument:
+            bar: str = (
+                "This is a multiline argument"
+                " that should not be included in the docstring"
+            )
+            """biz baz"""
+
+        class_variables = {"bar": {"comment": "biz baz"}}
+        self.assertEqual(get_class_variables(MultilineArgument), class_variables)
+
     def test_single_quote_multiline(self):
         class SingleQuoteMultiline:
             bar: int = 0
