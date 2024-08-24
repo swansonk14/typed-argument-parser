@@ -319,7 +319,7 @@ T
                 "This is a multiline argument"
                 " that should not be included in the docstring"
             )
-            ("""biz baz""")
+            """biz baz"""
 
         class_variables = {"bar": {"comment": "biz baz"}}
         self.assertEqual(get_class_variables(MultilineArgument), class_variables)
