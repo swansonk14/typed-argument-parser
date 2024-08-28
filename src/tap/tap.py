@@ -483,7 +483,7 @@ class Tap(ArgumentParser):
         return self
 
     @classmethod
-    def _get_from_self_and_super( cls, extract_func: Callable[[type], dict]) -> Union[Dict[str, Any], Dict]:
+    def _get_from_self_and_super(cls, extract_func: Callable[[type], dict]) -> Union[Dict[str, Any], Dict]:
         """Returns a dictionary mapping variable names to values.
 
         Variables and values are extracted from classes using key starting
@@ -537,9 +537,7 @@ class Tap(ArgumentParser):
 
     def _get_annotations(self) -> Dict[str, Any]:
         """Returns a dictionary mapping variable names to their type annotations."""
-        return self._get_from_self_and_super(
-            extract_func=lambda super_class: dict(get_type_hints(super_class))
-        )
+        return self._get_from_self_and_super(extract_func=lambda super_class: dict(get_type_hints(super_class)))
 
     def _get_class_variables(self) -> dict:
         """Returns a dictionary mapping class variables names to their additional information."""
@@ -586,7 +584,7 @@ class Tap(ArgumentParser):
 
         self_dict = self.__dict__
         class_dict = self._get_from_self_and_super(
-            extract_func=lambda super_class: dict(getattr(super_class, "__dict__", dict())),
+            extract_func=lambda super_class: dict(getattr(super_class, "__dict__", dict()))
         )
         class_dict = {key: val for key, val in class_dict.items() if key not in self_dict}
         stored_dict = {**self_dict, **class_dict}
