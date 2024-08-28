@@ -483,7 +483,9 @@ class Tap(ArgumentParser):
         return self
 
     @classmethod
-    def _get_from_self_and_super(cls, extract_func: Callable[[type], dict]) -> Union[Dict[str, Any], Dict]:
+    def _get_from_self_and_super(
+        cls, extract_func: Callable[[type], dict], *, need_tap_cls: bool = True,
+    ) -> Union[Dict[str, Any], Dict]:
         """Returns a dictionary mapping variable names to values.
 
         Variables and values are extracted from classes using key starting
@@ -494,6 +496,7 @@ class Tap(ArgumentParser):
         Super classes are traversed through breadth first search.
 
         :param extract_func: A function that extracts from a class a dictionary mapping variables to values.
+        :param need_tap_cls: If False, variables from the Tap and ArgumentParser classes are ignored.
         :return: A dictionary mapping variable names to values from the class dict.
         """
         visited = set()
@@ -502,6 +505,9 @@ class Tap(ArgumentParser):
 
         while len(super_classes) > 0:
             super_class = super_classes.pop(0)
+
+            if not need_tap_cls and super_class is Tap:
+                break
 
             if super_class not in visited and issubclass(super_class, Tap):
                 super_dictionary = extract_func(super_class)
@@ -521,7 +527,8 @@ class Tap(ArgumentParser):
     def _get_class_dict(self) -> Dict[str, Any]:
         """Returns a dictionary mapping class variable names to values from the class dict."""
         class_dict = self._get_from_self_and_super(
-            extract_func=lambda super_class: dict(getattr(super_class, "__dict__", dict()))
+            extract_func=lambda super_class: dict(getattr(super_class, "__dict__", dict())),
+            need_tap_cls=False,
         )
         class_dict = {
             var: val
@@ -529,9 +536,7 @@ class Tap(ArgumentParser):
             if not (
                 var.startswith("_")
                 or callable(val)
-                or isinstance(val, staticmethod)
-                or isinstance(val, classmethod)
-                or isinstance(val, property)
+                or isinstance(val, (staticmethod, classmethod, property))
             )
         }
 
@@ -539,7 +544,10 @@ class Tap(ArgumentParser):
 
     def _get_annotations(self) -> Dict[str, Any]:
         """Returns a dictionary mapping variable names to their type annotations."""
-        return self._get_from_self_and_super(extract_func=lambda super_class: dict(get_type_hints(super_class)))
+        return self._get_from_self_and_super(
+            extract_func=lambda super_class: dict(get_type_hints(super_class)),
+            need_tap_cls=False,
+        )
 
     def _get_class_variables(self) -> dict:
         """Returns a dictionary mapping class variables names to their additional information."""
@@ -547,7 +555,7 @@ class Tap(ArgumentParser):
 
         try:
             class_variables = self._get_from_self_and_super(
-                extract_func=lambda super_class: get_class_variables(super_class)
+                extract_func=get_class_variables, need_tap_cls=False,
             )
 
             # Handle edge-case of source code modification while code is running
@@ -588,7 +596,8 @@ class Tap(ArgumentParser):
 
         self_dict = self.__dict__
         class_dict = self._get_from_self_and_super(
-            extract_func=lambda super_class: dict(getattr(super_class, "__dict__", dict()))
+            extract_func=lambda super_class: dict(getattr(super_class, "__dict__", dict())),
+            need_tap_cls=False,
         )
         class_dict = {key: val for key, val in class_dict.items() if key not in self_dict}
         stored_dict = {**self_dict, **class_dict}
