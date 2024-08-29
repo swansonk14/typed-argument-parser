@@ -264,6 +264,11 @@ def get_subsequent_assign_lines(source_cls: str) -> Set[int]:
     assign_lines = set()
     for node in cls_body.body:
         if isinstance(node, (ast.Assign, ast.AnnAssign)):
+            # Check if the end line number is found
+            if node.end_lineno is None:
+                warnings.warn(parse_warning)
+                return set()
+
             # Get line number of assign statement excluding the first line (and minus 1 for the if statement)
             assign_lines |= set(range(node.lineno, node.end_lineno))
 
