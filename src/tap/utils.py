@@ -267,7 +267,7 @@ def get_subsequent_assign_lines(source_cls: str) -> Set[int]:
             # Check if the end line number is found
             if node.end_lineno is None:
                 warnings.warn(parse_warning)
-                return set()
+                continue
 
             # Get line number of assign statement excluding the first line (and minus 1 for the if statement)
             assign_lines |= set(range(node.lineno, node.end_lineno))
