@@ -26,7 +26,6 @@ from tap.utils import (
     TupleTypeEnforcer,
     define_python_object_encoder,
     as_python_object,
-    fix_py36_copy,
     enforce_reproducibility,
     PathLike,
 )
@@ -227,7 +226,7 @@ class Tap(ArgumentParser):
                 # Handle Tuple type (with type args) by extracting types of Tuple elements and enforcing them
                 elif get_origin(var_type) in (Tuple, tuple) and len(get_args(var_type)) > 0:
                     loop = False
-                    types = get_args(var_type)
+                    types = list(get_args(var_type))
 
                     # Handle Tuple[type, ...]
                     if len(types) == 2 and types[1] == Ellipsis:
@@ -331,7 +330,7 @@ class Tap(ArgumentParser):
         self._subparser_buffer.append((flag, subparser_type, kwargs))
 
     def _add_subparsers(self) -> None:
-        """Add each of the subparsers to the Tap object. """
+        """Add each of the subparsers to the Tap object."""
         # Initialize the _subparsers object if not already created
         if self._subparsers is None and len(self._subparser_buffer) > 0:
             self._subparsers = super(Tap, self).add_subparsers()
@@ -345,7 +344,7 @@ class Tap(ArgumentParser):
         self._subparsers = super().add_subparsers(**kwargs)
 
     def _configure(self) -> None:
-        """Executes the user-defined configuration. """
+        """Executes the user-defined configuration."""
         # Call the user-defined configuration
         self.configure()
 
@@ -526,11 +525,7 @@ class Tap(ArgumentParser):
         class_dict = {
             var: val
             for var, val in class_dict.items()
-            if not (
-                var.startswith("_")
-                or callable(val)
-                or isinstance(val, (staticmethod, classmethod, property))
-            )
+            if not (var.startswith("_") or callable(val) or isinstance(val, (staticmethod, classmethod, property)))
         }
 
         return class_dict
@@ -712,7 +707,6 @@ class Tap(ArgumentParser):
         """
         return pformat(self.as_dict())
 
-    @fix_py36_copy
     def __deepcopy__(self, memo: Dict[int, Any] = None) -> TapType:
         """Deepcopy the Tap object."""
         copied = type(self).__new__(type(self))
@@ -722,7 +716,7 @@ class Tap(ArgumentParser):
 
         memo[id(self)] = copied
 
-        for (k, v) in self.__dict__.items():
+        for k, v in self.__dict__.items():
             copied.__dict__[k] = deepcopy(v, memo)
 
         return copied

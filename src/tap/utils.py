@@ -146,7 +146,7 @@ def get_argument_name(*name_or_flags) -> str:
         return "help"
 
     if len(name_or_flags) > 1:
-        name_or_flags = [n_or_f for n_or_f in name_or_flags if n_or_f.startswith("--")]
+        name_or_flags = tuple(n_or_f for n_or_f in name_or_flags if n_or_f.startswith("--"))
 
     if len(name_or_flags) != 1:
         raise ValueError(f"There should only be a single canonical name for argument {name_or_flags}!")
@@ -204,39 +204,33 @@ def get_class_column(tokens: Iterable[tokenize.TokenInfo]) -> int:
 
 
 def source_line_to_tokens(tokens: Iterable[tokenize.TokenInfo]) -> Dict[int, List[Dict[str, Union[str, int]]]]:
-    """
-    Gets a dictionary mapping from line number to a dictionary of tokens on that line for an object's source code,
-    given the tokens of the object's source code.
-    """
+    """Extract a map from each line number to list of mappings providing information about each token."""
     line_to_tokens = {}
     for token_type, token, (start_line, start_column), (end_line, end_column), line in tokens:
-        line_to_tokens.setdefault(start_line, []).append({
-            'token_type': token_type,
-            'token': token,
-            'start_line': start_line,
-            'start_column': start_column,
-            'end_line': end_line,
-            'end_column': end_column,
-            'line': line
-        })
+        line_to_tokens.setdefault(start_line, []).append(
+            {
+                "token_type": token_type,
+                "token": token,
+                "start_line": start_line,
+                "start_column": start_column,
+                "end_line": end_line,
+                "end_column": end_column,
+                "line": line,
+            }
+        )
 
     return line_to_tokens
 
 
 def get_subsequent_assign_lines(source_cls: str) -> Set[int]:
-    """
-    For all multiline assign statements, get the line numbers after the first line of the assignment,
-    given the source code of the object.
-    """
-
+    """For all multiline assign statements, get the line numbers after the first line in the assignment."""
     # Parse source code using ast (with an if statement to avoid indentation errors)
     source = f"if True:\n{textwrap.indent(source_cls, ' ')}"
     body = ast.parse(source).body[0]
 
     # Set up warning message
     parse_warning = (
-        "Could not parse class source code to extract comments. "
-        "Comments in the help string may be incorrect."
+        "Could not parse class source code to extract comments. Comments in the help string may be incorrect."
     )
 
     # Check for correct parsing
@@ -322,7 +316,7 @@ def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
                 token["token"] = token["token"][num_quote_chars:-num_quote_chars]
 
                 # Remove the unicode escape sequences (e.g. "\"")
-                token["token"] = bytes(token["token"], encoding='ascii').decode('unicode-escape')
+                token["token"] = bytes(token["token"], encoding="ascii").decode("unicode-escape")
 
                 # Add the token to the comment, stripping whitespace
                 variable_to_comment[class_variable]["comment"] += sep + token["token"].strip()
@@ -351,7 +345,7 @@ def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
     return variable_to_comment
 
 
-def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any], List[str]]:
+def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any], List[type]]:
     """Extracts the values from a Literal type and ensures that the values are all primitive types."""
     literals = list(get_args(literal))
 
@@ -476,7 +470,7 @@ def define_python_object_encoder(skip_unpicklable: bool = False) -> "PythonObjec
 
 
 class UnpicklableObject:
-    """A class that serves as a placeholder for an object that could not be pickled. """
+    """A class that serves as a placeholder for an object that could not be pickled."""
 
     def __eq__(self, other):
         return isinstance(other, UnpicklableObject)
@@ -506,33 +500,6 @@ def as_python_object(dct: Any) -> Any:
             raise ArgumentTypeError(f'Special type "{_type}" not supported for JSON loading.')
 
     return dct
-
-
-def fix_py36_copy(func: Callable) -> Callable:
-    """Decorator that fixes functions using Python 3.6 deepcopy of ArgumentParsers.
-
-    Based on https://stackoverflow.com/questions/6279305/typeerror-cannot-deepcopy-this-pattern-object
-    """
-    if sys.version_info[:2] > (3, 6):
-        return func
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        re_type = type(re.compile(""))
-        has_prev_val = re_type in copy._deepcopy_dispatch
-        prev_val = copy._deepcopy_dispatch.get(re_type, None)
-        copy._deepcopy_dispatch[type(re.compile(""))] = lambda r, _: r
-
-        result = func(*args, **kwargs)
-
-        if has_prev_val:
-            copy._deepcopy_dispatch[re_type] = prev_val
-        else:
-            del copy._deepcopy_dispatch[re_type]
-
-        return result
-
-    return wrapper
 
 
 def enforce_reproducibility(
