@@ -1,4 +1,5 @@
 from argparse import ArgumentTypeError
+import inspect
 import json
 import os
 import subprocess
@@ -11,6 +12,7 @@ from tap.utils import (
     get_class_column,
     get_class_variables,
     GitInfo,
+    tokenize_source,
     type_to_str,
     get_literals,
     TupleTypeEnforcer,
@@ -145,7 +147,8 @@ class ClassColumnTests(TestCase):
         class SimpleColumn:
             arg = 2
 
-        self.assertEqual(get_class_column(SimpleColumn), 12)
+        tokens = tokenize_source(inspect.getsource(SimpleColumn))
+        self.assertEqual(get_class_column(tokens), 12)
 
     def test_column_comment(self):
         class CommentColumn:
@@ -158,28 +161,32 @@ class ClassColumnTests(TestCase):
 
             arg = 2
 
-        self.assertEqual(get_class_column(CommentColumn), 12)
+        tokens = tokenize_source(inspect.getsource(CommentColumn))
+        self.assertEqual(get_class_column(tokens), 12)
 
     def test_column_space(self):
         class SpaceColumn:
 
             arg = 2
 
-        self.assertEqual(get_class_column(SpaceColumn), 12)
+        tokens = tokenize_source(inspect.getsource(SpaceColumn))
+        self.assertEqual(get_class_column(tokens), 12)
 
     def test_column_method(self):
         class FuncColumn:
             def func(self):
                 pass
 
-        self.assertEqual(get_class_column(FuncColumn), 12)
+        tokens = tokenize_source(inspect.getsource(FuncColumn))
+        self.assertEqual(get_class_column(tokens), 12)
 
     def test_dataclass(self):
         @class_decorator
         class DataclassColumn:
             arg: int = 5
 
-        self.assertEqual(get_class_column(DataclassColumn), 12)
+        tokens = tokenize_source(inspect.getsource(DataclassColumn))
+        self.assertEqual(get_class_column(tokens), 12)
 
     def test_dataclass_method(self):
         def wrapper(f):
@@ -191,7 +198,8 @@ class ClassColumnTests(TestCase):
             def func(self):
                 pass
 
-        self.assertEqual(get_class_column(DataclassColumn), 12)
+        tokens = tokenize_source(inspect.getsource(DataclassColumn))
+        self.assertEqual(get_class_column(tokens), 12)
 
 
 class ClassVariableTests(TestCase):

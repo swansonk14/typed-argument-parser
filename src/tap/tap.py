@@ -503,7 +503,7 @@ class Tap(ArgumentParser):
         while len(super_classes) > 0:
             super_class = super_classes.pop(0)
 
-            if super_class not in visited and issubclass(super_class, Tap):
+            if super_class not in visited and issubclass(super_class, Tap) and super_class is not Tap:
                 super_dictionary = extract_func(super_class)
 
                 # Update only unseen variables to avoid overriding subclass values
@@ -529,9 +529,7 @@ class Tap(ArgumentParser):
             if not (
                 var.startswith("_")
                 or callable(val)
-                or isinstance(val, staticmethod)
-                or isinstance(val, classmethod)
-                or isinstance(val, property)
+                or isinstance(val, (staticmethod, classmethod, property))
             )
         }
 
@@ -546,9 +544,7 @@ class Tap(ArgumentParser):
         class_variable_names = {**self._get_annotations(), **self._get_class_dict()}.keys()
 
         try:
-            class_variables = self._get_from_self_and_super(
-                extract_func=lambda super_class: get_class_variables(super_class)
-            )
+            class_variables = self._get_from_self_and_super(extract_func=get_class_variables)
 
             # Handle edge-case of source code modification while code is running
             variables_to_add = class_variable_names - class_variables.keys()

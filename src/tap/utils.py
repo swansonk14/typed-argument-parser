@@ -18,6 +18,7 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Iterable,
     Iterator,
     List,
     Literal,
@@ -184,29 +185,31 @@ def is_positional_arg(*name_or_flags) -> bool:
     return not is_option_arg(*name_or_flags)
 
 
-def tokenize_source(obj: object) -> Generator:
-    """Returns a generator for the tokens of the object's source code."""
-    source = inspect.getsource(obj)
-    token_generator = tokenize.generate_tokens(StringIO(source).readline)
-    return token_generator
+def tokenize_source(source: str) -> Generator[tokenize.TokenInfo, None, None]:
+    """Returns a generator for the tokens of the object's source code, given the source code."""
+    return tokenize.generate_tokens(StringIO(source).readline)
 
 
-def get_class_column(obj: type) -> int:
-    """Determines the column number for class variables in a class."""
+def get_class_column(tokens: Iterable[tokenize.TokenInfo]) -> int:
+    """Determines the column number for class variables in a class, given the tokens of the class."""
     first_line = 1
-    for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(obj):
+    for token_type, token, (start_line, start_column), (end_line, end_column), line in tokens:
         if token.strip() == "@":
             first_line += 1
         if start_line <= first_line or token.strip() == "":
             continue
 
         return start_column
+    raise ValueError("Could not find any class variables in the class.")
 
 
-def source_line_to_tokens(obj: object) -> Dict[int, List[Dict[str, Union[str, int]]]]:
-    """Gets a dictionary mapping from line number to a dictionary of tokens on that line for an object's source code."""
+def source_line_to_tokens(tokens: Iterable[tokenize.TokenInfo]) -> Dict[int, List[Dict[str, Union[str, int]]]]:
+    """
+    Gets a dictionary mapping from line number to a dictionary of tokens on that line for an object's source code,
+    given the tokens of the object's source code.
+    """
     line_to_tokens = {}
-    for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(obj):
+    for token_type, token, (start_line, start_column), (end_line, end_column), line in tokens:
         line_to_tokens.setdefault(start_line, []).append({
             'token_type': token_type,
             'token': token,
@@ -220,13 +223,14 @@ def source_line_to_tokens(obj: object) -> Dict[int, List[Dict[str, Union[str, in
     return line_to_tokens
 
 
-def get_subsequent_assign_lines(cls: type) -> Set[int]:
-    """For all multiline assign statements, get the line numbers after the first line of the assignment."""
-    # Get source code of class
-    source = inspect.getsource(cls)
+def get_subsequent_assign_lines(source_cls: str) -> Set[int]:
+    """
+    For all multiline assign statements, get the line numbers after the first line of the assignment,
+    given the source code of the object.
+    """
 
     # Parse source code using ast (with an if statement to avoid indentation errors)
-    source = f"if True:\n{textwrap.indent(source, ' ')}"
+    source = f"if True:\n{textwrap.indent(source_cls, ' ')}"
     body = ast.parse(source).body[0]
 
     # Set up warning message
@@ -260,6 +264,11 @@ def get_subsequent_assign_lines(cls: type) -> Set[int]:
     assign_lines = set()
     for node in cls_body.body:
         if isinstance(node, (ast.Assign, ast.AnnAssign)):
+            # Check if the end line number is found
+            if node.end_lineno is None:
+                warnings.warn(parse_warning)
+                continue
+
             # Get line number of assign statement excluding the first line (and minus 1 for the if statement)
             assign_lines |= set(range(node.lineno, node.end_lineno))
 
@@ -268,15 +277,19 @@ def get_subsequent_assign_lines(cls: type) -> Set[int]:
 
 def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
     """Returns a dictionary mapping class variables to their additional information (currently just comments)."""
+    # Get the source code and tokens of the class
+    source_cls = inspect.getsource(cls)
+    tokens = tuple(tokenize_source(source_cls))
+
     # Get mapping from line number to tokens
-    line_to_tokens = source_line_to_tokens(cls)
+    line_to_tokens = source_line_to_tokens(tokens)
 
     # Get class variable column number
-    class_variable_column = get_class_column(cls)
+    class_variable_column = get_class_column(tokens)
 
     # For all multiline assign statements, get the line numbers after the first line of the assignment
     # This is used to avoid identifying comments in multiline assign statements
-    subsequent_assign_lines = get_subsequent_assign_lines(cls)
+    subsequent_assign_lines = get_subsequent_assign_lines(source_cls)
 
     # Extract class variables
     class_variable = None
