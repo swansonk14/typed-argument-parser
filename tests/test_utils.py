@@ -333,7 +333,7 @@ T
         self.assertEqual(get_class_variables(MultilineArgument), class_variables)
 
     def test_multiline_argument_with_final_hashtag_comment(self):
-        class MultilineArgument:
+        class MultilineArgumentWithHashTagComment:
             bar: str = (
                 "This is a multiline argument"
                 " that should not be included in the docstring"
@@ -347,7 +347,7 @@ T
             )  # yay!
 
         class_variables = {"bar": {"comment": "biz baz"}, "barr": {"comment": "bar baz"}, "barrr": {"comment": "yay!"}}
-        self.assertEqual(get_class_variables(MultilineArgument), class_variables)
+        self.assertEqual(get_class_variables(MultilineArgumentWithHashTagComment), class_variables)
 
     def test_single_quote_multiline(self):
         class SingleQuoteMultiline:

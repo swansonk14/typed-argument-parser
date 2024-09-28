@@ -303,7 +303,6 @@ def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
         if line in final_assign_lines:
             # Find the comment (if it exists)
             for token in tokens:
-                print(token)
                 if token["token_type"] == tokenize.COMMENT:
                     # Leave out "#" and whitespace from comment
                     variable_to_comment[class_variable]["comment"] = token["token"][1:].strip()
