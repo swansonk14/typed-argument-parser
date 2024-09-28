@@ -222,8 +222,12 @@ def source_line_to_tokens(tokens: Iterable[tokenize.TokenInfo]) -> Dict[int, Lis
     return line_to_tokens
 
 
-def get_subsequent_assign_lines(source_cls: str) -> Set[int]:
-    """For all multiline assign statements, get the line numbers after the first line in the assignment."""
+def get_subsequent_assign_lines(source_cls: str) -> Tuple[Set[int], Set[int]]:
+    """For all multiline assign statements, get the line numbers after the first line in the assignment.
+
+    :param source_cls: The source code of the class.
+    :return: A set of intermediate line numbers for multiline assign statements and a set of final line numbers.
+    """
     # Parse source code using ast (with an if statement to avoid indentation errors)
     source = f"if True:\n{textwrap.indent(source_cls, ' ')}"
     body = ast.parse(source).body[0]
@@ -236,7 +240,7 @@ def get_subsequent_assign_lines(source_cls: str) -> Set[int]:
     # Check for correct parsing
     if not isinstance(body, ast.If):
         warnings.warn(parse_warning)
-        return set()
+        return set(), set()
 
     # Extract if body
     if_body = body.body
@@ -244,7 +248,7 @@ def get_subsequent_assign_lines(source_cls: str) -> Set[int]:
     # Check for a single body
     if len(if_body) != 1:
         warnings.warn(parse_warning)
-        return set()
+        return set(), set()
 
     # Extract class body
     cls_body = if_body[0]
@@ -252,10 +256,11 @@ def get_subsequent_assign_lines(source_cls: str) -> Set[int]:
     # Check for a single class definition
     if not isinstance(cls_body, ast.ClassDef):
         warnings.warn(parse_warning)
-        return set()
+        return set(), set()
 
     # Get line numbers of assign statements
-    assign_lines = set()
+    intermediate_assign_lines = set()
+    final_assign_lines = set()
     for node in cls_body.body:
         if isinstance(node, (ast.Assign, ast.AnnAssign)):
             # Check if the end line number is found
@@ -263,10 +268,15 @@ def get_subsequent_assign_lines(source_cls: str) -> Set[int]:
                 warnings.warn(parse_warning)
                 continue
 
-            # Get line number of assign statement excluding the first line (and minus 1 for the if statement)
-            assign_lines |= set(range(node.lineno, node.end_lineno))
+            # Only consider multiline assign statements
+            if node.end_lineno > node.lineno:
+                # Get intermediate line number of assign statement excluding the first line (and minus 1 for the if statement)
+                intermediate_assign_lines |= set(range(node.lineno, node.end_lineno - 1))
 
-    return assign_lines
+                # If multiline assign statement, get the line number of the last line (and minus 1 for the if statement)
+                final_assign_lines.add(node.end_lineno - 1)
+
+    return intermediate_assign_lines, final_assign_lines
 
 
 def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
@@ -283,14 +293,25 @@ def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
 
     # For all multiline assign statements, get the line numbers after the first line of the assignment
     # This is used to avoid identifying comments in multiline assign statements
-    subsequent_assign_lines = get_subsequent_assign_lines(source_cls)
+    intermediate_assign_lines, final_assign_lines = get_subsequent_assign_lines(source_cls)
 
     # Extract class variables
     class_variable = None
     variable_to_comment = {}
     for line, tokens in line_to_tokens.items():
+        # If this is the final line of a multiline assign, extract any potential comments
+        if line in final_assign_lines:
+            # Find the comment (if it exists)
+            for token in tokens:
+                print(token)
+                if token["token_type"] == tokenize.COMMENT:
+                    # Leave out "#" and whitespace from comment
+                    variable_to_comment[class_variable]["comment"] = token["token"][1:].strip()
+                    break
+            continue
+
         # Skip assign lines after the first line of multiline assign statements
-        if line in subsequent_assign_lines:
+        if line in intermediate_assign_lines:
             continue
 
         for i, token in enumerate(tokens):
