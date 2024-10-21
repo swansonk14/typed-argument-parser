@@ -321,9 +321,6 @@ class TapifyTests(TestCase):
 
             self.assertEqual(output, "complex things require 1 0 Person(jesse)")
 
-    @unittest.skipIf(
-        sys.version_info < (3, 9), "Parameterized standard collections (e.g., list[int]) introduced in Python 3.9"
-    )
     def test_tapify_complex_types_parameterized_standard(self):
         def concat(complexity: list[int], requires: tuple[int, int], intelligence: Person) -> str:
             return f'{" ".join(map(str, complexity))} {requires[0]} {requires[1]} {intelligence}'

@@ -558,7 +558,7 @@ def enforce_reproducibility(
         raise ValueError(f"{no_reproducibility_message}: Uncommitted changes " f"in current args.")
 
 
-# TODO: remove this once typing_inspect.get_origin is fixed for Python 3.8, 3.9, and 3.10
+# TODO: remove this once typing_inspect.get_origin is fixed for Python 3.9 and 3.10
 # https://github.com/ilevkivskyi/typing_inspect/issues/64
 # https://github.com/ilevkivskyi/typing_inspect/issues/65
 def get_origin(tp: Any) -> Any:

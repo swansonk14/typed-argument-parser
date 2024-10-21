@@ -120,9 +120,6 @@ class RequiredClassVariableTests(TestCase):
 
 
 class ParameterizedStandardCollectionTests(TestCase):
-    @unittest.skipIf(
-        sys.version_info < (3, 9), "Parameterized standard collections (e.g., list[int]) introduced in Python 3.9"
-    )
     def test_parameterized_standard_collection(self):
         class ParameterizedStandardCollectionTap(Tap):
             arg_list_str: list[str]

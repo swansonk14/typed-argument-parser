@@ -39,7 +39,7 @@ Running `python square.py --num 2` will print `The square of your number is 4.0.
 
 ## Installation
 
-Tap requires Python 3.8+
+Tap requires Python 3.9+
 
 To install Tap from PyPI run: 
 

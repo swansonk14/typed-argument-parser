@@ -171,7 +171,6 @@ class TestArgparseActions(TestCase):
         # tried redirecting stderr using unittest.mock.patch
         # VersionTap().parse_args(['--version'])
 
-    @unittest.skipIf(sys.version_info < (3, 8), 'action="extend" introduced in argparse in Python 3.8')
     def test_actions_extend(self):
         class ExtendTap(Tap):
             arg = [1, 2]
@@ -185,7 +184,6 @@ class TestArgparseActions(TestCase):
         args = ExtendTap().parse_args("--arg a b --arg a --arg c d".split())
         self.assertEqual(args.arg, [1, 2] + "a b a c d".split())
 
-    @unittest.skipIf(sys.version_info < (3, 8), 'action="extend" introduced in argparse in Python 3.8')
     def test_actions_extend_list(self):
         class ExtendListTap(Tap):
             arg: List = ["hi"]
@@ -196,7 +194,6 @@ class TestArgparseActions(TestCase):
         args = ExtendListTap().parse_args("--arg yo yo --arg yoyo --arg yo yo".split())
         self.assertEqual(args.arg, "hi yo yo yoyo yo yo".split())
 
-    @unittest.skipIf(sys.version_info < (3, 8), 'action="extend" introduced in argparse in Python 3.8')
     def test_actions_extend_list_int(self):
         class ExtendListIntTap(Tap):
             arg: List[int] = [0]
