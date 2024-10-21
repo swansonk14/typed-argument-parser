@@ -24,9 +24,14 @@ else:
     _IS_PYDANTIC_V1 = Version(pydantic.__version__) < Version("2.0.0")
 
 
-# To properly test the help message, we need to know how argparse formats it. It changed from 3.8 -> 3.9 -> 3.10
+# To properly test the help message, we need to know how argparse formats it. It changed from 3.8 -> 3.9 -> 3.10 -> 3.13
 _OPTIONS_TITLE = "options" if not sys.version_info < (3, 10) else "optional arguments"
 _ARG_LIST_DOTS = "..." if not sys.version_info < (3, 9) else "[ARG_LIST ...]"
+_ARG_WITH_ALIAS = (
+    "-arg, --argument_with_really_long_name ARGUMENT_WITH_REALLY_LONG_NAME"
+    if not sys.version_info < (3, 13)
+    else "-arg ARGUMENT_WITH_REALLY_LONG_NAME, --argument_with_really_long_name ARGUMENT_WITH_REALLY_LONG_NAME"
+)
 
 
 @dataclasses.dataclass
@@ -416,7 +421,7 @@ def test_subclasser_complex_help_message(class_or_function_: Any):
     {description}
 
     {_OPTIONS_TITLE}:
-    -arg ARGUMENT_WITH_REALLY_LONG_NAME, --argument_with_really_long_name ARGUMENT_WITH_REALLY_LONG_NAME
+    {_ARG_WITH_ALIAS}
                             (Union[float, int], default=3) This argument has a long name and will be aliased with a short
                             one
     --arg_int ARG_INT     (int, required) some integer
