@@ -110,7 +110,7 @@ class GitTests(TestCase):
 
     def test_get_git_url_no_remote(self) -> None:
         subprocess.run(["git", "remote", "remove", "origin"])
-        self.assertIsNone(self.git_info.get_git_url())
+        self.assertEqual(self.git_info.get_git_url(), "")
 
     def test_get_git_version(self) -> None:
         git_version = self.git_info.get_git_version()

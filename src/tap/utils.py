@@ -83,12 +83,12 @@ class GitInfo:
         number_start_index = next(i for i, c in enumerate(raw) if c.isdigit())
         return tuple(int(num) for num in raw[number_start_index:].split("."))
 
-    def get_git_url(self, commit_hash: bool = True) -> Optional[str]:
+    def get_git_url(self, commit_hash: bool = True) -> str:
         """Gets the https url of the git repo where the command is run.
 
         :param commit_hash: If True, the url links to the latest local git commit hash.
         If False, the url links to the general git url.
-        :return: The https url of the current git repo.
+        :return: The https url of the current git repo or an empty string for a local repo.
         """
         # Get git url (either https or ssh)
         input_remote = (
@@ -102,7 +102,7 @@ class GitInfo:
             if e.returncode == 2:
                 # https://git-scm.com/docs/git-remote#_exit_status
                 # 2: The remote does not exist.
-                return None
+                return ""
             raise e
 
         # Remove .git at end
@@ -417,7 +417,7 @@ def define_python_object_encoder(skip_unpicklable: bool = False) -> "PythonObjec
 
 
 class UnpicklableObject:
-    """A class that serves as a placeholder for an object that could not be pickled. """
+    """A class that serves as a placeholder for an object that could not be pickled."""
 
     def __eq__(self, other):
         return isinstance(other, UnpicklableObject)

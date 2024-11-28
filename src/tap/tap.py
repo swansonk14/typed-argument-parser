@@ -331,7 +331,7 @@ class Tap(ArgumentParser):
         self._subparser_buffer.append((flag, subparser_type, kwargs))
 
     def _add_subparsers(self) -> None:
-        """Add each of the subparsers to the Tap object. """
+        """Add each of the subparsers to the Tap object."""
         # Initialize the _subparsers object if not already created
         if self._subparsers is None and len(self._subparser_buffer) > 0:
             self._subparsers = super(Tap, self).add_subparsers()
@@ -345,7 +345,7 @@ class Tap(ArgumentParser):
         self._subparsers = super().add_subparsers(**kwargs)
 
     def _configure(self) -> None:
-        """Executes the user-defined configuration. """
+        """Executes the user-defined configuration."""
         # Call the user-defined configuration
         self.configure()
 
@@ -370,7 +370,7 @@ class Tap(ArgumentParser):
         pass
 
     @staticmethod
-    def get_reproducibility_info(repo_path: Optional[PathLike] = None) -> Dict[str, Optional[str]]:
+    def get_reproducibility_info(repo_path: Optional[PathLike] = None) -> Dict[str, str]:
         """Gets a dictionary of reproducibility information.
 
         Reproducibility information always includes:
@@ -402,7 +402,7 @@ class Tap(ArgumentParser):
         if git_info.has_git():
             reproducibility["git_root"] = git_info.get_git_root()
             reproducibility["git_url"] = git_info.get_git_url(commit_hash=True)
-            reproducibility["git_has_uncommitted_changes"] = git_info.has_uncommitted_changes()
+            reproducibility["git_has_uncommitted_changes"] = str(git_info.has_uncommitted_changes())
 
         return reproducibility
 
@@ -727,7 +727,7 @@ class Tap(ArgumentParser):
 
         memo[id(self)] = copied
 
-        for (k, v) in self.__dict__.items():
+        for k, v in self.__dict__.items():
             copied.__dict__[k] = deepcopy(v, memo)
 
         return copied
