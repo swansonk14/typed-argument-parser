@@ -1,4 +1,5 @@
 from argparse import ArgumentParser, ArgumentTypeError
+import ast
 from base64 import b64encode, b64decode
 import copy
 from functools import wraps
@@ -10,20 +11,24 @@ import pickle
 import re
 import subprocess
 import sys
+import textwrap
 import tokenize
 from typing import (
     Any,
     Callable,
     Dict,
     Generator,
+    Iterable,
     Iterator,
     List,
     Literal,
     Optional,
+    Set,
     Tuple,
     Union,
 )
 from typing_inspect import get_args as typing_inspect_get_args, get_origin as typing_inspect_get_origin
+import warnings
 
 if sys.version_info >= (3, 10):
     from types import UnionType
@@ -162,7 +167,7 @@ def get_argument_name(*name_or_flags) -> str:
         return "help"
 
     if len(name_or_flags) > 1:
-        name_or_flags = [n_or_f for n_or_f in name_or_flags if n_or_f.startswith("--")]
+        name_or_flags = tuple(n_or_f for n_or_f in name_or_flags if n_or_f.startswith("--"))
 
     if len(name_or_flags) != 1:
         raise ValueError(f"There should only be a single canonical name for argument {name_or_flags}!")
@@ -201,30 +206,28 @@ def is_positional_arg(*name_or_flags) -> bool:
     return not is_option_arg(*name_or_flags)
 
 
-def tokenize_source(obj: object) -> Generator:
-    """Returns a generator for the tokens of the object's source code."""
-    source = inspect.getsource(obj)
-    token_generator = tokenize.generate_tokens(StringIO(source).readline)
-
-    return token_generator
+def tokenize_source(source: str) -> Generator[tokenize.TokenInfo, None, None]:
+    """Returns a generator for the tokens of the object's source code, given the source code."""
+    return tokenize.generate_tokens(StringIO(source).readline)
 
 
-def get_class_column(obj: type) -> int:
-    """Determines the column number for class variables in a class."""
+def get_class_column(tokens: Iterable[tokenize.TokenInfo]) -> int:
+    """Determines the column number for class variables in a class, given the tokens of the class."""
     first_line = 1
-    for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(obj):
+    for token_type, token, (start_line, start_column), (end_line, end_column), line in tokens:
         if token.strip() == "@":
             first_line += 1
         if start_line <= first_line or token.strip() == "":
             continue
 
         return start_column
+    raise ValueError("Could not find any class variables in the class.")
 
 
-def source_line_to_tokens(obj: object) -> Dict[int, List[Dict[str, Union[str, int]]]]:
-    """Gets a dictionary mapping from line number to a dictionary of tokens on that line for an object's source code."""
+def source_line_to_tokens(tokens: Iterable[tokenize.TokenInfo]) -> Dict[int, List[Dict[str, Union[str, int]]]]:
+    """Extract a map from each line number to list of mappings providing information about each token."""
     line_to_tokens = {}
-    for token_type, token, (start_line, start_column), (end_line, end_column), line in tokenize_source(obj):
+    for token_type, token, (start_line, start_column), (end_line, end_column), line in tokens:
         line_to_tokens.setdefault(start_line, []).append(
             {
                 "token_type": token_type,
@@ -240,20 +243,98 @@ def source_line_to_tokens(obj: object) -> Dict[int, List[Dict[str, Union[str, in
     return line_to_tokens
 
 
+def get_subsequent_assign_lines(source_cls: str) -> Tuple[Set[int], Set[int]]:
+    """For all multiline assign statements, get the line numbers after the first line in the assignment.
+
+    :param source_cls: The source code of the class.
+    :return: A set of intermediate line numbers for multiline assign statements and a set of final line numbers.
+    """
+    # Parse source code using ast (with an if statement to avoid indentation errors)
+    source = f"if True:\n{textwrap.indent(source_cls, ' ')}"
+    body = ast.parse(source).body[0]
+
+    # Set up warning message
+    parse_warning = (
+        "Could not parse class source code to extract comments. Comments in the help string may be incorrect."
+    )
+
+    # Check for correct parsing
+    if not isinstance(body, ast.If):
+        warnings.warn(parse_warning)
+        return set(), set()
+
+    # Extract if body
+    if_body = body.body
+
+    # Check for a single body
+    if len(if_body) != 1:
+        warnings.warn(parse_warning)
+        return set(), set()
+
+    # Extract class body
+    cls_body = if_body[0]
+
+    # Check for a single class definition
+    if not isinstance(cls_body, ast.ClassDef):
+        warnings.warn(parse_warning)
+        return set(), set()
+
+    # Get line numbers of assign statements
+    intermediate_assign_lines = set()
+    final_assign_lines = set()
+    for node in cls_body.body:
+        if isinstance(node, (ast.Assign, ast.AnnAssign)):
+            # Check if the end line number is found
+            if node.end_lineno is None:
+                warnings.warn(parse_warning)
+                continue
+
+            # Only consider multiline assign statements
+            if node.end_lineno > node.lineno:
+                # Get intermediate line number of assign statement excluding the first line (and minus 1 for the if statement)
+                intermediate_assign_lines |= set(range(node.lineno, node.end_lineno - 1))
+
+                # If multiline assign statement, get the line number of the last line (and minus 1 for the if statement)
+                final_assign_lines.add(node.end_lineno - 1)
+
+    return intermediate_assign_lines, final_assign_lines
+
+
 def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
     """Returns a dictionary mapping class variables to their additional information (currently just comments)."""
+    # Get the source code and tokens of the class
+    source_cls = inspect.getsource(cls)
+    tokens = tuple(tokenize_source(source_cls))
+
     # Get mapping from line number to tokens
-    line_to_tokens = source_line_to_tokens(cls)
+    line_to_tokens = source_line_to_tokens(tokens)
 
     # Get class variable column number
-    class_variable_column = get_class_column(cls)
+    class_variable_column = get_class_column(tokens)
+
+    # For all multiline assign statements, get the line numbers after the first line of the assignment
+    # This is used to avoid identifying comments in multiline assign statements
+    intermediate_assign_lines, final_assign_lines = get_subsequent_assign_lines(source_cls)
 
     # Extract class variables
     class_variable = None
     variable_to_comment = {}
-    for tokens in line_to_tokens.values():
-        for i, token in enumerate(tokens):
+    for line, tokens in line_to_tokens.items():
+        # If this is the final line of a multiline assign, extract any potential comments
+        if line in final_assign_lines:
+            # Find the comment (if it exists)
+            for token in tokens:
+                if token["token_type"] == tokenize.COMMENT:
+                    # Leave out "#" and whitespace from comment
+                    variable_to_comment[class_variable]["comment"] = token["token"][1:].strip()
+                    break
+            continue
 
+        # Skip assign lines after the first line of multiline assign statements
+        if line in intermediate_assign_lines:
+            continue
+
+        for i, token in enumerate(tokens):
             # Skip whitespace
             if token["token"].strip() == "":
                 continue
@@ -265,8 +346,21 @@ def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
                 and token["token"][:1] in {'"', "'"}
             ):
                 sep = " " if variable_to_comment[class_variable]["comment"] else ""
+
+                # Identify the quote character (single or double)
                 quote_char = token["token"][:1]
-                variable_to_comment[class_variable]["comment"] += sep + token["token"].strip(quote_char).strip()
+
+                # Identify the number of quote characters at the start of the string
+                num_quote_chars = len(token["token"]) - len(token["token"].lstrip(quote_char))
+
+                # Remove the number of quote characters at the start of the string and the end of the string
+                token["token"] = token["token"][num_quote_chars:-num_quote_chars]
+
+                # Remove the unicode escape sequences (e.g. "\"")
+                token["token"] = bytes(token["token"], encoding="ascii").decode("unicode-escape")
+
+                # Add the token to the comment, stripping whitespace
+                variable_to_comment[class_variable]["comment"] += sep + token["token"].strip()
 
             # Match class variable
             class_variable = None
@@ -292,7 +386,7 @@ def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
     return variable_to_comment
 
 
-def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any], List[str]]:
+def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any], List[type]]:
     """Extracts the values from a Literal type and ensures that the values are all primitive types."""
     literals = list(get_args(literal))
 
@@ -449,33 +543,6 @@ def as_python_object(dct: Any) -> Any:
     return dct
 
 
-def fix_py36_copy(func: Callable) -> Callable:
-    """Decorator that fixes functions using Python 3.6 deepcopy of ArgumentParsers.
-
-    Based on https://stackoverflow.com/questions/6279305/typeerror-cannot-deepcopy-this-pattern-object
-    """
-    if sys.version_info[:2] > (3, 6):
-        return func
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        re_type = type(re.compile(""))
-        has_prev_val = re_type in copy._deepcopy_dispatch
-        prev_val = copy._deepcopy_dispatch.get(re_type, None)
-        copy._deepcopy_dispatch[type(re.compile(""))] = lambda r, _: r
-
-        result = func(*args, **kwargs)
-
-        if has_prev_val:
-            copy._deepcopy_dispatch[re_type] = prev_val
-        else:
-            del copy._deepcopy_dispatch[re_type]
-
-        return result
-
-    return wrapper
-
-
 def enforce_reproducibility(
     saved_reproducibility_data: Optional[Dict[str, str]], current_reproducibility_data: Dict[str, str], path: PathLike
 ) -> None:
@@ -512,7 +579,7 @@ def enforce_reproducibility(
         raise ValueError(f"{no_reproducibility_message}: Uncommitted changes " f"in current args.")
 
 
-# TODO: remove this once typing_inspect.get_origin is fixed for Python 3.8, 3.9, and 3.10
+# TODO: remove this once typing_inspect.get_origin is fixed for Python 3.9 and 3.10
 # https://github.com/ilevkivskyi/typing_inspect/issues/64
 # https://github.com/ilevkivskyi/typing_inspect/issues/65
 def get_origin(tp: Any) -> Any:

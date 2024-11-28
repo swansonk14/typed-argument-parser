@@ -26,7 +26,6 @@ from tap.utils import (
     TupleTypeEnforcer,
     define_python_object_encoder,
     as_python_object,
-    fix_py36_copy,
     enforce_reproducibility,
     PathLike,
 )
@@ -227,7 +226,7 @@ class Tap(ArgumentParser):
                 # Handle Tuple type (with type args) by extracting types of Tuple elements and enforcing them
                 elif get_origin(var_type) in (Tuple, tuple) and len(get_args(var_type)) > 0:
                     loop = False
-                    types = get_args(var_type)
+                    types = list(get_args(var_type))
 
                     # Handle Tuple[type, ...]
                     if len(types) == 2 and types[1] == Ellipsis:
@@ -504,7 +503,7 @@ class Tap(ArgumentParser):
         while len(super_classes) > 0:
             super_class = super_classes.pop(0)
 
-            if super_class not in visited and issubclass(super_class, Tap):
+            if super_class not in visited and issubclass(super_class, Tap) and super_class is not Tap:
                 super_dictionary = extract_func(super_class)
 
                 # Update only unseen variables to avoid overriding subclass values
@@ -527,13 +526,7 @@ class Tap(ArgumentParser):
         class_dict = {
             var: val
             for var, val in class_dict.items()
-            if not (
-                var.startswith("_")
-                or callable(val)
-                or isinstance(val, staticmethod)
-                or isinstance(val, classmethod)
-                or isinstance(val, property)
-            )
+            if not (var.startswith("_") or callable(val) or isinstance(val, (staticmethod, classmethod, property)))
         }
 
         return class_dict
@@ -547,9 +540,7 @@ class Tap(ArgumentParser):
         class_variable_names = {**self._get_annotations(), **self._get_class_dict()}.keys()
 
         try:
-            class_variables = self._get_from_self_and_super(
-                extract_func=lambda super_class: get_class_variables(super_class)
-            )
+            class_variables = self._get_from_self_and_super(extract_func=get_class_variables)
 
             # Handle edge-case of source code modification while code is running
             variables_to_add = class_variable_names - class_variables.keys()
@@ -717,7 +708,6 @@ class Tap(ArgumentParser):
         """
         return pformat(self.as_dict())
 
-    @fix_py36_copy
     def __deepcopy__(self, memo: Dict[int, Any] = None) -> TapType:
         """Deepcopy the Tap object."""
         copied = type(self).__new__(type(self))

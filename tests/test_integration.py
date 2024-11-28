@@ -120,9 +120,6 @@ class RequiredClassVariableTests(TestCase):
 
 
 class ParameterizedStandardCollectionTests(TestCase):
-    @unittest.skipIf(
-        sys.version_info < (3, 9), "Parameterized standard collections (e.g., list[int]) introduced in Python 3.9"
-    )
     def test_parameterized_standard_collection(self):
         class ParameterizedStandardCollectionTap(Tap):
             arg_list_str: list[str]
@@ -1247,19 +1244,19 @@ class TupleTests(TestCase):
 
         self.assertEqual(args.tup, true_args)
 
-    def test_tuple_literally_one(self):
+    def test_tuple_literally_three(self):
         class LiterallyOne(Tap):
-            tup: Tuple[Literal[1]]
+            tup: Tuple[Literal[3]]
 
-        input_args = ("1",)
-        true_args = (1,)
+        input_args = ("3",)
+        true_args = (3,)
 
         args = LiterallyOne().parse_args(["--tup", *input_args])
 
         self.assertEqual(args.tup, true_args)
 
         with self.assertRaises(SystemExit):
-            LiterallyOne().parse_args(["--tup", "2"])
+            LiterallyOne().parse_args(["--tup", "5"])
 
     def test_tuple_literally_two(self):
         class LiterallyTwo(Tap):

@@ -24,9 +24,14 @@ else:
     _IS_PYDANTIC_V1 = Version(pydantic.__version__) < Version("2.0.0")
 
 
-# To properly test the help message, we need to know how argparse formats it. It changed from 3.8 -> 3.9 -> 3.10
+# To properly test the help message, we need to know how argparse formats it. It changed from 3.9 -> 3.10 -> 3.13
 _OPTIONS_TITLE = "options" if not sys.version_info < (3, 10) else "optional arguments"
-_ARG_LIST_DOTS = "..." if not sys.version_info < (3, 9) else "[ARG_LIST ...]"
+_ARG_LIST_DOTS = "..."
+_ARG_WITH_ALIAS = (
+    "-arg, --argument_with_really_long_name ARGUMENT_WITH_REALLY_LONG_NAME"
+    if not sys.version_info < (3, 13)
+    else "-arg ARGUMENT_WITH_REALLY_LONG_NAME, --argument_with_really_long_name ARGUMENT_WITH_REALLY_LONG_NAME"
+)
 
 
 @dataclasses.dataclass
@@ -416,7 +421,7 @@ def test_subclasser_complex_help_message(class_or_function_: Any):
     {description}
 
     {_OPTIONS_TITLE}:
-    -arg ARGUMENT_WITH_REALLY_LONG_NAME, --argument_with_really_long_name ARGUMENT_WITH_REALLY_LONG_NAME
+    {_ARG_WITH_ALIAS}
                             (Union[float, int], default=3) This argument has a long name and will be aliased with a short
                             one
     --arg_int ARG_INT     (int, required) some integer
@@ -467,8 +472,6 @@ def test_subclasser_complex_help_message(class_or_function_: Any):
             "--arg_int 1 --baz X --foo b",
             SystemExit(
                 "error: argument {a,b}: invalid choice: 'X' (choose from 'a', 'b')"
-                if sys.version_info >= (3, 9)
-                else "error: invalid choice: 'X' (choose from 'a', 'b')"
             ),
         ),
         (
@@ -488,14 +491,12 @@ def test_subclasser_subparser(
     _test_subclasser(subclasser_subparser, class_or_function_, args_string_and_arg_to_expected_value, test_call=False)
 
 
-# @pytest.mark.skipif(sys.version_info < (3, 10), reason="argparse is different. Need to fix help_message_expected")
 @pytest.mark.parametrize(
     "args_string_and_description_and_expected_message",
     [
         (
             "-h",
             "Script description",
-            # foo help likely missing b/c class nesting. In a demo in a Python 3.8 env, foo help appears in -h
             f"""
             usage: pytest [--foo] --arg_int ARG_INT [--arg_bool] [--arg_list [ARG_LIST {_ARG_LIST_DOTS}]] [-h]
                           {{a,b}} ...
@@ -508,7 +509,7 @@ def test_subclasser_subparser(
                 b                   b help
 
             {_OPTIONS_TITLE}:
-            --foo                 (bool, default=False) {'' if sys.version_info < (3, 9) else 'foo help'}
+            --foo                 (bool, default=False) foo help
             --arg_int ARG_INT     (int, required) some integer
             --arg_bool            (bool, default=True)
             --arg_list [ARG_LIST {_ARG_LIST_DOTS}]
