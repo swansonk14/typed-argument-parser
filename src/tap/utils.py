@@ -86,7 +86,7 @@ class GitInfo:
         """
         raw = check_output(["git", "--version"])
         number_start_index = next(i for i, c in enumerate(raw) if c.isdigit())
-        return tuple(int(num) for num in raw[number_start_index:].split("."))
+        return tuple(int(num) for num in raw[number_start_index:].split(".") if num.isdigit())
 
     def get_git_url(self, commit_hash: bool = True) -> str:
         """Gets the https url of the git repo where the command is run.
