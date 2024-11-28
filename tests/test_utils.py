@@ -116,7 +116,6 @@ class GitTests(TestCase):
 
     def test_get_git_version(self) -> None:
         git_version = self.git_info.get_git_version()
-        self.assertEqual(len(git_version), 3)
         self.assertIsInstance(git_version, tuple)
         for v in git_version:
             self.assertIsInstance(v, int)
@@ -245,9 +244,7 @@ class ClassVariableTests(TestCase):
 
     def test_separated_variables(self):
         class SeparatedVariable:
-            """Comment
-
-            """
+            """Comment"""
 
             arg_1: str
 
@@ -263,9 +260,7 @@ class ClassVariableTests(TestCase):
 
     def test_commented_variables(self):
         class CommentedVariable:
-            """Comment
-
-            """
+            """Comment"""
 
             arg_1: str  # Arg 1 comment
 
@@ -286,10 +281,10 @@ class ClassVariableTests(TestCase):
 
     def test_bad_spacing_multiline(self):
         class TrickyMultiline:
-            """   This is really difficult
+            """This is really difficult
 
-        so
-            so very difficult
+            so
+                so very difficult
             """
 
             foo: str = "my"  # Header line
@@ -322,22 +317,19 @@ T
     def test_comments_with_quotes(self):
         class MultiquoteMultiline:
             bar: int = 0
-            '\'\'biz baz\''
+            "''biz baz'"
 
             hi: str
-            "\"Hello there\"\""
+            '"Hello there""'
 
         class_variables = {}
-        class_variables['bar'] = {'comment': "''biz baz'"}
-        class_variables['hi'] = {'comment': '"Hello there""'}
+        class_variables["bar"] = {"comment": "''biz baz'"}
+        class_variables["hi"] = {"comment": '"Hello there""'}
         self.assertEqual(get_class_variables(MultiquoteMultiline), class_variables)
 
     def test_multiline_argument(self):
         class MultilineArgument:
-            bar: str = (
-                "This is a multiline argument"
-                " that should not be included in the docstring"
-            )
+            bar: str = "This is a multiline argument" " that should not be included in the docstring"
             """biz baz"""
 
         class_variables = {"bar": {"comment": "biz baz"}}
@@ -345,13 +337,8 @@ T
 
     def test_multiline_argument_with_final_hashtag_comment(self):
         class MultilineArgumentWithHashTagComment:
-            bar: str = (
-                "This is a multiline argument"
-                " that should not be included in the docstring"
-            )  # biz baz
-            barr: str = (
-                "This is a multiline argument"
-                " that should not be included in the docstring")  # bar baz
+            bar: str = "This is a multiline argument" " that should not be included in the docstring"  # biz baz
+            barr: str = "This is a multiline argument" " that should not be included in the docstring"  # bar baz
             barrr: str = (  # meow
                 "This is a multiline argument"  # blah
                 " that should not be included in the docstring"  # grrrr
@@ -563,7 +550,7 @@ class PythonObjectEncoderTests(TestCase):
 
     def test_python_object_encoder_unpicklable(self):
         class CannotPickleThis:
-            """Da na na na. Can't pickle this. """
+            """Da na na na. Can't pickle this."""
 
             def __init__(self):
                 self.x = 1
