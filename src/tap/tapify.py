@@ -7,7 +7,7 @@ handling
 
 import dataclasses
 import inspect
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Callable, Optional, Sequence, Type, TypeVar, Union
 
 from docstring_parser import Docstring, parse
 from packaging.version import Version
@@ -68,7 +68,7 @@ class _TapData:
     Data about a class' or function's arguments which are sufficient to inform a Tap class.
     """
 
-    args_data: List[_ArgData]
+    args_data: list[_ArgData]
     "List of data about each argument in the class or function"
 
     has_kwargs: bool
@@ -79,7 +79,7 @@ class _TapData:
 
 
 def _is_pydantic_base_model(obj: Union[Type[Any], Any]) -> bool:
-    if inspect.isclass(obj):  # issublcass requires that obj is a class
+    if inspect.isclass(obj):  # issubclass requires that obj is a class
         return issubclass(obj, BaseModel)
     else:
         return isinstance(obj, BaseModel)
@@ -94,7 +94,7 @@ def _is_pydantic_dataclass(obj: Union[Type[Any], Any]) -> bool:
 
 
 def _tap_data_from_data_model(
-    data_model: Any, func_kwargs: Dict[str, Any], param_to_description: Dict[str, str] = None
+    data_model: Any, func_kwargs: dict[str, Any], param_to_description: dict[str, str] = None
 ) -> _TapData:
     """
     Currently only works when `data_model` is a:
@@ -153,7 +153,7 @@ def _tap_data_from_data_model(
     # dataclass fields in a pydantic BaseModel. It's also possible to use (builtin) dataclass fields and pydantic Fields
     # in the same data model. Therefore, the type of the data model doesn't determine the type of each field. The
     # solution is to iterate through the fields and check each type.
-    args_data: List[_ArgData] = []
+    args_data: list[_ArgData] = []
     for name, field in name_to_field.items():
         if isinstance(field, dataclasses.Field):
             # Idiosyncrasy: if a pydantic Field is used in a pydantic dataclass, then field.default is a FieldInfo
@@ -177,7 +177,7 @@ def _tap_data_from_data_model(
 
 
 def _tap_data_from_class_or_function(
-    class_or_function: _ClassOrFunction, func_kwargs: Dict[str, Any], param_to_description: Dict[str, str]
+    class_or_function: _ClassOrFunction, func_kwargs: dict[str, Any], param_to_description: dict[str, str]
 ) -> _TapData:
     """
     Extract data by inspecting the signature of `class_or_function`.
@@ -186,7 +186,7 @@ def _tap_data_from_class_or_function(
     ----
     Deletes redundant keys from `func_kwargs`
     """
-    args_data: List[_ArgData] = []
+    args_data: list[_ArgData] = []
     has_kwargs = False
     known_only = False
 
@@ -240,7 +240,7 @@ def _docstring(class_or_function) -> Docstring:
     return parse(doc)
 
 
-def _tap_data(class_or_function: _ClassOrFunction, param_to_description: Dict[str, str], func_kwargs) -> _TapData:
+def _tap_data(class_or_function: _ClassOrFunction, param_to_description: dict[str, str], func_kwargs) -> _TapData:
     """
     Controls how :class:`_TapData` is extracted from `class_or_function`.
     """
@@ -298,7 +298,7 @@ def to_tap_class(class_or_function: _ClassOrFunction) -> Type[Tap]:
 def tapify(
     class_or_function: Union[Callable[[InputType], OutputType], Type[OutputType]],
     known_only: bool = False,
-    command_line_args: Optional[List[str]] = None,
+    command_line_args: Optional[list[str]] = None,
     explicit_bool: bool = False,
     description: Optional[str] = None,
     **func_kwargs,
@@ -339,7 +339,7 @@ def tapify(
 
     # Prepare command line arguments for class_or_function, respecting positional-only args
     class_or_function_args: list[Any] = []
-    class_or_function_kwargs: Dict[str, Any] = {}
+    class_or_function_kwargs: dict[str, Any] = {}
     command_line_args_dict = command_line_args.as_dict()
     for arg_data in tap_data.args_data:
         arg_value = command_line_args_dict[arg_data.name]

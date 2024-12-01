@@ -7,7 +7,7 @@ import dataclasses
 import io
 import re
 import sys
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Any, Callable, List, Literal, Optional, Type, Union
 
 from packaging.version import Version
 import pytest
@@ -250,7 +250,7 @@ def _test_raises_system_exit(tap: Tap, args_string: str) -> str:
 def _test_subclasser(
     subclasser: Callable[[Any], Type[Tap]],
     class_or_function: Any,
-    args_string_and_arg_to_expected_value: Tuple[str, Union[Dict[str, Any], BaseException]],
+    args_string_and_arg_to_expected_value: tuple[str, Union[dict[str, Any], BaseException]],
     test_call: bool = True,
 ):
     """
@@ -333,7 +333,7 @@ def _test_subclasser_message(
     ],
 )
 def test_subclasser_simple(
-    class_or_function_: Any, args_string_and_arg_to_expected_value: Tuple[str, Union[Dict[str, Any], BaseException]]
+    class_or_function_: Any, args_string_and_arg_to_expected_value: tuple[str, Union[dict[str, Any], BaseException]]
 ):
     _test_subclasser(subclasser_simple, class_or_function_, args_string_and_arg_to_expected_value)
 
@@ -406,7 +406,7 @@ def test_subclasser_simple_help_message(class_or_function_: Any):
     ],
 )
 def test_subclasser_complex(
-    class_or_function_: Any, args_string_and_arg_to_expected_value: Tuple[str, Union[Dict[str, Any], BaseException]]
+    class_or_function_: Any, args_string_and_arg_to_expected_value: tuple[str, Union[dict[str, Any], BaseException]]
 ):
     # Currently setting test_call=False b/c all data models except the pydantic Model don't accept extra args
     _test_subclasser(subclasser_complex, class_or_function_, args_string_and_arg_to_expected_value, test_call=False)
@@ -485,7 +485,7 @@ def test_subclasser_complex_help_message(class_or_function_: Any):
     ],
 )
 def test_subclasser_subparser(
-    class_or_function_: Any, args_string_and_arg_to_expected_value: Tuple[str, Union[Dict[str, Any], BaseException]]
+    class_or_function_: Any, args_string_and_arg_to_expected_value: tuple[str, Union[dict[str, Any], BaseException]]
 ):
     # Currently setting test_call=False b/c all data models except the pydantic Model don't accept extra args
     _test_subclasser(subclasser_subparser, class_or_function_, args_string_and_arg_to_expected_value, test_call=False)
@@ -544,7 +544,7 @@ def test_subclasser_subparser(
     ],
 )
 def test_subclasser_subparser_help_message(
-    class_or_function_: Any, args_string_and_description_and_expected_message: Tuple[str, str]
+    class_or_function_: Any, args_string_and_description_and_expected_message: tuple[str, str]
 ):
     args_string, description, expected_message = args_string_and_description_and_expected_message
     _test_subclasser_message(

@@ -6,7 +6,7 @@ import contextlib
 from dataclasses import dataclass
 import io
 import sys
-from typing import Dict, List, Optional, Tuple, Any
+from typing import List, Optional, Tuple, Any
 import unittest
 from unittest import TestCase
 
@@ -237,21 +237,21 @@ class TapifyTests(TestCase):
             self.assertEqual(output, "1 simple 3.14 -0.3 True wee")
 
     def test_tapify_complex_types(self):
-        def concat(complexity: List[str], requires: Tuple[int, int], intelligence: Person) -> str:
+        def concat(complexity: list[str], requires: tuple[int, int], intelligence: Person) -> str:
             return f'{" ".join(complexity)} {requires[0]} {requires[1]} {intelligence}'
 
-        def concat_with_positionals(complexity: List[str], /, requires: Tuple[int, int], intelligence: Person) -> str:
+        def concat_with_positionals(complexity: list[str], /, requires: tuple[int, int], intelligence: Person) -> str:
             return f'{" ".join(complexity)} {requires[0]} {requires[1]} {intelligence}'
 
         class Concat:
-            def __init__(self, complexity: List[str], requires: Tuple[int, int], intelligence: Person):
+            def __init__(self, complexity: list[str], requires: tuple[int, int], intelligence: Person):
                 self.kwargs = {"complexity": complexity, "requires": requires, "intelligence": intelligence}
 
             def __eq__(self, other: str) -> bool:
                 return other == concat(**self.kwargs)
 
         class ConcatWithPositionals:
-            def __init__(self, complexity: List[str], /, requires: Tuple[int, int], intelligence: Person):
+            def __init__(self, complexity: list[str], /, requires: tuple[int, int], intelligence: Person):
                 self.kwargs = {"complexity": complexity, "requires": requires, "intelligence": intelligence}
 
             def __eq__(self, other: str) -> bool:
@@ -1468,7 +1468,7 @@ class TestTapifyKwargs(unittest.TestCase):
             pydantic_data_models = []
 
         class Concat:
-            def __init__(self, a: int, b: int = 2, **kwargs: Dict[str, str]):
+            def __init__(self, a: int, b: int = 2, **kwargs: dict[str, str]):
                 """Concatenate three numbers.
 
                 :param a: The first number.
@@ -1482,7 +1482,7 @@ class TestTapifyKwargs(unittest.TestCase):
                 return other == concat(self.a, self.b, **self.kwargs)
 
         class ConcatWithPositionals:
-            def __init__(self, a: int, /, b: int = 2, **kwargs: Dict[str, str]):
+            def __init__(self, a: int, /, b: int = 2, **kwargs: dict[str, str]):
                 """Concatenate three numbers.
 
                 :param a: The first number.

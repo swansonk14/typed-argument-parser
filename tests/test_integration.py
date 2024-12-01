@@ -21,7 +21,7 @@ class DevNull:
 sys.stderr = DevNull()
 
 
-def stringify(arg_list: Iterable[Any]) -> List[str]:
+def stringify(arg_list: Iterable[Any]) -> list[str]:
     """Converts an iterable of arguments of any type to a list of strings.
 
     :param arg_list: An iterable of arguments of any type.

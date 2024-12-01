@@ -1,8 +1,6 @@
 from argparse import ArgumentParser, ArgumentTypeError
 import ast
 from base64 import b64encode, b64decode
-import copy
-from functools import wraps
 import inspect
 from io import StringIO
 from json import JSONEncoder
@@ -16,15 +14,11 @@ import tokenize
 from typing import (
     Any,
     Callable,
-    Dict,
     Generator,
     Iterable,
     Iterator,
-    List,
     Literal,
     Optional,
-    Set,
-    Tuple,
     Union,
 )
 from typing_inspect import get_args as typing_inspect_get_args, get_origin as typing_inspect_get_origin
@@ -38,7 +32,7 @@ PRIMITIVES = (str, int, float, bool)
 PathLike = Union[str, os.PathLike]
 
 
-def check_output(command: List[str], suppress_stderr: bool = True, **kwargs) -> str:
+def check_output(command: list[str], suppress_stderr: bool = True, **kwargs) -> str:
     """Runs subprocess.check_output and returns the result as a string.
 
     :param command: A list of strings representing the command to run on the command line.
@@ -225,7 +219,7 @@ def get_class_column(tokens: Iterable[tokenize.TokenInfo]) -> int:
     raise ValueError("Could not find any class variables in the class.")
 
 
-def source_line_to_tokens(tokens: Iterable[tokenize.TokenInfo]) -> Dict[int, List[Dict[str, Union[str, int]]]]:
+def source_line_to_tokens(tokens: Iterable[tokenize.TokenInfo]) -> dict[int, list[dict[str, Union[str, int]]]]:
     """Extract a map from each line number to list of mappings providing information about each token."""
     line_to_tokens = {}
     for token_type, token, (start_line, start_column), (end_line, end_column), line in tokens:
@@ -244,7 +238,7 @@ def source_line_to_tokens(tokens: Iterable[tokenize.TokenInfo]) -> Dict[int, Lis
     return line_to_tokens
 
 
-def get_subsequent_assign_lines(source_cls: str) -> Tuple[Set[int], Set[int]]:
+def get_subsequent_assign_lines(source_cls: str) -> tuple[set[int], set[int]]:
     """For all multiline assign statements, get the line numbers after the first line in the assignment.
 
     :param source_cls: The source code of the class.
@@ -301,7 +295,7 @@ def get_subsequent_assign_lines(source_cls: str) -> Tuple[Set[int], Set[int]]:
     return intermediate_assign_lines, final_assign_lines
 
 
-def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
+def get_class_variables(cls: type) -> dict[str, dict[str, str]]:
     """Returns a dictionary mapping class variables to their additional information (currently just comments)."""
     # Get the source code and tokens of the class
     source_cls = inspect.getsource(cls)
@@ -387,7 +381,7 @@ def get_class_variables(cls: type) -> Dict[str, Dict[str, str]]:
     return variable_to_comment
 
 
-def get_literals(literal: Literal, variable: str) -> Tuple[Callable[[str], Any], List[type]]:
+def get_literals(literal: Literal, variable: str) -> tuple[Callable[[str], Any], list[type]]:
     """Extracts the values from a Literal type and ensures that the values are all primitive types."""
     literals = list(get_args(literal))
 
@@ -424,7 +418,7 @@ def boolean_type(flag_value: str) -> bool:
 class TupleTypeEnforcer:
     """The type argument to argparse for checking and applying types to Tuples."""
 
-    def __init__(self, types: List[type], loop: bool = False):
+    def __init__(self, types: list[type], loop: bool = False):
         self.types = [boolean_type if t == bool else t for t in types]
         self.loop = loop
         self.index = 0
@@ -545,7 +539,7 @@ def as_python_object(dct: Any) -> Any:
 
 
 def enforce_reproducibility(
-    saved_reproducibility_data: Optional[Dict[str, str]], current_reproducibility_data: Dict[str, str], path: PathLike
+    saved_reproducibility_data: Optional[dict[str, str]], current_reproducibility_data: dict[str, str], path: PathLike
 ) -> None:
     """Checks if reproducibility has failed and raises the appropriate error.
 
@@ -597,7 +591,7 @@ def get_origin(tp: Any) -> Any:
 
 
 # TODO: remove this once typing_inspect.get_args is fixed for Python 3.10 union types
-def get_args(tp: Any) -> Tuple[type, ...]:
+def get_args(tp: Any) -> tuple[type, ...]:
     """Same as typing_inspect.get_args but fixes Python 3.10 union types."""
     if sys.version_info >= (3, 10) and isinstance(tp, UnionType):
         return tp.__args__

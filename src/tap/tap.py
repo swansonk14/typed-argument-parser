@@ -8,7 +8,7 @@ from pathlib import Path
 from pprint import pformat
 from shlex import quote, split
 from types import MethodType
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
+from typing import Any, Callable, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
 from typing_inspect import is_literal_type
 
 from tap.utils import (
@@ -53,9 +53,9 @@ class Tap(ArgumentParser):
         *args,
         underscores_to_dashes: bool = False,
         explicit_bool: bool = False,
-        config_files: Optional[List[PathLike]] = None,
+        config_files: Optional[list[PathLike]] = None,
         **kwargs,
-    ):
+    ) -> None:
         """Initializes the Tap instance.
 
         :param args: Arguments passed to the super class ArgumentParser.
@@ -88,7 +88,7 @@ class Tap(ArgumentParser):
         self.argument_buffer = {}
 
         # Create a place to put the subparsers
-        self._subparser_buffer: List[Tuple[str, type, Dict[str, Any]]] = []
+        self._subparser_buffer: list[tuple[str, type, dict[str, Any]]] = []
 
         # Get class variables help strings from the comments
         self.class_variables = self._get_class_variables()
@@ -369,7 +369,7 @@ class Tap(ArgumentParser):
         pass
 
     @staticmethod
-    def get_reproducibility_info(repo_path: Optional[PathLike] = None) -> Dict[str, str]:
+    def get_reproducibility_info(repo_path: Optional[PathLike] = None) -> dict[str, str]:
         """Gets a dictionary of reproducibility information.
 
         Reproducibility information always includes:
@@ -405,7 +405,7 @@ class Tap(ArgumentParser):
 
         return reproducibility
 
-    def _log_all(self, repo_path: Optional[PathLike] = None) -> Dict[str, Any]:
+    def _log_all(self, repo_path: Optional[PathLike] = None) -> dict[str, Any]:
         """Gets all arguments along with reproducibility information.
 
         :param repo_path: Path to the git repo to examine for reproducibility info.
@@ -418,7 +418,10 @@ class Tap(ArgumentParser):
         return arg_log
 
     def parse_args(
-        self: TapType, args: Optional[Sequence[str]] = None, known_only: bool = False, legacy_config_parsing=False
+        self: TapType,
+        args: Optional[Sequence[str]] = None,
+        known_only: bool = False,
+        legacy_config_parsing: bool = False,
     ) -> TapType:
         """Parses arguments, sets attributes of self equal to the parsed arguments, and processes arguments.
 
@@ -483,7 +486,7 @@ class Tap(ArgumentParser):
         return self
 
     @classmethod
-    def _get_from_self_and_super(cls, extract_func: Callable[[type], dict]) -> Union[Dict[str, Any], Dict]:
+    def _get_from_self_and_super(cls, extract_func: Callable[[type], dict]) -> Union[dict[str, Any], dict]:
         """Returns a dictionary mapping variable names to values.
 
         Variables and values are extracted from classes using key starting
@@ -518,7 +521,7 @@ class Tap(ArgumentParser):
 
         return dictionary
 
-    def _get_class_dict(self) -> Dict[str, Any]:
+    def _get_class_dict(self) -> dict[str, Any]:
         """Returns a dictionary mapping class variable names to values from the class dict."""
         class_dict = self._get_from_self_and_super(
             extract_func=lambda super_class: dict(getattr(super_class, "__dict__", dict()))
@@ -531,7 +534,7 @@ class Tap(ArgumentParser):
 
         return class_dict
 
-    def _get_annotations(self) -> Dict[str, Any]:
+    def _get_annotations(self) -> dict[str, Any]:
         """Returns a dictionary mapping variable names to their type annotations."""
         return self._get_from_self_and_super(extract_func=lambda super_class: dict(get_type_hints(super_class)))
 
@@ -559,7 +562,7 @@ class Tap(ArgumentParser):
 
         return class_variables
 
-    def _get_argument_names(self) -> Set[str]:
+    def _get_argument_names(self) -> set[str]:
         """Returns a list of variable names corresponding to the arguments."""
         return (
             {get_dest(*name_or_flags, **kwargs) for name_or_flags, kwargs in self.argument_buffer.values()}
@@ -567,7 +570,7 @@ class Tap(ArgumentParser):
             | set(self._annotations.keys())
         ) - {"help"}
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> dict[str, Any]:
         """Returns the member variables corresponding to the parsed arguments.
 
         Note: This does not include attributes set directly on an instance
@@ -596,7 +599,7 @@ class Tap(ArgumentParser):
 
         return stored_dict
 
-    def from_dict(self, args_dict: Dict[str, Any], skip_unsettable: bool = False) -> TapType:
+    def from_dict(self, args_dict: dict[str, Any], skip_unsettable: bool = False) -> TapType:
         """Loads arguments from a dictionary, ensuring all required arguments are set.
 
         :param args_dict: A dictionary from argument names to the values of the arguments.
@@ -682,7 +685,7 @@ class Tap(ArgumentParser):
 
         return self
 
-    def _load_from_config_files(self, config_files: Optional[List[str]]) -> List[str]:
+    def _load_from_config_files(self, config_files: Optional[list[str]]) -> list[str]:
         """Loads arguments from a list of configuration files containing command line arguments.
 
         :param config_files: A list of paths to configuration files containing the command line arguments
@@ -708,7 +711,7 @@ class Tap(ArgumentParser):
         """
         return pformat(self.as_dict())
 
-    def __deepcopy__(self, memo: Dict[int, Any] = None) -> TapType:
+    def __deepcopy__(self, memo: dict[int, Any] = None) -> TapType:
         """Deepcopy the Tap object."""
         copied = type(self).__new__(type(self))
 
@@ -722,11 +725,11 @@ class Tap(ArgumentParser):
 
         return copied
 
-    def __getstate__(self) -> Dict[str, Any]:
+    def __getstate__(self) -> dict[str, Any]:
         """Gets the state of the object for pickling."""
         return self.as_dict()
 
-    def __setstate__(self, d: Dict[str, Any]) -> None:
+    def __setstate__(self, d: dict[str, Any]) -> None:
         """
         Initializes the object with the provided dictionary of arguments for unpickling.
 
