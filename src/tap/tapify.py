@@ -7,7 +7,7 @@ handling
 
 import dataclasses
 import inspect
-from typing import Any, Callable, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Callable, Optional, Sequence, TypeVar, Union
 
 from docstring_parser import Docstring, parse
 from packaging.version import Version
@@ -35,7 +35,7 @@ from tap import Tap
 InputType = TypeVar("InputType")
 OutputType = TypeVar("OutputType")
 
-_ClassOrFunction = Union[Callable[[InputType], OutputType], Type[OutputType]]
+_ClassOrFunction = Union[Callable[[InputType], OutputType], type[OutputType]]
 
 
 @dataclasses.dataclass
@@ -46,7 +46,7 @@ class _ArgData:
 
     name: str
 
-    annotation: Type
+    annotation: type
     "The type of values this argument accepts"
 
     is_required: bool
@@ -78,14 +78,14 @@ class _TapData:
     "If true, ignore extra arguments and only parse known arguments"
 
 
-def _is_pydantic_base_model(obj: Union[Type[Any], Any]) -> bool:
+def _is_pydantic_base_model(obj: Union[type[Any], Any]) -> bool:
     if inspect.isclass(obj):  # issubclass requires that obj is a class
         return issubclass(obj, BaseModel)
     else:
         return isinstance(obj, BaseModel)
 
 
-def _is_pydantic_dataclass(obj: Union[Type[Any], Any]) -> bool:
+def _is_pydantic_dataclass(obj: Union[type[Any], Any]) -> bool:
     if _IS_PYDANTIC_V1:
         # There's no public function in v1. This is a somewhat safe but linear check
         return dataclasses.is_dataclass(obj) and any(key.startswith("__pydantic") for key in obj.__dict__)
@@ -124,7 +124,7 @@ def _tap_data_from_data_model(
             description,
         )
 
-    def arg_data_from_pydantic(name: str, field: _PydanticField, annotation: Optional[Type] = None) -> _ArgData:
+    def arg_data_from_pydantic(name: str, field: _PydanticField, annotation: Optional[type] = None) -> _ArgData:
         annotation = field.annotation if annotation is None else annotation
         # Prefer the description from param_to_description (from the data model / class docstring) over the
         # field.description b/c a docstring can be modified on the fly w/o causing real issues
@@ -227,7 +227,7 @@ def _tap_data_from_class_or_function(
     return _TapData(args_data, has_kwargs, known_only)
 
 
-def _is_data_model(obj: Union[Type[Any], Any]) -> bool:
+def _is_data_model(obj: Union[type[Any], Any]) -> bool:
     return dataclasses.is_dataclass(obj) or _is_pydantic_base_model(obj)
 
 
@@ -258,7 +258,7 @@ def _tap_data(class_or_function: _ClassOrFunction, param_to_description: dict[st
     return _tap_data_from_class_or_function(class_or_function, func_kwargs, param_to_description)
 
 
-def _tap_class(args_data: Sequence[_ArgData]) -> Type[Tap]:
+def _tap_class(args_data: Sequence[_ArgData]) -> type[Tap]:
     """
     Transfers argument data to a :class:`tap.Tap` class. Arguments will be added to the parser on initialization.
     """
@@ -282,7 +282,7 @@ def _tap_class(args_data: Sequence[_ArgData]) -> Type[Tap]:
     return ArgParser
 
 
-def to_tap_class(class_or_function: _ClassOrFunction) -> Type[Tap]:
+def to_tap_class(class_or_function: _ClassOrFunction) -> type[Tap]:
     """Creates a `Tap` class from `class_or_function`. This can be subclassed to add custom argument handling and
     instantiated to create a typed argument parser.
 
@@ -296,7 +296,7 @@ def to_tap_class(class_or_function: _ClassOrFunction) -> Type[Tap]:
 
 
 def tapify(
-    class_or_function: Union[Callable[[InputType], OutputType], Type[OutputType]],
+    class_or_function: Union[Callable[[InputType], OutputType], type[OutputType]],
     known_only: bool = False,
     command_line_args: Optional[list[str]] = None,
     explicit_bool: bool = False,
