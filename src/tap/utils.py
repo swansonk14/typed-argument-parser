@@ -104,9 +104,10 @@ class GitInfo:
         try:
             url = check_output(input_remote, cwd=self.repo_path)
         except subprocess.CalledProcessError as e:
-            if e.returncode == 2:
+            if e.returncode in {2, 128}:
                 # https://git-scm.com/docs/git-remote#_exit_status
                 # 2: The remote does not exist.
+                # 128: The remote was not found.
                 return ""
             raise e
 
