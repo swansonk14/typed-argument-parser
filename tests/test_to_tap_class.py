@@ -266,7 +266,7 @@ def _test_subclasser(
 
     if isinstance(arg_to_expected_value, SystemExit):
         stderr = _test_raises_system_exit(tap, args_string)
-        assert str(arg_to_expected_value) in stderr
+        assert re.search(str(arg_to_expected_value), stderr)
     elif isinstance(arg_to_expected_value, BaseException):
         expected_exception = arg_to_expected_value.__class__
         expected_error_message = str(arg_to_expected_value) or None
@@ -471,7 +471,7 @@ def test_subclasser_complex_help_message(class_or_function_: Any):
         (
             "--arg_int 1 --baz X --foo b",
             SystemExit(
-                "error: argument {a,b}: invalid choice: 'X' (choose from 'a', 'b')"
+                r"error: argument \{a,b}: invalid choice: 'X' \(choose from '?a'?, '?b'?\)"
             ),
         ),
         (
@@ -480,7 +480,7 @@ def test_subclasser_complex_help_message(class_or_function_: Any):
         ),
         (
             "--arg_int 1 --foo b --baz A",
-            SystemExit("""error: argument --baz: Value for variable "baz" must be one of ['X', 'Y', 'Z']."""),
+            SystemExit(r"""error: argument --baz: Value for variable "baz" must be one of \['X', 'Y', 'Z']."""),
         ),
     ],
 )
