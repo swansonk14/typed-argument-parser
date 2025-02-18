@@ -1521,5 +1521,41 @@ class TestTapifyKwargs(unittest.TestCase):
             self.assertEqual(output, "1_5_c=3-d=4")
 
 
+class TestTapifyUnderscoresToDashes(unittest.TestCase):
+    def setUp(self) -> None:
+        class MyClass:
+            def __init__(self, my_arg: str):
+                self.my_arg = my_arg
+
+            def __eq__(self, other: str) -> bool:
+                return self.my_arg == other
+
+        @dataclass
+        class DataClassTarget:
+            my_arg: str
+
+            def __eq__(self, other: str) -> bool:
+                return self.my_arg == other
+
+        def my_function(my_arg: str) -> str:
+            return my_arg
+
+        self.class_or_functions = [my_function, MyClass, DataClassTarget]
+
+    def test_underscores_to_dashes(self) -> None:
+        for target in self.class_or_functions:
+            # With underscores_to_dashes True and using dashes in the args.
+            instance = tapify(target, command_line_args=["--my-arg", "value"], underscores_to_dashes=True)
+            self.assertEqual(instance, "value")
+
+            # With underscores_to_dashes False and using underscore in the args.
+            instance = tapify(target, command_line_args=["--my_arg", "value"], underscores_to_dashes=False)
+            self.assertEqual(instance, "value")
+
+            # Using underscore when dashes are expected causes a parse error.
+            with self.assertRaises(SystemExit):
+                tapify(target, command_line_args=["--my_arg", "value"], underscores_to_dashes=True)
+
+
 if __name__ == "__main__":
     unittest.main()

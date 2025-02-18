@@ -300,6 +300,7 @@ def tapify(
     known_only: bool = False,
     command_line_args: Optional[list[str]] = None,
     explicit_bool: bool = False,
+    underscores_to_dashes: bool = False,
     description: Optional[str] = None,
     **func_kwargs,
 ) -> OutputType:
@@ -312,6 +313,7 @@ def tapify(
     :param explicit_bool: Booleans can be specified on the command line as `--arg True` or `--arg False` rather than
                           `--arg`. Additionally, booleans can be specified by prefixes of True and False with any
                           capitalization as well as 1 or 0.
+    :param underscores_to_dashes: If True, convert underscores in flag names to dashes.
     :param description: The description displayed in the help message—the same description passed in
                         `argparse.ArgumentParser(description=...)`. By default, it's extracted from `class_or_function`'s
                         docstring.
@@ -327,7 +329,7 @@ def tapify(
     # Create a Tap object
     if description is None:
         description = "\n".join(filter(None, (docstring.short_description, docstring.long_description)))
-    tap = tap_class(description=description, explicit_bool=explicit_bool)
+    tap = tap_class(description=description, explicit_bool=explicit_bool, underscores_to_dashes=underscores_to_dashes)
 
     # If any func_kwargs remain, they are not used in the function, so raise an error
     known_only = known_only or tap_data.known_only
