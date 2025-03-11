@@ -32,10 +32,9 @@ else:
 
 from tap import Tap
 
-InputType = TypeVar("InputType")
 OutputType = TypeVar("OutputType")
 
-_ClassOrFunction = Union[Callable[[InputType], OutputType], type[OutputType]]
+_ClassOrFunction = Union[Callable[..., OutputType], type[OutputType]]
 
 
 @dataclasses.dataclass
