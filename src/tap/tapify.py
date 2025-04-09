@@ -32,10 +32,9 @@ else:
 
 from tap import Tap
 
-InputType = TypeVar("InputType")
 OutputType = TypeVar("OutputType")
 
-_ClassOrFunction = Union[Callable[[InputType], OutputType], type[OutputType]]
+_ClassOrFunction = Union[Callable[..., OutputType], type[OutputType]]
 
 
 @dataclasses.dataclass
@@ -296,7 +295,7 @@ def to_tap_class(class_or_function: _ClassOrFunction) -> type[Tap]:
 
 
 def tapify(
-    class_or_function: Union[Callable[[InputType], OutputType], type[OutputType]],
+    class_or_function: Union[Callable[..., OutputType], type[OutputType]],
     known_only: bool = False,
     command_line_args: Optional[list[str]] = None,
     explicit_bool: bool = False,
