@@ -546,8 +546,12 @@ class Tap(ArgumentParser):
             class_variables = self._get_from_self_and_super(extract_func=get_class_variables)
 
             # Handle edge-case of source code modification while code is running
-            variables_to_add = class_variable_names - class_variables.keys()
-            variables_to_remove = class_variables.keys() - class_variable_names
+            variables_to_add = (
+                variable for variable in class_variable_names if variable not in class_variables
+            )
+            variables_to_remove = (
+                variable for variable in class_variables.keys() if variable not in class_variable_names
+            )
 
             for variable in variables_to_add:
                 class_variables[variable] = {"comment": ""}
