@@ -10,8 +10,6 @@ from typing import List, Optional, Tuple, Any
 import unittest
 from unittest import TestCase
 
-from packaging.version import Version
-
 from tap import tapify
 
 
@@ -20,7 +18,7 @@ try:
 except ModuleNotFoundError:
     _IS_PYDANTIC_V1 = None
 else:
-    _IS_PYDANTIC_V1 = Version(pydantic.__version__) < Version("2.0.0")
+    _IS_PYDANTIC_V1 = pydantic.VERSION.startswith("1.")
 
 
 # Suppress prints from SystemExit

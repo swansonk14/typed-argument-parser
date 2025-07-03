@@ -10,7 +10,6 @@ import inspect
 from typing import Any, Callable, Optional, Sequence, TypeVar, Union
 
 from docstring_parser import Docstring, parse
-from packaging.version import Version
 
 try:
     import pydantic
@@ -21,7 +20,7 @@ except ModuleNotFoundError:
     _PydanticField = type("_PydanticField", (object,), {})
     _PYDANTIC_FIELD_TYPES = ()
 else:
-    _IS_PYDANTIC_V1 = Version(pydantic.__version__) < Version("2.0.0")
+    _IS_PYDANTIC_V1 = pydantic.VERSION.startswith("1.")
     from pydantic import BaseModel
     from pydantic.fields import FieldInfo as PydanticFieldBaseModel
     from pydantic.dataclasses import FieldInfo as PydanticFieldDataclass
