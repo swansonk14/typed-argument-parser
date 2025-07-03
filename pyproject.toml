@@ -41,6 +41,7 @@ keywords = [
 
 [project.optional-dependencies]
 dev-no-pydantic = [
+    "black",
     "pytest",
     "pytest-cov",
     "flake8",
@@ -61,6 +62,9 @@ version = {attr = "tap.__version__"}
 
 [tool.setuptools.package-data]
 tap = ["py.typed"]
+
+[tool.black]
+line-length = 121
 
 [project.urls]
 Homepage = "https://github.com/swansonk14/typed-argument-parser"

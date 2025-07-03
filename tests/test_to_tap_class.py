@@ -422,8 +422,8 @@ def test_subclasser_complex_help_message(class_or_function_: Any):
 
     {_OPTIONS_TITLE}:
     {_ARG_WITH_ALIAS}
-                            (Union[float, int], default=3) This argument has a long name and will be aliased with a short
-                            one
+                            ({type_to_str(Union[float, int])}, default=3) This argument has a long name and will be
+                            aliased with a short one
     --arg_int ARG_INT     (int, required) some integer
     --arg_bool            (bool, default=True)
     --arg_list [ARG_LIST {_ARG_LIST_DOTS}]
@@ -470,9 +470,7 @@ def test_subclasser_complex_help_message(class_or_function_: Any):
         ),
         (
             "--arg_int 1 --baz X --foo b",
-            SystemExit(
-                r"error: argument \{a,b}: invalid choice: 'X' \(choose from '?a'?, '?b'?\)"
-            ),
+            SystemExit(r"error: argument \{a,b}: invalid choice: 'X' \(choose from '?a'?, '?b'?\)"),
         ),
         (
             "--arg_int 1 b --baz X --foo",
@@ -544,7 +542,7 @@ def test_subclasser_subparser(
     ],
 )
 def test_subclasser_subparser_help_message(
-    class_or_function_: Any, args_string_and_description_and_expected_message: tuple[str, str]
+    class_or_function_: Any, args_string_and_description_and_expected_message: tuple[str, str, str]
 ):
     args_string, description, expected_message = args_string_and_description_and_expected_message
     _test_subclasser_message(

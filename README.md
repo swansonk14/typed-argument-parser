@@ -65,10 +65,7 @@ pip install -e .
 python -m pip install -e ".[dev]"
 ```
 
-Style:
-- Please use [`black`](https://github.com/psf/black) formatting
-- Set your vertical line ruler to 121
-- Use [`flake8`](https://github.com/PyCQA/flake8) linting.
+Use [`flake8`](https://github.com/PyCQA/flake8) linting.
 
 To run tests, run:
 
