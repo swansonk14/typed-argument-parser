@@ -1,6 +1,4 @@
 """
-Works for Pydantic v1 and v2.
-
 Example commands:
 
 python demo_data_model.py -h
@@ -16,6 +14,7 @@ python demo_data_model.py \
     --arg_bool \
     -arg 3.14
 """
+
 from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field

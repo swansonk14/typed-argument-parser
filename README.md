@@ -199,7 +199,7 @@ Running `python main.py -h` results in the following:
 
 ```
 >>> python main.py -h
-usage: demo.py --x X [--pi PI] [-h]
+usage: main.py --x X [--pi PI] [-h]
 
 optional arguments:
   --x X       (float, required) What am I?
@@ -916,5 +916,5 @@ class MyCustomTap(to_tap_class(my_class_or_function)):
     # Special argument behavior, e.g., override configure and/or process_args
 ```
 
-Please see `demo_data_model.py` for an example of overriding [`configure`](#configuring-arguments) and
-[`process_args`](#argument-processing).
+Please see [`demos/demo_data_model.py`](./demos/demo_data_model.py) for an example of overriding
+[`configure`](#configuring-arguments) and [`process_args`](#argument-processing).
