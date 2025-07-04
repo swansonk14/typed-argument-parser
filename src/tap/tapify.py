@@ -10,7 +10,6 @@ import inspect
 from typing import Any, Callable, Optional, Sequence, TypeVar, Union
 
 from docstring_parser import Docstring, parse
-from packaging.version import Version
 
 try:
     import pydantic
@@ -21,7 +20,7 @@ except ModuleNotFoundError:
     _PydanticField = type("_PydanticField", (object,), {})
     _PYDANTIC_FIELD_TYPES = ()
 else:
-    _IS_PYDANTIC_V1 = Version(pydantic.__version__) < Version("2.0.0")
+    _IS_PYDANTIC_V1 = pydantic.VERSION.startswith("1.")
     from pydantic import BaseModel
     from pydantic.fields import FieldInfo as PydanticFieldBaseModel
     from pydantic.dataclasses import FieldInfo as PydanticFieldDataclass
@@ -191,7 +190,21 @@ def _tap_data_from_class_or_function(
 
     sig = inspect.signature(class_or_function)
 
-    for param_name, param in sig.parameters.items():
+    is_pydantic_v1_dataclass_class = (
+        _IS_PYDANTIC_V1 and _is_pydantic_dataclass(class_or_function) and inspect.isclass(class_or_function)
+    )
+
+    for idx, (param_name, param) in enumerate(sig.parameters.items()):
+        if (
+            idx == 0
+            and param.annotation == inspect.Parameter.empty
+            and param_name == "self"
+            and is_pydantic_v1_dataclass_class
+        ):
+            # This check gets around a quirk of Pydantic v1 dataclasses. Sometime after Python 3.13.0, the signature
+            # started including self as the first parameter out of inspect.signature
+            continue
+
         # Skip **kwargs
         if param.kind == inspect.Parameter.VAR_KEYWORD:
             has_kwargs = True

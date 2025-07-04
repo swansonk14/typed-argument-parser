@@ -3,6 +3,7 @@ import inspect
 import json
 import os
 import subprocess
+import sys
 from tempfile import TemporaryDirectory
 from typing import Any, Callable, List, Literal, Dict, Set, Tuple, Union
 import unittest
@@ -145,7 +146,11 @@ class TypeToStrTests(TestCase):
         self.assertEqual(type_to_str(List[bool]), "List[bool]")
         self.assertEqual(type_to_str(Set[int]), "Set[int]")
         self.assertEqual(type_to_str(Dict[str, int]), "Dict[str, int]")
-        self.assertEqual(type_to_str(Union[List[int], Dict[float, bool]]), "Union[List[int], Dict[float, bool]]")
+
+        if sys.version_info >= (3, 14):
+            self.assertEqual(type_to_str(Union[List[int], Dict[float, bool]]), "List[int] | Dict[float, bool]")
+        else:
+            self.assertEqual(type_to_str(Union[List[int], Dict[float, bool]]), "Union[List[int], Dict[float, bool]]")
 
 
 def class_decorator(cls):

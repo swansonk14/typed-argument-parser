@@ -110,8 +110,11 @@ class TestSubparser(TestCase):
                 self.add_subparser("a", SubparserB)
                 self.add_subparser("a", SubparserA)
 
-        if sys.version_info >= (3, 11):
-            with self.assertRaises(ArgumentError):
+        if sys.version_info >= (3, 14):
+            with self.assertRaises(ValueError, msg="conflicting subparser: a"):
+                Args().parse_args([])
+        elif sys.version_info >= (3, 11):
+            with self.assertRaises(ArgumentError, msg="argument {a}: conflicting subparser: a"):
                 Args().parse_args([])
         else:
             args = Args().parse_args("a --bar 2".split())
@@ -134,8 +137,11 @@ class TestSubparser(TestCase):
                 self.add_subparsers(help="sub-command1 help")
                 self.add_subparsers(help="sub-command2 help")
 
-        if sys.version_info >= (3, 12, 5):
-            with self.assertRaises(ArgumentError):
+        if sys.version_info >= (3, 14):
+            with self.assertRaises(ValueError, msg="cannot have multiple subparser arguments"):
+                Args().parse_args([])
+        elif sys.version_info >= (3, 12, 5):
+            with self.assertRaises(ArgumentError, msg="cannot have multiple subparser arguments"):
                 Args().parse_args([])
         else:
             with self.assertRaises(SystemExit):
