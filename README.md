@@ -1,5 +1,5 @@
 <p align="center">
-   <img src="images/logo.png" width="40%" align="middle">
+   <img src="https://raw.githubusercontent.com/swansonk14/typed-argument-parser/refs/tags/v_1.11.0/images/logo.png" width="40%" align="middle">
 </p>
 
 # Typed Argument Parser (Tap)
