@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 61.0.0", "setuptools-scm"]
+requires = ["setuptools >= 61.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -15,7 +15,8 @@ maintainers = [
 ]
 description = "Typed Argument Parser"
 readme = "README.md"
-license = { file = "LICENSE.txt" }
+license = "MIT"
+license-files = [ "LICENSE.txt" ]
 dependencies = [
     "docstring-parser >= 0.15",
     "typing-inspect >= 0.7.1",
@@ -28,7 +29,6 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Typing :: Typed",
 ]
