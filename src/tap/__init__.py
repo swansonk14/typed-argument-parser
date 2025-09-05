@@ -2,7 +2,7 @@
 Typed Argument Parser
 """
 
-__version__ = "1.10.1"
+__version__ = "1.11.0"
 
 from argparse import ArgumentError, ArgumentTypeError
 from tap.tap import Tap
