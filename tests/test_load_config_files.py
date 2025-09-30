@@ -108,13 +108,14 @@ class LoadConfigFilesTests(TestCase):
             a: int
             b: str = "b"
 
-        with NamedTemporaryFile() as config1, NamedTemporaryFile() as config2:
+        with TemporaryDirectory() as temp_dir:
+            fname1, fname2 = os.path.join(temp_dir, "config1.txt"), os.path.join(temp_dir, "config2.txt")
 
-            with open(config1.name, "w") as f1, open(config2.name, "w") as f2:
+            with open(fname1, "w") as f1, open(fname2, "w") as f2:
                 f1.write("--b two")
                 f2.write("--a 1")
 
-            config_iter = (cf for cf in [config1.name, config2.name])
+            config_iter = (cf for cf in [fname1, fname2])
 
             args = MultipleTap(config_files=config_iter).parse_args([])
 
