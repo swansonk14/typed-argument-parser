@@ -1,6 +1,6 @@
 import os
 import sys
-from tempfile import TemporaryDirectory
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 import unittest
 from unittest import TestCase
 
@@ -99,6 +99,24 @@ class LoadConfigFilesTests(TestCase):
                 f2.write("--a 1")
 
             args = MultipleTap(config_files=[fname1, fname2]).parse_args([])
+
+        self.assertEqual(args.a, 1)
+        self.assertEqual(args.b, "two")
+
+    def test_config_as_iterator(self) -> None:
+        class MultipleTap(Tap):
+            a: int
+            b: str = "b"
+
+        with NamedTemporaryFile() as config1, NamedTemporaryFile() as config2:
+
+            with open(config1.name, "w") as f1, open(config2.name, "w") as f2:
+                f1.write("--b two")
+                f2.write("--a 1")
+
+            config_iter = (cf for cf in [config1.name, config2.name])
+
+            args = MultipleTap(config_files=config_iter).parse_args([])
 
         self.assertEqual(args.a, 1)
         self.assertEqual(args.b, "two")
