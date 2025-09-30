@@ -53,7 +53,7 @@ class Tap(ArgumentParser):
         *args,
         underscores_to_dashes: bool = False,
         explicit_bool: bool = False,
-        config_files: Optional[list[PathLike]] = None,
+        config_files: Optional[Sequence[PathLike]] = None,
         **kwargs,
     ) -> None:
         """Initializes the Tap instance.
@@ -63,7 +63,7 @@ class Tap(ArgumentParser):
         :param explicit_bool: Booleans can be specified on the command line as "--arg True" or "--arg False"
                               rather than "--arg". Additionally, booleans can be specified by prefixes of True and False
                               with any capitalization as well as 1 or 0.
-        :param config_files: A list of paths to configuration files containing the command line arguments
+        :param config_files: A sequence of paths to configuration files containing the command line arguments
                              (e.g., '--arg1 a1 --arg2 a2'). Arguments passed in from the command line
                              overwrite arguments from the configuration files. Arguments in configuration files
                              that appear later in the list overwrite the arguments in previous configuration files.
@@ -689,7 +689,7 @@ class Tap(ArgumentParser):
 
         return self
 
-    def _load_from_config_files(self, config_files: Optional[list[str]]) -> list[str]:
+    def _load_from_config_files(self, config_files: Optional[Sequence[PathLike]]) -> list[str]:
         """Loads arguments from a list of configuration files containing command line arguments.
 
         :param config_files: A list of paths to configuration files containing the command line arguments
