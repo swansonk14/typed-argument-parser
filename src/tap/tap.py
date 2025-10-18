@@ -7,7 +7,7 @@ from functools import partial
 from pathlib import Path
 from pprint import pformat
 from shlex import quote, split
-from types import MethodType
+from types import MethodType, UnionType
 from typing import Any, Callable, Iterable, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
 from typing_inspect import is_literal_type
 
@@ -30,14 +30,11 @@ from tap.utils import (
     PathLike,
 )
 
-if sys.version_info >= (3, 10):
-    from types import UnionType
-
 
 # Constants
 EMPTY_TYPE = get_args(List)[0] if len(get_args(List)) > 0 else tuple()
 BOXED_COLLECTION_TYPES = {List, list, Set, set, Tuple, tuple}
-UNION_TYPES = {Union} | ({UnionType} if sys.version_info >= (3, 10) else set())
+UNION_TYPES = {Union, UnionType}
 OPTIONAL_TYPES = {Optional} | UNION_TYPES
 BOXED_TYPES = BOXED_COLLECTION_TYPES | OPTIONAL_TYPES
 
@@ -191,10 +188,10 @@ class Tap(ArgumentParser):
                         raise ArgumentTypeError(
                             "For Union types, you must include an explicit type function in the configure method. "
                             "For example,\n\n"
-                            "def to_number(string: str) -> Union[float, int]:\n"
+                            "def to_number(string: str) -> float | int:\n"
                             "    return float(string) if '.' in string else int(string)\n\n"
                             "class Args(Tap):\n"
-                            "    arg: Union[float, int]\n"
+                            "    arg: float | int\n"
                             "\n"
                             "    def configure(self) -> None:\n"
                             "        self.add_argument('--arg', type=to_number)"
@@ -486,7 +483,7 @@ class Tap(ArgumentParser):
         return self
 
     @classmethod
-    def _get_from_self_and_super(cls, extract_func: Callable[[type], dict]) -> Union[dict[str, Any], dict]:
+    def _get_from_self_and_super(cls, extract_func: Callable[[type], dict]) -> dict[str, Any] | dict:
         """Returns a dictionary mapping variable names to values.
 
         Variables and values are extracted from classes using key starting

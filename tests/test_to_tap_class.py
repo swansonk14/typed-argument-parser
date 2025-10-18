@@ -20,11 +20,12 @@ try:
 except ModuleNotFoundError:
     _IS_PYDANTIC_V1 = None
 else:
-    _IS_PYDANTIC_V1 = pydantic.VERSION.startswith("1.")
+    # Pydantic v1 is incompatible with Python 3.14+
+    _IS_PYDANTIC_V1 = pydantic.VERSION.startswith("1.") and sys.version_info < (3, 14)
 
 
-# To properly test the help message, we need to know how argparse formats it. It changed from 3.9 -> 3.10 -> 3.13
-_OPTIONS_TITLE = "options" if not sys.version_info < (3, 10) else "optional arguments"
+# To properly test the help message, we need to know how argparse formats it. It changed from 3.10 -> 3.13
+_OPTIONS_TITLE = "options"
 _ARG_LIST_DOTS = "..."
 _ARG_WITH_ALIAS = (
     "-arg, --argument_with_really_long_name ARGUMENT_WITH_REALLY_LONG_NAME"
@@ -547,3 +548,128 @@ def test_subclasser_subparser_help_message(
     _test_subclasser_message(
         subclasser_subparser, class_or_function_, expected_message, description=description, args_string=args_string
     )
+
+class TestMethodResolutionOrder:
+    @staticmethod
+    def _assert_all_two(class_or_function: Any) -> None:
+        class ParserClass(to_tap_class(class_or_function)):
+            a: int = 2
+
+        assert ParserClass.a == ParserClass().a == ParserClass().parse_args([]).a == 2
+
+    def test_function(self):
+        def foo(a: int = 0):
+            ...
+
+        self._assert_all_two(foo)
+
+    def test_plain_class(self):
+        class Foo:
+            def __init__(self, a: int = 0):
+                self.a = a
+
+        self._assert_all_two(Foo)
+
+    @pytest.mark.skipif(_IS_PYDANTIC_V1 is None, reason="Pydantic not installed")
+    def test_pydantic_model(self):
+        class Foo(pydantic.BaseModel):
+            a: int = 0
+
+        self._assert_all_two(Foo)
+
+    def test_dataclass(self):
+        @dataclasses.dataclass
+        class Foo:
+            a: int = 0
+
+        self._assert_all_two(Foo)
+
+    def test_configure_in_leaf(self):
+        def foo(a: int = 0):
+            ...
+
+        class Leaf(to_tap_class(foo)):
+            a: int = 2
+
+            def configure(self) -> None:
+                # Add an extra argument to validate that leaf.configure runs after _configure in foo
+                self.add_argument("--a", default=3)
+
+        assert Leaf.a == Leaf().a == 2
+        assert Leaf().parse_args([]).a == 3
+
+    def test_class_to_tap_class_thats_subclassed(self):
+        class Parent:
+            def __init__(self, a: int = 0):
+                self.a = a
+
+        class TapChild(to_tap_class(Parent)):
+            a: int = 1
+
+        class TapGrandchild(TapChild):
+            a: int = 2
+
+        assert TapChild.a == TapChild().a == TapChild().parse_args([]).a == 1
+        assert TapGrandchild.a == TapGrandchild().a == TapGrandchild().parse_args([]).a == 2
+
+    def test_class_subclass_to_tap_class(self):
+        class Parent:
+            def __init__(self, a: int = 0):
+                self.a = a
+
+        class TapChild(Parent):
+            a: int = 1
+
+        class TapGrandchild(to_tap_class(TapChild)):
+            a: int = 2
+
+        assert TapGrandchild.a == TapGrandchild().a == TapGrandchild().parse_args([]).a == 2
+
+    def test_inheritance(self):
+        class Parent:
+            def __init__(self, a: int = 0, b: int = 5):
+                self.a = a
+                self.b = b
+
+        class TapChild(Parent):
+            def __init__(self, a: int = 0, b: int = 5, c: int = 3):
+                super().__init__(a=a, b=b)
+                self.c = c
+
+        class TapGrandchild(to_tap_class(TapChild)):
+            a: int = 2
+
+        assert TapGrandchild.a == TapGrandchild().a == TapGrandchild().parse_args([]).a == 2
+        assert TapGrandchild().parse_args([]).b == 5
+        assert TapGrandchild().parse_args([]).c == 3
+
+    def test_defaults_and_required(self):
+        class Parent:
+            def __init__(self, a: int, e: int, b: int = 5):
+                self.a = a
+                self.b = b
+                self.e = e
+
+        class TapChild(Parent):
+            def __init__(self, b: int, a: int = 0, c: int = 3):
+                super().__init__(a=a, b=b, e=6)
+                self.c = c
+
+        class TapGrandchild(to_tap_class(TapChild)):
+            a: int = 2
+            d: int
+
+        args = ["--b", "6", "--c", "5", "--d", "4"]
+        assert TapGrandchild.a == TapGrandchild().a == TapGrandchild().parse_args(args).a == 2
+        assert TapGrandchild().parse_args(args).b == 6
+        assert TapGrandchild().parse_args(args).c == 5
+        assert TapGrandchild().parse_args(args).d == 4
+        with pytest.raises(AttributeError):
+            TapGrandchild().parse_args(args).e
+
+        args = ["--b", "6"]
+        with pytest.raises(SystemExit):
+            TapGrandchild().parse_args(args)
+        args = ["--d", "4"]
+        with pytest.raises(SystemExit):
+            TapGrandchild().parse_args(args)
