@@ -20,7 +20,8 @@ try:
 except ModuleNotFoundError:
     _IS_PYDANTIC_V1 = None
 else:
-    _IS_PYDANTIC_V1 = pydantic.VERSION.startswith("1.")
+    # Pydantic v1 is incompatible with Python 3.14+
+    _IS_PYDANTIC_V1 = pydantic.VERSION.startswith("1.") and sys.version_info < (3, 14)
 
 
 # To properly test the help message, we need to know how argparse formats it. It changed from 3.10 -> 3.13
