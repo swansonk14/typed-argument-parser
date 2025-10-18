@@ -20,8 +20,7 @@ try:
 except ModuleNotFoundError:
     _IS_PYDANTIC_V1 = None
 else:
-    # Pydantic v1 is incompatible with Python 3.14+
-    _IS_PYDANTIC_V1 = pydantic.VERSION.startswith("1.") and sys.version_info < (3, 14)
+    _IS_PYDANTIC_V1 = pydantic.VERSION.startswith("1.")
 
 
 # To properly test the help message, we need to know how argparse formats it. It changed from 3.10 -> 3.13
@@ -300,11 +299,27 @@ def _test_subclasser_message(
     def replace_whitespace(string: str) -> str:
         return re.sub(r"\s+", " ", string).strip()  # FYI this line was written by an LLM
 
+    def normalize_prog_name(string: str) -> str:
+        """Normalize the program name in usage line to handle platform differences.
+        
+        On Windows with Python 3.14, sys.argv[0] may include the full path like:
+        'python.exe C:\\path\\to\\pytest' instead of just 'pytest'
+        """
+        # Find where "pytest" appears and keep everything from "pytest" onwards
+        if "usage: " in string and "pytest" in string:
+            usage_start = string.index("usage: ")
+            pytest_start = string.index("pytest", usage_start)
+            # Reconstruct: everything before "usage: " + "usage: pytest" + everything after "pytest"
+            return string[:usage_start] + "usage: pytest" + string[pytest_start + len("pytest"):]
+        return string
+
     TapSubclass = subclasser(class_or_function)
     tap = TapSubclass(description=description)
     message = _test_raises_system_exit(tap, args_string)
     # Standardize to ignore trivial differences due to terminal settings
-    assert replace_whitespace(message) == replace_whitespace(message_expected)
+    message_normalized = normalize_prog_name(replace_whitespace(message))
+    expected_normalized = normalize_prog_name(replace_whitespace(message_expected))
+    assert message_normalized == expected_normalized
 
 
 # Test sublcasser_simple
