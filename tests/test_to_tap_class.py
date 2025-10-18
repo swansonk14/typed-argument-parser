@@ -569,6 +569,7 @@ class TestMethodResolutionOrder:
 
         self._assert_all_two(Foo)
 
+    @pytest.mark.skipif(_IS_PYDANTIC_V1 is None, reason="Pydantic not installed")
     def test_pydantic_model(self):
         class Foo(pydantic.BaseModel):
             a: int = 0
