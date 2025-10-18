@@ -281,13 +281,14 @@ def _tap_class(args_data: Sequence[_ArgData]) -> type[Tap]:
         def _configure(self):
             for arg_data in args_data:
                 variable = arg_data.name
-                self._annotations[variable] = str if arg_data.annotation is Any else arg_data.annotation
-                self.class_variables[variable] = {"comment": arg_data.description or ""}
-                if arg_data.is_required:
-                    kwargs = {}
-                else:
-                    kwargs = dict(required=False, default=arg_data.default)
-                self.add_argument(f"--{variable}", **kwargs)
+                if variable not in self.class_variables:
+                    self._annotations[variable] = str if arg_data.annotation is Any else arg_data.annotation
+                    self.class_variables[variable] = {"comment": arg_data.description or ""}
+                    if arg_data.is_required:
+                        kwargs = {}
+                    else:
+                        kwargs = dict(required=False, default = arg_data.default)
+                    self.add_argument(f"--{variable}", **kwargs)
 
             super()._configure()
 

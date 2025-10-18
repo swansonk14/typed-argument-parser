@@ -874,7 +874,7 @@ special argument behavior. For example, you can override [`configure`](#configur
 [`process_args`](#argument-processing).
 
 If the object can be `tapify`d, then it can be `to_tap_class`d, and vice-versa. `to_tap_class` provides full control
-over argument parsing.
+over argument parsing. Just as in `tapify`, the data extracted from standard Python classes (not `pydantic` models or `dataclass`es) only comes from the `__init__`, not from class variables.
 
 ### `to_tap_class` examples
 
