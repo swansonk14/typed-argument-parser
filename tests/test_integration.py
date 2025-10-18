@@ -674,32 +674,30 @@ class UnionTypeTap(Tap):
         self.add_argument("--union_many_default_arg", type=convert_many_types)
 
 
-if sys.version_info >= (3, 10):
+class UnionType310Tap(Tap):
+    union_two_required_arg: str | int
+    union_two_default_int_arg: str | int = 10
+    union_two_default_str_arg: str | int = "pieces of pie for"
+    union_custom_required_arg: Person | str
+    union_custom_required_flip_arg: str | Person
+    union_custom_default_arg: Person | str = Person("Kyle")
+    union_custom_default_flip_arg: str | Person = "making"
+    union_none_required_arg: int | None
+    union_none_required_flip_arg: None | int
+    union_many_required_arg: int | float | Person | str
+    union_many_default_arg: int | float | Person | str = 3.14 * 10 / 8
 
-    class UnionType310Tap(Tap):
-        union_two_required_arg: str | int
-        union_two_default_int_arg: str | int = 10
-        union_two_default_str_arg: str | int = "pieces of pie for"
-        union_custom_required_arg: Person | str
-        union_custom_required_flip_arg: str | Person
-        union_custom_default_arg: Person | str = Person("Kyle")
-        union_custom_default_flip_arg: str | Person = "making"
-        union_none_required_arg: int | None
-        union_none_required_flip_arg: None | int
-        union_many_required_arg: int | float | Person | str
-        union_many_default_arg: int | float | Person | str = 3.14 * 10 / 8
-
-        def configure(self) -> None:
-            self.add_argument("--union_two_required_arg", type=convert_str_or_int)
-            self.add_argument("--union_two_default_int_arg", type=convert_str_or_int)
-            self.add_argument("--union_two_default_str_arg", type=convert_str_or_int)
-            self.add_argument("--union_custom_required_arg", type=convert_person_or_str)
-            self.add_argument("--union_custom_required_flip_arg", type=convert_person_or_str)
-            self.add_argument("--union_custom_default_arg", type=convert_person_or_str)
-            self.add_argument("--union_custom_default_flip_arg", type=convert_person_or_str)
-            self.add_argument("--union_none_required_flip_arg", type=int)
-            self.add_argument("--union_many_required_arg", type=convert_many_types)
-            self.add_argument("--union_many_default_arg", type=convert_many_types)
+    def configure(self) -> None:
+        self.add_argument("--union_two_required_arg", type=convert_str_or_int)
+        self.add_argument("--union_two_default_int_arg", type=convert_str_or_int)
+        self.add_argument("--union_two_default_str_arg", type=convert_str_or_int)
+        self.add_argument("--union_custom_required_arg", type=convert_person_or_str)
+        self.add_argument("--union_custom_required_flip_arg", type=convert_person_or_str)
+        self.add_argument("--union_custom_default_arg", type=convert_person_or_str)
+        self.add_argument("--union_custom_default_flip_arg", type=convert_person_or_str)
+        self.add_argument("--union_none_required_flip_arg", type=int)
+        self.add_argument("--union_many_required_arg", type=convert_many_types)
+        self.add_argument("--union_many_default_arg", type=convert_many_types)
 
 
 class UnionTypeTests(TestCase):
@@ -762,7 +760,6 @@ class UnionTypeTests(TestCase):
         with self.assertRaises(ArgumentTypeError):
             UnionMissingTypeFunctionTap()
 
-    @unittest.skipIf(sys.version_info < (3, 10), 'Union type operator "|" introduced in Python 3.10')
     def test_union_types_310(self):
         union_two_required_arg = "1"  # int
         union_custom_required_arg = "hungry"  # str
@@ -806,7 +803,6 @@ class UnionTypeTests(TestCase):
         self.assertEqual(args.union_many_required_arg, union_many_required_arg)
         self.assertEqual(args.union_many_default_arg, UnionType310Tap.union_many_default_arg)
 
-    @unittest.skipIf(sys.version_info < (3, 10), 'Union type operator "|" introduced in Python 3.10')
     def test_union_missing_type_function_310(self):
         class UnionMissingTypeFunctionTap(Tap):
             arg: int | float

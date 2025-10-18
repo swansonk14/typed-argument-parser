@@ -23,8 +23,8 @@ else:
     _IS_PYDANTIC_V1 = pydantic.VERSION.startswith("1.")
 
 
-# To properly test the help message, we need to know how argparse formats it. It changed from 3.9 -> 3.10 -> 3.13
-_OPTIONS_TITLE = "options" if not sys.version_info < (3, 10) else "optional arguments"
+# To properly test the help message, we need to know how argparse formats it. It changed from 3.10 -> 3.13
+_OPTIONS_TITLE = "options"
 _ARG_LIST_DOTS = "..."
 _ARG_WITH_ALIAS = (
     "-arg, --argument_with_really_long_name ARGUMENT_WITH_REALLY_LONG_NAME"

@@ -7,7 +7,7 @@ handling
 
 import dataclasses
 import inspect
-from typing import Any, Callable, Optional, Sequence, TypeVar, Union
+from typing import Any, Callable, Optional, Sequence, TypeVar
 
 from docstring_parser import Docstring, parse
 
@@ -25,7 +25,7 @@ else:
     from pydantic.fields import FieldInfo as PydanticFieldBaseModel
     from pydantic.dataclasses import FieldInfo as PydanticFieldDataclass
 
-    _PydanticField = Union[PydanticFieldBaseModel, PydanticFieldDataclass]
+    _PydanticField = PydanticFieldBaseModel | PydanticFieldDataclass
     # typing.get_args(_PydanticField) is an empty tuple for some reason. Just repeat
     _PYDANTIC_FIELD_TYPES = (PydanticFieldBaseModel, PydanticFieldDataclass)
 
@@ -33,7 +33,7 @@ from tap import Tap
 
 OutputType = TypeVar("OutputType")
 
-_ClassOrFunction = Union[Callable[..., OutputType], type[OutputType]]
+_ClassOrFunction = Callable[..., OutputType] | type[OutputType]
 
 
 @dataclasses.dataclass
@@ -76,14 +76,14 @@ class _TapData:
     "If true, ignore extra arguments and only parse known arguments"
 
 
-def _is_pydantic_base_model(obj: Union[type[Any], Any]) -> bool:
+def _is_pydantic_base_model(obj: type[Any] | Any) -> bool:
     if inspect.isclass(obj):  # issubclass requires that obj is a class
         return issubclass(obj, BaseModel)
     else:
         return isinstance(obj, BaseModel)
 
 
-def _is_pydantic_dataclass(obj: Union[type[Any], Any]) -> bool:
+def _is_pydantic_dataclass(obj: type[Any] | Any) -> bool:
     if _IS_PYDANTIC_V1:
         # There's no public function in v1. This is a somewhat safe but linear check
         return dataclasses.is_dataclass(obj) and any(key.startswith("__pydantic") for key in obj.__dict__)
@@ -239,7 +239,7 @@ def _tap_data_from_class_or_function(
     return _TapData(args_data, has_kwargs, known_only)
 
 
-def _is_data_model(obj: Union[type[Any], Any]) -> bool:
+def _is_data_model(obj: type[Any] | Any) -> bool:
     return dataclasses.is_dataclass(obj) or _is_pydantic_base_model(obj)
 
 
@@ -309,7 +309,7 @@ def to_tap_class(class_or_function: _ClassOrFunction) -> type[Tap]:
 
 
 def tapify(
-    class_or_function: Union[Callable[..., OutputType], type[OutputType]],
+    class_or_function: Callable[..., OutputType] | type[OutputType],
     known_only: bool = False,
     command_line_args: Optional[list[str]] = None,
     explicit_bool: bool = False,

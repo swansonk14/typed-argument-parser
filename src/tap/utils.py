@@ -8,9 +8,9 @@ import os
 import pickle
 import re
 import subprocess
-import sys
 import textwrap
 import tokenize
+from types import UnionType
 from typing import (
     Any,
     Callable,
@@ -19,17 +19,14 @@ from typing import (
     Iterator,
     Literal,
     Optional,
-    Union,
 )
 from typing_inspect import get_args as typing_inspect_get_args, get_origin as typing_inspect_get_origin
 import warnings
 
-if sys.version_info >= (3, 10):
-    from types import UnionType
 
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
 PRIMITIVES = (str, int, float, bool)
-PathLike = Union[str, os.PathLike]
+PathLike = str | os.PathLike
 
 
 def check_output(command: list[str], suppress_stderr: bool = True, **kwargs) -> str:
@@ -138,7 +135,7 @@ class GitInfo:
         return not status.endswith(NO_CHANGES_STATUS)
 
 
-def type_to_str(type_annotation: Union[type, Any]) -> str:
+def type_to_str(type_annotation: type | Any) -> str:
     """Gets a string representation of the provided type.
 
     :param type_annotation: A type annotation, which is either a built-in type or a typing type.
@@ -219,7 +216,7 @@ def get_class_column(tokens: Iterable[tokenize.TokenInfo]) -> int:
     raise ValueError("Could not find any class variables in the class.")
 
 
-def source_line_to_tokens(tokens: Iterable[tokenize.TokenInfo]) -> dict[int, list[dict[str, Union[str, int]]]]:
+def source_line_to_tokens(tokens: Iterable[tokenize.TokenInfo]) -> dict[int, list[dict[str, str | int]]]:
     """Extract a map from each line number to list of mappings providing information about each token."""
     line_to_tokens = {}
     for token_type, token, (start_line, start_column), (end_line, end_column), line in tokens:
@@ -584,7 +581,7 @@ def get_origin(tp: Any) -> Any:
     if origin is None:
         origin = tp
 
-    if sys.version_info >= (3, 10) and isinstance(origin, UnionType):
+    if isinstance(origin, UnionType):
         origin = UnionType
 
     return origin
@@ -593,7 +590,7 @@ def get_origin(tp: Any) -> Any:
 # TODO: remove this once typing_inspect.get_args is fixed for Python 3.10 union types
 def get_args(tp: Any) -> tuple[type, ...]:
     """Same as typing_inspect.get_args but fixes Python 3.10 union types."""
-    if sys.version_info >= (3, 10) and isinstance(tp, UnionType):
+    if isinstance(tp, UnionType):
         return tp.__args__
 
     return typing_inspect_get_args(tp)

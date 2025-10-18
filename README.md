@@ -39,7 +39,7 @@ Running `python square.py --num 2` will print `The square of your number is 4.0.
 
 ## Installation
 
-Tap requires Python 3.9+
+Tap requires Python 3.10+
 
 To install Tap from PyPI run: 
 
@@ -256,13 +256,11 @@ Tap automatically handles all the following types:
 ```python
 str, int, float, bool
 Optional, Optional[str], Optional[int], Optional[float], Optional[bool]
-List, List[str], List[int], List[float], List[bool]
-Set, Set[str], Set[int], Set[float], Set[bool]
-Tuple, Tuple[Type1, Type2, etc.], Tuple[Type, ...]  
+list, list[str], list[int], list[float], list[bool]
+set, set[str], set[int], set[float], set[bool]
+tuple, tuple[Type1, Type2, etc.], tuple[Type, ...]
 Literal
 ```
-
-If you're using Python 3.9+, then you can replace `List` with `list`, `Set` with `set`, and `Tuple` with `tuple`.
 
 Tap also supports `Union`, but this requires additional specification (see [Union](#-union-) section below).
 
