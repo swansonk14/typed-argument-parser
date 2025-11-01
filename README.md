@@ -585,7 +585,7 @@ args.from_dict({
 Note: As with `load`, all required arguments must be present in the dictionary if not already set in the Tap object. All values in the provided dictionary will overwrite values currently in the Tap object.
 
 ### Loading from configuration files
-Configuration files can be loaded along with arguments with the optional flag `config_files: List[str]`. Arguments passed in from the command line overwrite arguments from the configuration files. Arguments in configuration files that appear later in the list overwrite the arguments in previous configuration files.
+Configuration files can be loaded along with arguments with the optional flag `config_files: Iterable[str]`. Arguments passed in from the command line overwrite arguments from the configuration files. Arguments in configuration files that appear later in the list overwrite the arguments in previous configuration files.
 
 For example, if you have the config file `my_config.txt`
 ```
