@@ -1,6 +1,6 @@
 import os
 import sys
-from tempfile import NamedTemporaryFile, TemporaryDirectory
+from tempfile import TemporaryDirectory
 import unittest
 from unittest import TestCase
 
