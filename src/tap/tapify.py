@@ -7,7 +7,7 @@ handling
 
 import dataclasses
 import inspect
-from typing import Any, Callable, Optional, Sequence, TypeVar
+from typing import Any, Callable, Optional, Sequence, TypeVar, get_type_hints
 
 from docstring_parser import Docstring, parse
 
@@ -189,6 +189,11 @@ def _tap_data_from_class_or_function(
     known_only = False
 
     sig = inspect.signature(class_or_function)
+    
+    # Works for classes
+    type_hints = get_type_hints(class_or_function.__init__)
+    # TODO: works for functions
+    # type_hints = get_type_hints(class_or_function)
 
     is_pydantic_v1_dataclass_class = (
         _IS_PYDANTIC_V1 and _is_pydantic_dataclass(class_or_function) and inspect.isclass(class_or_function)
@@ -211,7 +216,10 @@ def _tap_data_from_class_or_function(
             known_only = True
             continue
 
-        if param.annotation != inspect.Parameter.empty:
+        # Use resolved type hint if available, otherwise fall back to signature annotation
+        if param_name in type_hints:
+            annotation = type_hints[param_name]
+        elif param.annotation != inspect.Parameter.empty:
             annotation = param.annotation
         else:
             annotation = Any
@@ -282,7 +290,8 @@ def _tap_class(args_data: Sequence[_ArgData]) -> type[Tap]:
             for arg_data in args_data:
                 variable = arg_data.name
                 if variable not in self.class_variables:
-                    self._annotations[variable] = str if arg_data.annotation is Any else arg_data.annotation
+                    t = arg_data.annotation if arg_data.annotation is not Any else str
+                    self._annotations[variable] = t
                     self.class_variables[variable] = {"comment": arg_data.description or ""}
                     if arg_data.is_required:
                         kwargs = {}
