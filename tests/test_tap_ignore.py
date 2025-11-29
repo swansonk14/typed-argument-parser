@@ -29,6 +29,9 @@ class TapIgnoreTests(unittest.TestCase):
         self.assertIn("c", actions)
         self.assertNotIn("d", actions)
         self.assertNotIn("e", actions)
+        self.assertNotIn("b", args.class_variables)
+        self.assertNotIn("d", args.class_variables)
+        self.assertNotIn("e", args.class_variables)
 
     def test_tap_ignore_no_default(self):
         class Args(Tap):
@@ -74,6 +77,9 @@ class TapIgnoreTests(unittest.TestCase):
         self.assertNotIn("base_ignore", actions)
         self.assertIn("sub_keep", actions)
         self.assertNotIn("sub_ignore", actions)
+        self.assertNotIn("b", args.class_variables)
+        self.assertNotIn("d", args.class_variables)
+        self.assertNotIn("e", args.class_variables)
 
     def test_tap_ignore_subclass_override(self):
         # Case 1: Override ignored with argument
