@@ -618,5 +618,7 @@ Usage:
 
     class Args(Tap):
         a: int
+
+        # TapIgnore is generic and preserves the type of the ignored attribute
         e: TapIgnore[int] = 5
 """

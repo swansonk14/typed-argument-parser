@@ -505,7 +505,7 @@ class Tap(ArgumentParser):
         return self
 
     @classmethod
-    def _get_from_self_and_super(cls, extract_func: Callable[[type], dict]) -> dict[str, Any] | dict:
+    def _get_from_self_and_super(cls, extract_func: Callable[[type], dict]) -> dict[str, Any]:
         """Returns a dictionary mapping variable names to values.
 
         Variables and values are extracted from classes using key starting
