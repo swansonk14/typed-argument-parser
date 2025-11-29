@@ -8,7 +8,22 @@ from pathlib import Path
 from pprint import pformat
 from shlex import quote, split
 from types import MethodType, UnionType
-from typing import Any, Callable, Iterable, List, Optional, Sequence, Set, Tuple, TypeVar, Union, get_type_hints
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+    get_type_hints,
+    get_origin as typing_get_origin,
+    get_args as typing_get_args,
+)
 from typing_inspect import is_literal_type
 
 from tap.utils import (
@@ -23,6 +38,7 @@ from tap.utils import (
     type_to_str,
     get_literals,
     boolean_type,
+    _TapIgnoreMarker,
     TupleTypeEnforcer,
     define_python_object_encoder,
     as_python_object,
@@ -92,6 +108,7 @@ class Tap(ArgumentParser):
 
         # Get annotations from self and all super classes up through tap
         self._annotations = self._get_annotations()
+        self._annotations_with_extras = self._get_annotations(include_extras=True)
 
         # Set the default description to be the docstring
         kwargs.setdefault("description", self.__doc__)
@@ -304,6 +321,11 @@ class Tap(ArgumentParser):
         """Add arguments to self in the order they are defined as class variables (so the help string is in order)."""
         # Add class variables (in order)
         for variable in self.class_variables:
+            if variable in self._annotations_with_extras:
+                var_type = self._annotations_with_extras[variable]
+                if typing_get_origin(var_type) is Annotated and _TapIgnoreMarker in typing_get_args(var_type):
+                    continue
+
             if variable in self.argument_buffer:
                 name_or_flags, kwargs = self.argument_buffer[variable]
                 self._add_argument(*name_or_flags, **kwargs)
@@ -531,9 +553,14 @@ class Tap(ArgumentParser):
 
         return class_dict
 
-    def _get_annotations(self) -> dict[str, Any]:
-        """Returns a dictionary mapping variable names to their type annotations."""
-        return self._get_from_self_and_super(extract_func=lambda super_class: dict(get_type_hints(super_class)))
+    def _get_annotations(self, include_extras: bool = False) -> dict[str, Any]:
+        """
+        Returns a dictionary mapping variable names to their type annotations.
+        Keep Annotations and other extras if include_extras is True.
+        """
+        return self._get_from_self_and_super(
+            extract_func=lambda super_class: dict(get_type_hints(super_class, include_extras=include_extras))
+        )
 
     def _get_class_variables(self) -> dict:
         """Returns a dictionary mapping class variables names to their additional information."""
