@@ -317,14 +317,20 @@ class Tap(ArgumentParser):
         variable = get_argument_name(*name_or_flags).replace("-", "_")
         self.argument_buffer[variable] = (name_or_flags, kwargs)
 
+    def _is_ignored_argument(self, variable: str, annotations: Optional[dict[str, Any]] = None) -> bool:
+        annotations = self._annotations_with_extras if annotations is None else annotations
+        if variable in annotations:
+            var_type = annotations[variable]
+            if typing_get_origin(var_type) is Annotated and _TapIgnoreMarker in typing_get_args(var_type):
+                return True
+        return False
+
     def _add_arguments(self) -> None:
         """Add arguments to self in the order they are defined as class variables (so the help string is in order)."""
         # Add class variables (in order)
         for variable in self.class_variables:
-            if variable in self._annotations_with_extras:
-                var_type = self._annotations_with_extras[variable]
-                if typing_get_origin(var_type) is Annotated and _TapIgnoreMarker in typing_get_args(var_type):
-                    continue
+            if self._is_ignored_argument(variable):
+                continue
 
             if variable in self.argument_buffer:
                 name_or_flags, kwargs = self.argument_buffer[variable]
@@ -335,6 +341,8 @@ class Tap(ArgumentParser):
         # Add any arguments that were added manually in configure but aren't class variables (in order)
         for variable, (name_or_flags, kwargs) in self.argument_buffer.items():
             if variable not in self.class_variables:
+                if self._is_ignored_argument(variable):
+                    continue
                 self._add_argument(*name_or_flags, **kwargs)
 
     def process_args(self) -> None:
@@ -562,7 +570,7 @@ class Tap(ArgumentParser):
             extract_func=lambda super_class: dict(get_type_hints(super_class, include_extras=include_extras))
         )
 
-    def _get_class_variables(self) -> dict:
+    def _get_class_variables(self, exclude_tap_ignores: bool = True) -> dict:
         """Returns a dictionary mapping class variables names to their additional information."""
         class_variable_names = {**self._get_annotations(), **self._get_class_dict()}.keys()
 
@@ -587,7 +595,13 @@ class Tap(ArgumentParser):
             class_variables = {}
             for variable in class_variable_names:
                 class_variables[variable] = {"comment": ""}
-
+        if exclude_tap_ignores:
+            extra_annotations = self._get_annotations(include_extras=True)
+            return {
+                var: data
+                for var, data in class_variables.items()
+                if not self._is_ignored_argument(var, extra_annotations)
+            }
         return class_variables
 
     def _get_argument_names(self) -> set[str]:
