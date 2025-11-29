@@ -41,16 +41,16 @@ Running `python square.py --num 2` will print `The square of your number is 4.0.
 
 Tap requires Python 3.10+
 
-To install Tap from PyPI run: 
+To install Tap from PyPI run:
 
-```
+```shell
 pip install typed-argument-parser
 ```
 
 <details>
 <summary>To install Tap from source, run the following commands:</summary>
 
-```
+```shell
 git clone https://github.com/swansonk14/typed-argument-parser.git
 cd typed-argument-parser
 pip install -e .
@@ -61,7 +61,7 @@ pip install -e .
 <details>
 <summary>To develop this package, install development requirements (in a virtual environment):</summary>
 
-```
+```shell
 python -m pip install -e ".[dev]"
 ```
 
@@ -69,7 +69,7 @@ Use [`flake8`](https://github.com/PyCQA/flake8) linting.
 
 To run tests, run:
 
-```
+```shell
 pytest
 ```
 
@@ -77,35 +77,53 @@ pytest
 
 ## Table of Contents
 
-* [Installation](#installation)
-* [Table of Contents](#table-of-contents)
-* [Tap is Python-native](#tap-is-python-native)
-* [Tap features](#tap-features)
-  + [Arguments](#arguments)
-  + [Tap help](#tap-help)
-  + [Configuring arguments](#configuring-arguments)
-    - [Adding special argument behavior](#adding-special-argument-behavior)
-    - [Adding subparsers](#adding-subparsers)
-  + [Types](#types)
-  + [Argument processing](#argument-processing)
-  + [Processing known args](#processing-known-args)
-  + [Subclassing](#subclassing)
-  + [Printing](#printing)
-  + [Reproducibility](#reproducibility)
-  + [Saving and loading arguments](#saving-and-loading-arguments)
-  + [Loading from configuration files](#loading-from-configuration-files)
-* [tapify](#tapify)
-  + [Examples](#examples)
-    - [Function](#function)
-    - [Class](#class)
-    - [Dataclass](#dataclass)
-  + [tapify help](#tapify-help)
-  + [Command line vs explicit arguments](#command-line-vs-explicit-arguments)
-  + [Known args](#known-args)
-* [Convert to a `Tap` class](#convert-to-a-tap-class)
-  + [`to_tap_class` examples](#to_tap_class-examples)
-    - [Simple](#simple)
-    - [Complex](#complex)
+- [Typed Argument Parser (Tap)](#typed-argument-parser-tap)
+  - [Installation](#installation)
+  - [Table of Contents](#table-of-contents)
+  - [Tap is Python-native](#tap-is-python-native)
+  - [Tap features](#tap-features)
+    - [Arguments](#arguments)
+    - [Tap help](#tap-help)
+    - [Configuring arguments](#configuring-arguments)
+      - [Adding special argument behavior](#adding-special-argument-behavior)
+      - [Adding subparsers](#adding-subparsers)
+    - [Types](#types)
+      - [`str`, `int`, and `float`](#str-int-and-float)
+      - [`bool`](#bool)
+      - [`Optional`](#optional)
+      - [`List`](#list)
+      - [`Set`](#set)
+      - [`Tuple`](#tuple)
+      - [`Literal`](#literal)
+      - [`Union`](#union)
+      - [Complex Types](#complex-types)
+    - [Ignore Attribute (Workaround)](#ignore-attribute-workaround)
+    - [Argument processing](#argument-processing)
+    - [Processing known args](#processing-known-args)
+    - [Subclassing](#subclassing)
+    - [Printing](#printing)
+    - [Reproducibility](#reproducibility)
+      - [Reproducibility info](#reproducibility-info)
+    - [Conversion Tap to and from dictionaries](#conversion-tap-to-and-from-dictionaries)
+    - [Saving and loading arguments](#saving-and-loading-arguments)
+      - [Save](#save)
+      - [Load](#load)
+      - [Load from dict](#load-from-dict)
+    - [Loading from configuration files](#loading-from-configuration-files)
+  - [tapify](#tapify)
+    - [Examples](#examples)
+      - [Function](#function)
+      - [Class](#class)
+      - [Dataclass](#dataclass)
+      - [Pydantic](#pydantic)
+    - [tapify help](#tapify-help)
+    - [Command line vs explicit arguments](#command-line-vs-explicit-arguments)
+    - [Known args](#known-args)
+    - [Explicit boolean arguments](#explicit-boolean-arguments)
+  - [Convert to a `Tap` class](#convert-to-a-tap-class)
+    - [`to_tap_class` examples](#to_tap_class-examples)
+      - [Simple](#simple)
+      - [Complex](#complex)
 
 ## Tap is Python-native
 
@@ -359,6 +377,39 @@ class Args(Tap):
 
 args = Args().parse_args('--aged_person Tapper,27'.split())
 print(f'{args.aged_person.name} is {args.aged_person.age}')  # Tapper is 27
+```
+
+### Ignore Attribute (Workaround)
+
+Sometimes you may want to define attributes that should not be parsed as command line arguments, but you still want to type them.
+This is currently not supported, however there is a workaround as `tap` only looks for annotated or public attributes.
+You can exclude attributes and still type them from argument parsing by using type comment annotations instead of regular type hints -
+Check if your type-checker supports them. Note you should provide default values for ignored attributes (else you likely get a `NameError`)
+and they **must** be private (prefixed with underscore). For example,
+
+```python
+from typing import ClassVar
+from tap import Tap
+
+class MyTap(Tap):
+    # Regular arguments (will be parsed)
+    package: str
+    stars: int = 5
+    
+    # Ignored attributes (will not be parsed - must be private)
+    _internal_counter = 0  # type: int
+    _class_variable = "DEFAULT"  # type: ClassVar[str]
+
+args = MyTap().parse_args(["--help"])
+```
+
+```txt
+usage: ipython --package PACKAGE [--stars STARS] [-h]
+
+options:
+  --package PACKAGE  (str, required)
+  --stars STARS      (int, default=5)
+  -h, --help         show this help message and exit
 ```
 
 
@@ -863,7 +914,7 @@ Running `python person.py --name Jesse --age 1` prints `My name is Jesse.` follo
 
 ### Explicit boolean arguments
 
-Tapify supports explicit specification of boolean arguments (see [bool](#bool) for more details). By default, `explicit_bool=False` and it can be set with `tapify(..., explicit_bool=True)`. 
+Tapify supports explicit specification of boolean arguments (see [bool](#bool) for more details). By default, `explicit_bool=False` and it can be set with `tapify(..., explicit_bool=True)`.
 
 ## Convert to a `Tap` class
 
@@ -903,7 +954,7 @@ if __name__ == "__main__":
 
 Running `python main.py --package tap` will print `Project instance: package='tap' is_cool=True stars=5`.
 
-### Complex
+#### Complex
 
 The general pattern is:
 
