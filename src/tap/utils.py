@@ -1,17 +1,20 @@
-from argparse import ArgumentParser, ArgumentTypeError
 import ast
-from base64 import b64encode, b64decode
 import inspect
-from io import StringIO
-from json import JSONEncoder
 import os
 import pickle
 import re
 import subprocess
+import sys
 import textwrap
 import tokenize
+import warnings
+from argparse import ArgumentParser, ArgumentTypeError
+from base64 import b64decode, b64encode
+from io import StringIO
+from json import JSONEncoder
 from types import UnionType
 from typing import (
+    Annotated,
     Any,
     Callable,
     Generator,
@@ -19,10 +22,12 @@ from typing import (
     Iterator,
     Literal,
     Optional,
+    TypeAlias,
+    TypeVar,
 )
-from typing_inspect import get_args as typing_inspect_get_args, get_origin as typing_inspect_get_origin
-import warnings
 
+from typing_inspect import get_args as typing_inspect_get_args
+from typing_inspect import get_origin as typing_inspect_get_origin
 
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
 PRIMITIVES = (str, int, float, bool)
@@ -594,3 +599,26 @@ def get_args(tp: Any) -> tuple[type, ...]:
         return tp.__args__
 
     return typing_inspect_get_args(tp)
+
+
+_T = TypeVar("_T")
+
+
+class _TapIgnoreMarker:
+    """Internal marker that if present in a type annotation indicates that the argument should be ignored."""
+
+
+# TODO: Python 3.12 turn this into a TypeAliasType for better IDE tooltips
+TapIgnore: TypeAlias = Annotated[_T, _TapIgnoreMarker]
+"""
+Type annotation to indicate that an argument should be ignored by Tap and not be added as an argument.
+
+Usage:
+    from tap import Tap, TapIgnore
+
+    class Args(Tap):
+        a: int
+
+        # TapIgnore is generic and preserves the type of the ignored attribute
+        e: TapIgnore[int] = 5
+"""
