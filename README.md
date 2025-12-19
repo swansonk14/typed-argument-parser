@@ -407,6 +407,8 @@ options:
   -h, --help         show this help message and exit
 ```
 
+Note: this is currently only for `Tap` objects, not `tapify`.
+
 ### Argument processing
 
 With complex argument parsing, arguments often end up having interdependencies. This means that it may be necessary to disallow certain combinations of arguments or to modify some arguments based on other arguments.

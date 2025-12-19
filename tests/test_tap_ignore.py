@@ -104,6 +104,148 @@ class TapIgnoreTests(unittest.TestCase):
         self.assertEqual(args2.b, 4)
         self.assertNotIn("b", {a.dest for a in args2._actions})
 
+    def test_tap_ignore_all_arguments(self):
+        """All arguments are in TapIgnore, so no CLI arguments exist."""
+        class Args(Tap):
+            a: TapIgnore[int] = 1
+            b: TapIgnore[str] = "ignored"
+            c: TapIgnore[float] = 2.5
+
+        # Should parse with no arguments since all are ignored
+        args = Args().parse_args([])
+
+        self.assertEqual(args.a, 1)
+        self.assertEqual(args.b, "ignored")
+        self.assertEqual(args.c, 2.5)
+
+        # Only "help" should be in actions, not our fields
+        actions = {a.dest for a in args._actions}
+        self.assertNotIn("a", actions)
+        self.assertNotIn("b", actions)
+        self.assertNotIn("c", actions)
+        self.assertNotIn("a", args.class_variables)
+        self.assertNotIn("b", args.class_variables)
+        self.assertNotIn("c", args.class_variables)
+
+    def test_tap_ignore_generic_types(self):
+        """TapIgnore wraps generic/boxed types like list[int], dict[str, int]."""
+        class Args(Tap):
+            a: int
+            b: TapIgnore[list[int]] = [1, 2, 3]
+            c: TapIgnore[dict[str, int]] = {"x": 10}
+            d: TapIgnore[set[str]] = {"foo", "bar"}
+            e: TapIgnore[tuple[int, str]] = (42, "hello")
+
+        args = Args().parse_args(["--a", "5"])
+
+        self.assertEqual(args.a, 5)
+        self.assertEqual(args.b, [1, 2, 3])
+        self.assertEqual(args.c, {"x": 10})
+        self.assertEqual(args.d, {"foo", "bar"})
+        self.assertEqual(args.e, (42, "hello"))
+
+        actions = {a.dest for a in args._actions}
+        self.assertIn("a", actions)
+        self.assertNotIn("b", actions)
+        self.assertNotIn("c", actions)
+        self.assertNotIn("d", actions)
+        self.assertNotIn("e", actions)
+        self.assertNotIn("b", args.class_variables)
+        self.assertNotIn("c", args.class_variables)
+        self.assertNotIn("d", args.class_variables)
+        self.assertNotIn("e", args.class_variables)
+
+    def test_tap_ignore_as_dict(self):
+        """Test that as_dict includes TapIgnore fields with their default values."""
+        class Args(Tap):
+            a: int
+            b: TapIgnore[int] = 2
+            c: Annotated[int, "metadata"] = 3
+            d: Annotated[TapIgnore[int], "metadata"] = 4
+
+        args = Args().parse_args(["--a", "1", "--c", "5"])
+        args_dict = args.as_dict()
+
+        # Regular args should be in as_dict
+        self.assertIn("a", args_dict)
+        self.assertEqual(args_dict["a"], 1)
+        self.assertIn("c", args_dict)
+        self.assertEqual(args_dict["c"], 5)
+
+        # TapIgnore fields should also be in as_dict with their default values
+        self.assertIn("b", args_dict)
+        self.assertEqual(args_dict["b"], 2)
+        self.assertIn("d", args_dict)
+        self.assertEqual(args_dict["d"], 4)
+
+    def test_tap_ignore_as_dict_then_from_dict(self):
+        """Test round-trip: parse_args -> as_dict -> from_dict on a new instance."""
+        class Args(Tap):
+            a: int
+            b: TapIgnore[int] = 2
+            c: Annotated[int, "metadata"] = 3
+            d: Annotated[TapIgnore[int], "metadata"] = 4
+
+        # Parse initial args
+        args1 = Args().parse_args(["--a", "1", "--c", "5"])
+
+        # Get dict representation
+        args_dict = args1.as_dict()
+
+        # Create new instance and load from dict
+        args2 = Args().from_dict(args_dict)
+
+        # Check that all values match
+        self.assertEqual(args2.a, 1)
+        self.assertEqual(args2.b, 2)
+        self.assertEqual(args2.c, 5)
+        self.assertEqual(args2.d, 4)
+
+        # Verify both instances have the same as_dict output
+        self.assertEqual(args1.as_dict(), args2.as_dict())
+
+    def test_tap_ignore_configure_raises_error_for_ignored_argument(self):
+        """Test that configure() raises an error when trying to add a TapIgnore argument.
+
+        If you explicitly call add_argument in configure() for a TapIgnore field,
+        a ValueError is raised to alert the user of the conflicting configuration.
+        """
+        class Args(Tap):
+            a: int
+            b: TapIgnore[int] = 2  # Marked as ignored
+
+            def configure(self):
+                # Try to explicitly add the ignored argument - this should raise
+                self.add_argument("--b", type=int, default=2)
+
+        with self.assertRaises(ValueError) as context:
+            Args()
+
+        self.assertIn("b", str(context.exception))
+        self.assertIn("TapIgnore", str(context.exception))
+
+    def test_tap_ignore_configure_with_tap_ignore_type(self):
+        """Test that configure() raises an error when using TapIgnore as the type argument.
+
+        If a field is declared as a regular int, but someone tries to use TapIgnore[int]
+        as the type in add_argument, a ValueError should be raised.
+        """
+        class Args(Tap):
+            a: int
+            b: int = 2  # Regular int, NOT ignored
+
+            def configure(self):
+                # Try to use TapIgnore as the type - this should raise
+                self.add_argument("--b", type=TapIgnore[int], default=3)
+
+        args = Args()
+        args.parse_args(["--a", "1", "--b", "2"])
+        self.assertEqual(args.a, 1)
+        self.assertEqual(args.b, 2)
+
+        args = Args().parse_args(["--a", "1"])
+        self.assertEqual(args.b, 3)
+
 
 if __name__ == "__main__":
     unittest.main()

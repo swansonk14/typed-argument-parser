@@ -315,6 +315,14 @@ class Tap(ArgumentParser):
             )
 
         variable = get_argument_name(*name_or_flags).replace("-", "_")
+
+        # Check if this argument is marked as TapIgnore
+        if self._is_ignored_argument(variable):
+            raise ValueError(
+                f"Argument '{variable}' is marked as TapIgnore and cannot be added as a command line argument. "
+                f"Either remove the TapIgnore annotation or remove the add_argument call."
+            )
+
         self.argument_buffer[variable] = (name_or_flags, kwargs)
 
     def _is_ignored_argument(self, variable: str, annotations: Optional[dict[str, Any]] = None) -> bool:
