@@ -1,6 +1,16 @@
+import sys
 import unittest
 from typing import Annotated
 from tap import Tap, TapIgnore
+
+
+# Suppress prints from SystemExit
+class DevNull:
+    def write(self, msg):
+        pass
+
+
+sys.stderr = DevNull()
 
 
 class TapIgnoreTests(unittest.TestCase):
@@ -48,6 +58,12 @@ class TapIgnoreTests(unittest.TestCase):
         # b should not be set
         with self.assertRaises(AttributeError):
             _ = args.b
+
+        args.b = 99
+        self.assertEqual(args.b, 99)
+
+        with self.assertRaises(SystemExit):
+            Args().parse_args(["--a", "1", "--b", "99"])
 
     def test_tap_ignore_annotated_unwrapping(self):
         class Args(Tap):
