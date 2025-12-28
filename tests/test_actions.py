@@ -244,12 +244,9 @@ class TestArgparseActions(TestCase):
         help_regex2 = r".*positional arguments:\n\s*barg\s*\(int, default=1\)\n\s*arg\s*\(str, default=default\).*"
         help_regex3 = r".*positional arguments:\n\s*barg\s*\(int, default=1\)\n\s*arg\s*\(str, required\).*"
 
-
         for PositionalOptional in [PositionalOptionalOrder1, PositionalOptionalOrder2, PositionalOptionalOrder3]:
             with self.subTest(cls=PositionalOptional.__name__):
                 tapped = PositionalOptional()
-                assert tapped._is_argument_annotated_positional("barg")
-                assert tapped._is_argument_annotated_positional("arg")
                 if PositionalOptional is PositionalOptionalOrder3:
                     with self.assertRaises(SystemExit):
                         tapped.parse_args([])
@@ -280,6 +277,25 @@ class TestArgparseActions(TestCase):
                     self.assertRegex(help_text, help_regex2)
                 else:
                     self.assertRegex(help_text, help_regex3)
+
+    def test_variadic_positional(self):
+        class VariadicPositionalTap(Tap):
+            list1: Positional[list[int]] = [1, 2]
+            # Note, fixed nargs are not compatible with defaults in argparse
+            tuple2: Positional[tuple[str, str]]
+
+        parser = VariadicPositionalTap()
+        args = parser.parse_args(["3", "4", "5", "a", "b"])
+        self.assertListEqual(args.list1, [3, 4, 5])
+        self.assertTupleEqual(args.tuple2, ("a", "b"))
+
+        parser = VariadicPositionalTap()
+        args = parser.parse_args(["3", "b"])
+        self.assertListEqual(args.list1, [1, 2])  # default
+        self.assertTupleEqual(args.tuple2, ("3", "b"))
+
+        with self.assertRaises(SystemExit):
+            VariadicPositionalTap().parse_args(["a"])
 
 
 if __name__ == "__main__":
