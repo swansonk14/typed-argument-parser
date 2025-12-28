@@ -21,12 +21,12 @@ from typing import (
     TypeVar,
     Union,
     get_type_hints,
-    get_origin as typing_get_origin,
-    get_args as typing_get_args,
 )
 from typing_inspect import is_literal_type
 
 from tap.utils import (
+    _is_marked_positional,
+    _is_marked_tap_ignore,
     get_class_variables,
     get_args,
     get_argument_name,
@@ -38,7 +38,6 @@ from tap.utils import (
     type_to_str,
     get_literals,
     boolean_type,
-    _TapIgnoreMarker,
     TupleTypeEnforcer,
     define_python_object_encoder,
     as_python_object,
@@ -54,6 +53,7 @@ UNION_TYPES = {Union, UnionType}
 OPTIONAL_TYPES = {Optional} | UNION_TYPES
 BOXED_TYPES = BOXED_COLLECTION_TYPES | OPTIONAL_TYPES
 
+_NO_DEFAULT = object()
 
 TapType = TypeVar("TapType", bound="Tap")
 
@@ -153,8 +153,9 @@ class Tap(ArgumentParser):
             variable = variable.replace("-", "_")
 
         # Get default if not specified
-        if hasattr(self, variable):
-            kwargs["default"] = kwargs.get("default", getattr(self, variable))
+        default_value = kwargs.get("default", getattr(self, variable, _NO_DEFAULT))
+        if default_value is not _NO_DEFAULT:
+            kwargs["default"] = default_value
 
         # Set required if option arg
         if (
@@ -174,7 +175,7 @@ class Tap(ArgumentParser):
                 kwargs["help"] += type_to_str(self._annotations[variable]) + ", "
 
             # Required/default
-            if kwargs.get("required", False) or is_positional_arg(*name_or_flags):
+            if kwargs.get("required", False) or default_value is _NO_DEFAULT:
                 kwargs["help"] += "required"
             else:
                 kwargs["help"] += f'default={kwargs.get("default", None)}'
@@ -182,8 +183,8 @@ class Tap(ArgumentParser):
             kwargs["help"] += ")"
 
             # Description
-            if variable in self.class_variables:
-                kwargs["help"] += " " + self.class_variables[variable]["comment"]
+            if variable in self.class_variables and (comment := self.class_variables[variable]["comment"]):
+                kwargs["help"] += " " + comment
 
         # Set other kwargs where not provided
         if variable in self._annotations:
@@ -280,6 +281,8 @@ class Tap(ArgumentParser):
                     # Handle the cases of List[bool], Set[bool], Tuple[bool]
                     if var_type == bool:
                         var_type = boolean_type
+                if "nargs" not in kwargs and self._is_argument_annotated_positional(variable) and default_value is not _NO_DEFAULT:
+                    kwargs["nargs"] = "?"
 
                 # If bool then set action, otherwise set type
                 if var_type == bool:
@@ -320,7 +323,14 @@ class Tap(ArgumentParser):
         if self._is_ignored_argument(variable):
             raise ValueError(
                 f"Argument '{variable}' is marked as TapIgnore and cannot be added as a command line argument. "
-                f"Either remove the TapIgnore annotation or remove the add_argument call."
+                "Either remove the TapIgnore annotation or remove the add_argument call."
+            )
+        if self._is_argument_annotated_positional(variable) and not is_positional_arg(*name_or_flags):
+            raise ValueError(
+                f"Argument '{variable}' is marked as TapPositional "
+                f"and cannot be added with option flags {name_or_flags}. "
+                "Either remove the TapPositional annotation "
+                "or change the add_argument call to use a positional argument."
             )
 
         self.argument_buffer[variable] = (name_or_flags, kwargs)
@@ -328,9 +338,13 @@ class Tap(ArgumentParser):
     def _is_ignored_argument(self, variable: str, annotations: Optional[dict[str, Any]] = None) -> bool:
         annotations = self._annotations_with_extras if annotations is None else annotations
         if variable in annotations:
-            var_type = annotations[variable]
-            if typing_get_origin(var_type) is Annotated and _TapIgnoreMarker in typing_get_args(var_type):
-                return True
+            return _is_marked_tap_ignore(annotations[variable])
+        return False
+
+    def _is_argument_annotated_positional(self, variable: str, annotations: Optional[dict[str, Any]] = None) -> bool:
+        annotations = self._annotations_with_extras if annotations is None else annotations
+        if variable in annotations:
+            return _is_marked_positional(annotations[variable])
         return False
 
     def _add_arguments(self) -> None:
@@ -343,6 +357,8 @@ class Tap(ArgumentParser):
             if variable in self.argument_buffer:
                 name_or_flags, kwargs = self.argument_buffer[variable]
                 self._add_argument(*name_or_flags, **kwargs)
+            elif self._is_argument_annotated_positional(variable):
+                self._add_argument(variable)
             else:
                 self._add_argument(f"--{variable}")
 
