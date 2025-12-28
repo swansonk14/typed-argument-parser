@@ -1,7 +1,7 @@
 import sys
 import unittest
 from typing import Annotated
-from tap import Tap, TapIgnore
+from tap import Tap, TapIgnore, tapify
 
 
 # Suppress prints from SystemExit
@@ -262,6 +262,48 @@ class TapIgnoreTests(unittest.TestCase):
         args = Args().parse_args(["--a", "1"])
         self.assertEqual(args.b, 3)
 
+
+
+    def test_tapify_function_with_tap_ignore(self):
+        """Test that tapify handles TapIgnore annotations on function arguments."""
+
+        def my_func(a: int, b: TapIgnore[int] = 2, c: str = "hello") -> str:
+            return f"{a} {b} {c}"
+
+        # b is ignored, so it shouldn't be parsed from CLI - should use default
+        output = tapify(my_func, command_line_args=["--a", "1", "--c", "world"])
+        self.assertEqual(output, "1 2 world")
+
+        # Passing --b should fail because it's not a recognized argument
+        with self.assertRaises(SystemExit):
+            tapify(my_func, command_line_args=["--a", "1", "--b", "99", "--c", "world"])
+
+
+    def test_tapify_function_with_tap_ignore_known_only(self):
+        """Test tapify with TapIgnore and known_only=True."""
+
+        def my_func(a: int, b: TapIgnore[int] = 2, c: str = "hello") -> str:
+            return f"{a} {b} {c}"
+
+        # With known_only=True, --b should be ignored (not cause an error)
+        output = tapify(
+            my_func,
+            command_line_args=["--a", "1", "--b", "99", "--c", "world"],
+            known_only=True
+        )
+        # b should still be 2 (the default), not 99
+        self.assertEqual(output, "1 2 world")
+
+    def test_tapify_class_with_tap_ignore(self):
+        """Test that tapify handles TapIgnore annotations on class __init__ arguments."""
+
+        class MyClass:
+            def __init__(self, a: int, b: TapIgnore[int] = 2, c: str = "hello"):
+                self.result = f"{a} {b} {c}"
+
+        # b is ignored, so it shouldn't be parsed from CLI
+        output = tapify(MyClass, command_line_args=["--a", "1", "--b", "99", "--c", "world"])
+        self.assertEqual(output.result, "1 2 world")
 
 if __name__ == "__main__":
     unittest.main()
