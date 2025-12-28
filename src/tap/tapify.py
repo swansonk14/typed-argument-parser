@@ -271,7 +271,7 @@ def _tap_data(class_or_function: _ClassOrFunction, param_to_description: dict[st
     return _tap_data_from_class_or_function(class_or_function, func_kwargs, param_to_description)
 
 def _remove_extras_from_annotation(annotation):
-    """Removes extras from annotation types, e.g., Annotated, Optional, etc."""
+    """Removes extras from annotation types, e.g., Annotated, etc."""
     return get_type_hints(SimpleNamespace(__annotations__ = {"dummy": annotation}))["dummy"]
 
 def _tap_class(args_data: Sequence[_ArgData]) -> type[Tap]:
