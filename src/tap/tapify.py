@@ -7,7 +7,8 @@ handling
 
 import dataclasses
 import inspect
-from typing import Any, Callable, Optional, Sequence, TypeVar
+from types import SimpleNamespace
+from typing import Any, Callable, Optional, Sequence, TypeVar, get_type_hints
 
 from docstring_parser import Docstring, parse
 
@@ -22,8 +23,8 @@ except ModuleNotFoundError:
 else:
     _IS_PYDANTIC_V1 = pydantic.VERSION.startswith("1.")
     from pydantic import BaseModel
-    from pydantic.fields import FieldInfo as PydanticFieldBaseModel
     from pydantic.dataclasses import FieldInfo as PydanticFieldDataclass
+    from pydantic.fields import FieldInfo as PydanticFieldBaseModel
 
     _PydanticField = PydanticFieldBaseModel | PydanticFieldDataclass
     # typing.get_args(_PydanticField) is an empty tuple for some reason. Just repeat
@@ -269,6 +270,9 @@ def _tap_data(class_or_function: _ClassOrFunction, param_to_description: dict[st
         # TODO: allow passing func_kwargs to a Pydantic BaseModel
     return _tap_data_from_class_or_function(class_or_function, func_kwargs, param_to_description)
 
+def _remove_extras_from_annotation(annotation):
+    """Removes extras from annotation types, e.g., Annotated, Optional, etc."""
+    return get_type_hints(SimpleNamespace(__annotations__ = {"dummy": annotation}))["dummy"]
 
 def _tap_class(args_data: Sequence[_ArgData]) -> type[Tap]:
     """
@@ -282,7 +286,9 @@ def _tap_class(args_data: Sequence[_ArgData]) -> type[Tap]:
             for arg_data in args_data:
                 variable = arg_data.name
                 if variable not in self.class_variables:
-                    self._annotations[variable] = str if arg_data.annotation is Any else arg_data.annotation
+                    annotation = str if arg_data.annotation is Any else arg_data.annotation
+                    self._annotations_with_extras[variable] = annotation
+                    self._annotations[variable] = _remove_extras_from_annotation(annotation)
                     self.class_variables[variable] = {"comment": arg_data.description or ""}
                     if arg_data.is_required:
                         kwargs = {}
