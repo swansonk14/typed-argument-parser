@@ -354,12 +354,12 @@ def tapify(
         raise ValueError(f"Unknown keyword arguments: {func_kwargs}")
 
     # Parse command line arguments
-    command_line_args: Tap = tap.parse_args(args=command_line_args, known_only=known_only)
+    parsed_command_line_args: Tap = tap.parse_args(args=command_line_args, known_only=known_only)
 
     # Prepare command line arguments for class_or_function, respecting positional-only args
     class_or_function_args: list[Any] = []
     class_or_function_kwargs: dict[str, Any] = {}
-    command_line_args_dict = command_line_args.as_dict()
+    command_line_args_dict = parsed_command_line_args.as_dict()
     for arg_data in tap_data.args_data:
         if tap._is_ignored_argument(arg_data.name):
             continue

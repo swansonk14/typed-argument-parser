@@ -262,8 +262,6 @@ class TapIgnoreTests(unittest.TestCase):
         args = Args().parse_args(["--a", "1"])
         self.assertEqual(args.b, 3)
 
-
-
     def test_tapify_function_with_tap_ignore(self):
         """Test that tapify handles TapIgnore annotations on function arguments."""
 
@@ -277,7 +275,6 @@ class TapIgnoreTests(unittest.TestCase):
         # Passing --b should fail because it's not a recognized argument
         with self.assertRaises(SystemExit):
             tapify(my_func, command_line_args=["--a", "1", "--b", "99", "--c", "world"])
-
 
     def test_tapify_function_with_tap_ignore_known_only(self):
         """Test tapify with TapIgnore and known_only=True."""
@@ -304,6 +301,11 @@ class TapIgnoreTests(unittest.TestCase):
         # Passing --b should fail because it's not a recognized argument
         with self.assertRaises(SystemExit):
             tapify(MyClass, command_line_args=["--a", "1", "--b", "99", "--c", "world"])
+
+        # test with known_only
+        myclass = tapify(MyClass, known_only=True, command_line_args=["--a", "1", "--b", "99", "--c", "world"])
+        # b should still be 2 (the default), not 99
+        self.assertEqual(myclass.result, "1 2 world")
 
 if __name__ == "__main__":
     unittest.main()
