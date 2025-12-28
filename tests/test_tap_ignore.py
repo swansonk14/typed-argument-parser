@@ -301,9 +301,9 @@ class TapIgnoreTests(unittest.TestCase):
             def __init__(self, a: int, b: TapIgnore[int] = 2, c: str = "hello"):
                 self.result = f"{a} {b} {c}"
 
-        # b is ignored, so it shouldn't be parsed from CLI
-        output = tapify(MyClass, command_line_args=["--a", "1", "--b", "99", "--c", "world"])
-        self.assertEqual(output.result, "1 2 world")
+        # Passing --b should fail because it's not a recognized argument
+        with self.assertRaises(SystemExit):
+            tapify(MyClass, command_line_args=["--a", "1", "--b", "99", "--c", "world"])
 
 if __name__ == "__main__":
     unittest.main()
