@@ -399,15 +399,13 @@ args = MyTap().parse_args(["--help"])
 ```
 
 ```txt
-usage: ipython --package PACKAGE [--stars STARS] [-h]
+usage: main.py --package PACKAGE [--stars STARS] [-h]
 
 options:
   --package PACKAGE  (str, required)
   --stars STARS      (int, default=5)
   -h, --help         show this help message and exit
 ```
-
-Note: this is currently only for `Tap` objects, not `tapify`.
 
 ### Argument processing
 
