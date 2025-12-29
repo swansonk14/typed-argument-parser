@@ -1339,11 +1339,21 @@ class TapifyTests(TestCase):
         self.assertEqual(output, "Hello, Alice!")
 
     def test_tapify_pydantic_with_positional_annotation(self):
-        class MyModel(pydantic.BaseModel):
+        class PydanticModel(pydantic.BaseModel):
             foo: Positional[int]
 
-        model = tapify(MyModel, command_line_args=["42"])
-        self.assertEqual(model.foo, 42)
+        @dataclass
+        class DataclassModel:
+            foo: Positional[int]
+
+        for struct_cls in [PydanticModel, DataclassModel]:
+            with self.subTest(struct_cls=struct_cls.__name__):
+                model = tapify(struct_cls, command_line_args=["42"])
+                self.assertEqual(model.foo, 42)
+                with self.assertRaises(SystemExit):
+                    tapify(struct_cls, command_line_args=[])
+                with self.assertRaises(SystemExit):
+                    tapify(struct_cls, command_line_args=["--foo", "42"])
 
     def test_tapify_dataclass_with_positional_annotation(self):
         @dataclass
