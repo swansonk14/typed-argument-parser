@@ -204,6 +204,18 @@ class TestArgparseActions(TestCase):
         args = ExtendListIntTap().parse_args("--arg 1 2 --arg 3 --arg 4 5".split())
         self.assertEqual(args.arg, [0, 1, 2, 3, 4, 5])
 
+    def test_positional_invalid_usage(self):
+        class PositionalTap(Tap):
+            a: Positional[int]
+
+            def configure(self) -> None:
+                self.add_argument("--a")
+
+        with self.assertRaisesRegex(
+            ValueError, "Argument 'a' is marked as Positional and cannot be added with option flags .'--a"
+        ):
+            PositionalTap()
+
     def test_positional_required(self):
         class PositionalRequired(Tap):
             arg: str
