@@ -2,6 +2,15 @@ import sys
 import unittest
 from typing import Annotated
 from tap import Tap, TapIgnore, tapify
+from dataclasses import dataclass
+
+
+try:
+    import pydantic
+except ModuleNotFoundError:
+    _IS_PYDANTIC_V1 = None
+else:
+    _IS_PYDANTIC_V1 = pydantic.VERSION.startswith("1.")
 
 
 # Suppress prints from SystemExit
@@ -306,6 +315,24 @@ class TapIgnoreTests(unittest.TestCase):
         myclass = tapify(MyClass, known_only=True, command_line_args=["--a", "1", "--b", "99", "--c", "world"])
         # b should still be 2 (the default), not 99
         self.assertEqual(myclass.result, "1 2 world")
+
+    def test_tapify_ignore_dataclass(self):
+        @dataclass
+        class DataclassConfig:
+            x: int
+            y: TapIgnore[str] = "ignore_me"
+
+        class PydanticModel(pydantic.BaseModel):
+            x: int
+            y: TapIgnore[str] = "ignore_me"
+
+        for struct_cls in (DataclassConfig, PydanticModel):
+            with self.subTest(struct_cls=struct_cls.__name__):
+                model = tapify(struct_cls, command_line_args=["--x", "20"])
+                self.assertEqual(model.x, 20)
+                self.assertEqual(model.y, "ignore_me")
+                with self.assertRaises(SystemExit):
+                    tapify(struct_cls, command_line_args=["--x", "10", "--y", "should_fail"])
 
 if __name__ == "__main__":
     unittest.main()
