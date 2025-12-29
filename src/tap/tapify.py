@@ -8,7 +8,9 @@ handling
 import dataclasses
 import inspect
 from types import SimpleNamespace
-from typing import Any, Callable, Optional, Sequence, TypeVar, get_type_hints
+
+# TODO: 3.11 use only Annotated to combine pydantic metadata
+from typing import Any, Callable, Optional, Sequence, TypeVar, _AnnotatedAlias, get_type_hints
 
 from docstring_parser import Docstring, parse
 
@@ -59,6 +61,9 @@ class _ArgData:
 
     is_positional_only: bool = False
     "Whether or not the argument must be provided positionally"
+
+    pydantic_metadata: Optional[tuple[Any]] = None
+    "Additional metadata from Annotated fields in Pydantic models"""
 
 
 @dataclasses.dataclass(frozen=True)
@@ -128,7 +133,7 @@ def _tap_data_from_data_model(
         # Prefer the description from param_to_description (from the data model / class docstring) over the
         # field.description b/c a docstring can be modified on the fly w/o causing real issues
         description = param_to_description.get(name, field.description)
-        return _ArgData(name, annotation, field.is_required(), field.default, description)
+        return _ArgData(name, annotation, field.is_required(), field.default, description, pydantic_metadata=tuple(field.metadata))
 
     # Determine what type of data model it is and extract fields accordingly
     if dataclasses.is_dataclass(data_model):
@@ -287,6 +292,16 @@ def _tap_class(args_data: Sequence[_ArgData]) -> type[Tap]:
                 variable = arg_data.name
                 if variable not in self.class_variables:
                     annotation = str if arg_data.annotation is Any else arg_data.annotation
+                    if arg_data.pydantic_metadata:
+
+                        # Pydantic does clean Annotated metadata, so we need to add it here
+                        # Make sure we have an _AnnotatedAlias and add the fields metadata to it
+                        # TODO: 3.11 use star expression:
+                        # annotation = Annotated[annotation, *arg_data.metadata]
+                        if not isinstance(annotation, _AnnotatedAlias):
+                            annotation = _AnnotatedAlias(annotation, arg_data.pydantic_metadata)
+                        else:
+                            annotation.__metadata__ = (*annotation.__metadata__, *arg_data.pydantic_metadata)
                     self._annotations_with_extras[variable] = annotation
                     self._annotations[variable] = _remove_extras_from_annotation(annotation)
                     self.class_variables[variable] = {"comment": arg_data.description or ""}
