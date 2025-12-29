@@ -10,7 +10,7 @@ from typing import List, Optional, Tuple, Any
 import unittest
 from unittest import TestCase
 
-from tap import tapify
+from tap import tapify, Positional
 
 
 try:
@@ -1332,6 +1332,11 @@ class TapifyTests(TestCase):
             self.assertIn("--b B       (int, required) The second number.", stdout)
             self.assertIn("--c C       (int, required) The third number.", stdout)
 
+    def test_tapify_with_positional_annotation(self):
+        def greet(name: Positional[str]):
+            return f"Hello, {name}!"
+        output = tapify(greet, command_line_args=["Alice"])
+        self.assertEqual(output, "Hello, Alice!")
 
 class TestTapifyExplicitBool(unittest.TestCase):
     def setUp(self) -> None:

@@ -282,7 +282,9 @@ def _tap_class(args_data: Sequence[_ArgData]) -> type[Tap]:
             for arg_data in args_data:
                 variable = arg_data.name
                 if variable not in self.class_variables:
-                    self._annotations[variable] = str if arg_data.annotation is Any else arg_data.annotation
+                    annotation = str if arg_data.annotation is Any else arg_data.annotation
+                    self._annotations_with_extras[variable] = annotation
+                    self._annotations[variable] = annotation
                     self.class_variables[variable] = {"comment": arg_data.description or ""}
                     if arg_data.is_required:
                         kwargs = {}
