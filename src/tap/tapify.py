@@ -304,6 +304,8 @@ def _tap_class(args_data: Sequence[_ArgData]) -> type[Tap]:
                             annotation.__metadata__ = (*annotation.__metadata__, *arg_data.pydantic_metadata)
                     self._annotations_with_extras[variable] = annotation
                     self._annotations[variable] = _remove_extras_from_annotation(annotation)
+                    if self._is_ignored_argument(variable):
+                        continue
                     self.class_variables[variable] = {"comment": arg_data.description or ""}
                     if arg_data.is_required:
                         kwargs = {}
@@ -371,13 +373,15 @@ def tapify(
         raise ValueError(f"Unknown keyword arguments: {func_kwargs}")
 
     # Parse command line arguments
-    command_line_args: Tap = tap.parse_args(args=command_line_args, known_only=known_only)
+    parsed_command_line_args: Tap = tap.parse_args(args=command_line_args, known_only=known_only)
 
     # Prepare command line arguments for class_or_function, respecting positional-only args
     class_or_function_args: list[Any] = []
     class_or_function_kwargs: dict[str, Any] = {}
-    command_line_args_dict = command_line_args.as_dict()
+    command_line_args_dict = parsed_command_line_args.as_dict()
     for arg_data in tap_data.args_data:
+        if tap._is_ignored_argument(arg_data.name):
+            continue
         arg_value = command_line_args_dict[arg_data.name]
         if arg_data.is_positional_only:
             class_or_function_args.append(arg_value)
