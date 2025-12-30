@@ -19,7 +19,7 @@ class DevNull:
         pass
 
 
-sys.stderr = DevNull()
+#sys.stderr = DevNull()
 
 
 class TapIgnoreTests(unittest.TestCase):
@@ -339,6 +339,51 @@ class TapIgnoreTests(unittest.TestCase):
         self.assertEqual(model.y, "ignore_me")
         with self.assertRaises(SystemExit):
             tapify(PydanticModel, command_line_args=["--x", "10", "--y", "should_fail"])
+
+    def test_tapify_function_with_tap_ignore_func_kwargs_pass_through(self):
+        """Test tapify with TapIgnore and set ignored variable via func_kwargs. """
+
+        def my_func(a: int, b: TapIgnore[int] = 2, c: str = "hello") -> str:
+            return f"{a} {b} {c}"
+
+        output = tapify(
+            my_func,
+            command_line_args=["--a", "1", "--c", "world"],
+            b=3,
+        )
+        # b should still be 3, not 2
+        self.assertEqual(output, "1 3 world")
+
+    def test_tapify_dataclass_with_tap_ignore_func_kwargs_pass_through(self):
+        """Test tapify with TapIgnore dataclass and set ignored variable via func_kwargs. """
+        @dataclass
+        class DataclassConfig:
+            x: int
+            y: TapIgnore[str] = "ignore_me"
+
+        model = tapify(
+            DataclassConfig,
+            command_line_args=["--x", "20"],
+            y="set_via_func_kwargs",
+        )
+        self.assertEqual(model.x, 20)
+        self.assertEqual(model.y, "set_via_func_kwargs")
+
+    @unittest.skipIf(_IS_PYDANTIC_V1 is None, reason="Pydantic not installed")
+    def test_tapify_pydantic_model_with_tap_ignore_func_kwargs_pass_through(self):
+        """Test tapify with TapIgnore pydantic model and set ignored variable via func_kwargs. """
+
+        class PydanticModel(pydantic.BaseModel):
+            x: int
+            y: TapIgnore[str] = "ignore_me"
+
+        model = tapify(
+            PydanticModel,
+            command_line_args=["--x", "20"],
+            y="set_via_func_kwargs",
+        )
+        self.assertEqual(model.x, 20)
+        self.assertEqual(model.y, "set_via_func_kwargs")
 
 if __name__ == "__main__":
     unittest.main()
