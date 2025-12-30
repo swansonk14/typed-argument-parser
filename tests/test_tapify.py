@@ -1337,30 +1337,44 @@ class TapifyTests(TestCase):
             return f"Hello, {name}!"
         output = tapify(greet, command_line_args=["Alice"])
         self.assertEqual(output, "Hello, Alice!")
+        with self.assertRaises(SystemExist):
+            tapify(greet, command_line_args=[])
+        with self.assertRaises(SystemExist):
+            tapify(greet, command_line_args=["--name Alice"])
+
+        def optional_greet(name: Positional[str] = "Anonymous"):
+            return f"Hello, {name}!"
+        output = tapify(greet, command_line_args=["Alice"])
+        self.assertEqual(output, "Hello, Alice!")
+        with self.assertRaises(SystemExist):
+            tapify(greet, command_line_args=["--name Alice"])
+        output = tapify(greet, command_line_args=[])
+        self.assertEqual(output, "Hello, Anonymous!")
+        
 
     @unittest.skipIf(_IS_PYDANTIC_V1 is None, reason="Pydantic not installed")
     def test_tapify_pydantic_with_positional_annotation(self):
         class PydanticModel(pydantic.BaseModel):
             foo: Positional[int]
 
-        model = tapify(struct_cls, command_line_args=["42"])
+        model = tapify(PydanticModel, command_line_args=["42"])
         self.assertEqual(model.foo, 42)
         with self.assertRaises(SystemExit):
-            tapify(struct_cls, command_line_args=[])
+            tapify(PydanticModel, command_line_args=[])
         with self.assertRaises(SystemExit):
-            tapify(struct_cls, command_line_args=["--foo", "42"])
+            tapify(PydanticModel, command_line_args=["--foo", "42"])
 
     def test_tapify_dataclass_with_positional_annotation(self):
         @dataclass
-        class MyModel:
+        class DataclassModel:
             foo: Positional[int]
 
-        model = tapify(struct_cls, command_line_args=["42"])
+        model = tapify(DataclassModel, command_line_args=["42"])
         self.assertEqual(model.foo, 42)
         with self.assertRaises(SystemExit):
-            tapify(struct_cls, command_line_args=[])
+            tapify(DataclassModel, command_line_args=[])
         with self.assertRaises(SystemExit):
-            tapify(struct_cls, command_line_args=["--foo", "42"])
+            tapify(DataclassModel, command_line_args=["--foo", "42"])
 
 class TestTapifyExplicitBool(unittest.TestCase):
     def setUp(self) -> None:
