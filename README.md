@@ -149,7 +149,7 @@ print(f'My name is {args.name} and I give the {args.language} package '
 
 You use Tap the same way you use standard argparse.
 
-```
+```txt
 >>> python main.py --name Jesse --stars 5
 My name is Jesse and I give the Python package Tap 5/5 stars!
 ```
@@ -219,7 +219,7 @@ args = MyTap().parse_args()
 
 Running `python main.py -h` results in the following:
 
-```
+```txt
 >>> python main.py -h
 usage: main.py --x X [--pi PI] [-h]
 
@@ -390,6 +390,8 @@ Sometimes you may want to define attributes that should not be parsed as command
 This can be achieved by using `TapIgnore`.
 
 ```python
+"""main.py"""
+
 from tap import Tap, TapIgnore
 
 class MyTap(Tap):
@@ -404,15 +406,14 @@ args = MyTap().parse_args(["--help"])
 ```
 
 ```txt
-usage: ipython --package PACKAGE [--stars STARS] [-h]
+>>> python main.py -h
+usage: main.py --package PACKAGE [--stars STARS] [-h]
 
 options:
   --package PACKAGE  (str, required)
   --stars STARS      (int, default=5)
   -h, --help         show this help message and exit
 ```
-
-Note: this is currently only for `Tap` objects, not `tapify`.
 
 ### Argument processing
 
@@ -494,7 +495,7 @@ print(args)
 
 Running `python main.py --package Tap` results in:
 
-```
+```txt
 >>> python main.py
 {'awards': ['amazing', 'wow', 'incredible', 'awesome'],
  'is_cool': True,
@@ -848,7 +849,7 @@ if __name__ == '__main__':
 
 The help string on the command line is set based on the docstring for the function or class. For example, running `python square_function.py -h` will print:
 
-```
+```txt
 usage: square_function.py [-h] --num NUM
 
 Square a number.
