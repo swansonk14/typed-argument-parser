@@ -24,6 +24,8 @@ from typing import (
     Optional,
     TypeAlias,
     TypeVar,
+    get_origin as typing_get_origin,
+    get_args as typing_get_args,
 )
 
 from typing_inspect import get_args as typing_inspect_get_args
@@ -607,6 +609,21 @@ _T = TypeVar("_T")
 class _TapIgnoreMarker:
     """Internal marker that if present in a type annotation indicates that the argument should be ignored."""
 
+class _TapPositionalMarker:
+    """Internal marker that if present in a type annotation indicates that the argument is positional-only."""
+
+def _is_marked_annotation(var_type: type | Any, marker: type) -> bool:
+    """Checks if the provided type is `Annotated` and contains the provided marker in the Annotation arguments."""
+    # Note: typing_inspect.get_origin will return the inner type and args and not Annotated
+    return typing_get_origin(var_type) is Annotated and marker in typing_get_args(var_type)[1:]
+
+def _is_marked_tap_ignore(var_type: type | Any) -> bool:
+    """Checks if the provided type is `Annotated` and contains the TapIgnore marker in the Annotation arguments."""
+    return _is_marked_annotation(var_type, _TapIgnoreMarker)
+
+def _is_marked_positional(var_type: type | Any) -> bool:
+    """Checks if the provided type is `Annotated` and contains the TapPositional marker in the Annotation arguments."""
+    return _is_marked_annotation(var_type, _TapPositionalMarker)
 
 # TODO: Python 3.12 turn this into a TypeAliasType for better IDE tooltips
 TapIgnore: TypeAlias = Annotated[_T, _TapIgnoreMarker]
@@ -621,4 +638,16 @@ Usage:
 
         # TapIgnore is generic and preserves the type of the ignored attribute
         e: TapIgnore[int] = 5
+"""
+
+Positional = Annotated[_T, _TapPositionalMarker]
+"""
+Type annotation to indicate that an argument is positional-only.
+
+Usage:
+    from tap import Tap, Positional
+
+    class Args(Tap):
+        # Positional is generic and preserves the type of the positional-only attribute
+        a: Positional[int]
 """

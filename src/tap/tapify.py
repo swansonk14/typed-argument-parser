@@ -311,7 +311,11 @@ def _tap_class(args_data: Sequence[_ArgData]) -> type[Tap]:
                         kwargs = {}
                     else:
                         kwargs = dict(required=False, default = arg_data.default)
-                    self.add_argument(f"--{variable}", **kwargs)
+                    if self._is_argument_annotated_positional(variable):
+                        kwargs.pop("required", None)  # required is for optional args only
+                        self.add_argument(variable, **kwargs)
+                    else:
+                        self.add_argument(f"--{variable}", **kwargs)
 
             super()._configure()
 

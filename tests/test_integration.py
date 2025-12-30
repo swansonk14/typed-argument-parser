@@ -1638,6 +1638,16 @@ class TestPositionalArguments(TestCase):
 
         self.assertEqual(args.a, 1)
 
+    def test_invalid_positional_with_required(self):
+        class PositionalTap(Tap):
+            a: int
+
+            def configure(self) -> None:
+                self.add_argument("a", required=False)
+
+        with self.assertRaises(TypeError):
+            PositionalTap()
+
 
 class TestPickle(TestCase):
     def test_pickle(self):
