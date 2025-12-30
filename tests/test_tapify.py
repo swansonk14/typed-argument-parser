@@ -1338,30 +1338,29 @@ class TapifyTests(TestCase):
         output = tapify(greet, command_line_args=["Alice"])
         self.assertEqual(output, "Hello, Alice!")
 
+    @unittest.skipIf(_IS_PYDANTIC_V1 is None, reason="Pydantic not installed")
     def test_tapify_pydantic_with_positional_annotation(self):
         class PydanticModel(pydantic.BaseModel):
             foo: Positional[int]
 
-        @dataclass
-        class DataclassModel:
-            foo: Positional[int]
-
-        for struct_cls in [PydanticModel, DataclassModel]:
-            with self.subTest(struct_cls=struct_cls.__name__):
-                model = tapify(struct_cls, command_line_args=["42"])
-                self.assertEqual(model.foo, 42)
-                with self.assertRaises(SystemExit):
-                    tapify(struct_cls, command_line_args=[])
-                with self.assertRaises(SystemExit):
-                    tapify(struct_cls, command_line_args=["--foo", "42"])
+        model = tapify(struct_cls, command_line_args=["42"])
+        self.assertEqual(model.foo, 42)
+        with self.assertRaises(SystemExit):
+            tapify(struct_cls, command_line_args=[])
+        with self.assertRaises(SystemExit):
+            tapify(struct_cls, command_line_args=["--foo", "42"])
 
     def test_tapify_dataclass_with_positional_annotation(self):
         @dataclass
         class MyModel:
             foo: Positional[int]
 
-        model = tapify(MyModel, command_line_args=["42"])
+        model = tapify(struct_cls, command_line_args=["42"])
         self.assertEqual(model.foo, 42)
+        with self.assertRaises(SystemExit):
+            tapify(struct_cls, command_line_args=[])
+        with self.assertRaises(SystemExit):
+            tapify(struct_cls, command_line_args=["--foo", "42"])
 
 class TestTapifyExplicitBool(unittest.TestCase):
     def setUp(self) -> None:
