@@ -157,7 +157,6 @@ else:
         ),  # to_tap_class also works on instances of data models. It ignores the attribute values
     ]
     + ([] if _IS_PYDANTIC_V1 is None else [DataclassPydantic, Model]),
-    # NOTE: instances of DataclassPydantic and Model can be tested for pydantic v2 but not v1
 )
 def class_or_function_(request: pytest.FixtureRequest):
     """

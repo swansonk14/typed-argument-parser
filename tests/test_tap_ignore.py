@@ -322,17 +322,23 @@ class TapIgnoreTests(unittest.TestCase):
             x: int
             y: TapIgnore[str] = "ignore_me"
 
+        model = tapify(DataclassConfig, command_line_args=["--x", "20"])
+        self.assertEqual(model.x, 20)
+        self.assertEqual(model.y, "ignore_me")
+        with self.assertRaises(SystemExit):
+            tapify(DataclassConfig, command_line_args=["--x", "10", "--y", "should_fail"])
+
+    @unittest.skipIf(_IS_PYDANTIC_V1 is None, reason="Pydantic not installed")
+    def test_tapify_ignore_pydantic_model(self):
         class PydanticModel(pydantic.BaseModel):
             x: int
             y: TapIgnore[str] = "ignore_me"
 
-        for struct_cls in (DataclassConfig, PydanticModel):
-            with self.subTest(struct_cls=struct_cls.__name__):
-                model = tapify(struct_cls, command_line_args=["--x", "20"])
-                self.assertEqual(model.x, 20)
-                self.assertEqual(model.y, "ignore_me")
-                with self.assertRaises(SystemExit):
-                    tapify(struct_cls, command_line_args=["--x", "10", "--y", "should_fail"])
+        model = tapify(PydanticModel, command_line_args=["--x", "20"])
+        self.assertEqual(model.x, 20)
+        self.assertEqual(model.y, "ignore_me")
+        with self.assertRaises(SystemExit):
+            tapify(PydanticModel, command_line_args=["--x", "10", "--y", "should_fail"])
 
 if __name__ == "__main__":
     unittest.main()
