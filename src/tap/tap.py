@@ -325,13 +325,16 @@ class Tap(ArgumentParser):
                 f"Argument '{variable}' is marked as TapIgnore and cannot be added as a command line argument. "
                 "Either remove the TapIgnore annotation or remove the add_argument call."
             )
-        if self._is_argument_annotated_positional(variable) and not is_positional_arg(*name_or_flags):
+        is_positional = self._is_argument_annotated_positional(variable)
+        if is_positional and not is_positional_arg(*name_or_flags):
             raise ValueError(
                 f"Argument '{variable}' is marked as Positional "
                 f"and cannot be added with option flags {name_or_flags}. "
                 "Either remove the Positional annotation "
                 "or change the add_argument call to use a positional argument."
             )
+        if is_positional and "required" in kwargs:
+            raise TypeError("'required' is an invalid argument for positionals")
 
         self.argument_buffer[variable] = (name_or_flags, kwargs)
 

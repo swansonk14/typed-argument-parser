@@ -1337,20 +1337,19 @@ class TapifyTests(TestCase):
             return f"Hello, {name}!"
         output = tapify(greet, command_line_args=["Alice"])
         self.assertEqual(output, "Hello, Alice!")
-        with self.assertRaises(SystemExist):
+        with self.assertRaises(SystemExit):
             tapify(greet, command_line_args=[])
-        with self.assertRaises(SystemExist):
-            tapify(greet, command_line_args=["--name Alice"])
+        with self.assertRaises(SystemExit):
+            tapify(greet, command_line_args=["--name", "Alice"])
 
         def optional_greet(name: Positional[str] = "Anonymous"):
             return f"Hello, {name}!"
-        output = tapify(greet, command_line_args=["Alice"])
-        self.assertEqual(output, "Hello, Alice!")
-        with self.assertRaises(SystemExist):
-            tapify(greet, command_line_args=["--name Alice"])
-        output = tapify(greet, command_line_args=[])
+        output = tapify(optional_greet, command_line_args=["Bob"])
+        self.assertEqual(output, "Hello, Bob!")
+        with self.assertRaises(SystemExit):
+            tapify(optional_greet, command_line_args=["--name", "Bob"])
+        output = tapify(optional_greet, command_line_args=[])
         self.assertEqual(output, "Hello, Anonymous!")
-        
 
     @unittest.skipIf(_IS_PYDANTIC_V1 is None, reason="Pydantic not installed")
     def test_tapify_pydantic_with_positional_annotation(self):
