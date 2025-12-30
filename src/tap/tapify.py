@@ -7,7 +7,10 @@ handling
 
 import dataclasses
 import inspect
-from typing import Any, Callable, Optional, Sequence, TypeVar
+from types import SimpleNamespace
+
+# TODO: 3.11 use only Annotated to combine pydantic metadata
+from typing import Any, Callable, Optional, Sequence, TypeVar, _AnnotatedAlias, get_type_hints
 
 from docstring_parser import Docstring, parse
 
@@ -22,8 +25,8 @@ except ModuleNotFoundError:
 else:
     _IS_PYDANTIC_V1 = pydantic.VERSION.startswith("1.")
     from pydantic import BaseModel
-    from pydantic.fields import FieldInfo as PydanticFieldBaseModel
     from pydantic.dataclasses import FieldInfo as PydanticFieldDataclass
+    from pydantic.fields import FieldInfo as PydanticFieldBaseModel
 
     _PydanticField = PydanticFieldBaseModel | PydanticFieldDataclass
     # typing.get_args(_PydanticField) is an empty tuple for some reason. Just repeat
@@ -58,6 +61,9 @@ class _ArgData:
 
     is_positional_only: bool = False
     "Whether or not the argument must be provided positionally"
+
+    pydantic_metadata: Optional[tuple[Any]] = None
+    "Additional metadata from Annotated fields in Pydantic models"""
 
 
 @dataclasses.dataclass(frozen=True)
@@ -127,7 +133,7 @@ def _tap_data_from_data_model(
         # Prefer the description from param_to_description (from the data model / class docstring) over the
         # field.description b/c a docstring can be modified on the fly w/o causing real issues
         description = param_to_description.get(name, field.description)
-        return _ArgData(name, annotation, field.is_required(), field.default, description)
+        return _ArgData(name, annotation, field.is_required(), field.default, description, pydantic_metadata=tuple(field.metadata))
 
     # Determine what type of data model it is and extract fields accordingly
     if dataclasses.is_dataclass(data_model):
@@ -269,6 +275,9 @@ def _tap_data(class_or_function: _ClassOrFunction, param_to_description: dict[st
         # TODO: allow passing func_kwargs to a Pydantic BaseModel
     return _tap_data_from_class_or_function(class_or_function, func_kwargs, param_to_description)
 
+def _remove_extras_from_annotation(annotation):
+    """Removes extras from annotation types, e.g., Annotated, etc."""
+    return get_type_hints(SimpleNamespace(__annotations__ = {"dummy": annotation}))["dummy"]
 
 def _tap_class(args_data: Sequence[_ArgData]) -> type[Tap]:
     """
@@ -283,8 +292,18 @@ def _tap_class(args_data: Sequence[_ArgData]) -> type[Tap]:
                 variable = arg_data.name
                 if variable not in self.class_variables:
                     annotation = str if arg_data.annotation is Any else arg_data.annotation
+                    if arg_data.pydantic_metadata:
+
+                        # Pydantic does clean Annotated metadata, so we need to add it here
+                        # Make sure we have an _AnnotatedAlias and add the fields metadata to it
+                        # TODO: 3.11 use star expression:
+                        # annotation = Annotated[annotation, *arg_data.metadata]
+                        if not isinstance(annotation, _AnnotatedAlias):
+                            annotation = _AnnotatedAlias(annotation, arg_data.pydantic_metadata)
+                        else:
+                            annotation.__metadata__ = (*annotation.__metadata__, *arg_data.pydantic_metadata)
                     self._annotations_with_extras[variable] = annotation
-                    self._annotations[variable] = annotation
+                    self._annotations[variable] = _remove_extras_from_annotation(annotation)
                     if self._is_ignored_argument(variable):
                         continue
                     self.class_variables[variable] = {"comment": arg_data.description or ""}
