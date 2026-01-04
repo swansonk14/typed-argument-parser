@@ -19,7 +19,6 @@ license = "MIT"
 license-files = [ "LICENSE.txt" ]
 dependencies = [
     "docstring-parser >= 0.15",
-    "typing-inspect >= 0.7.1",
 ]
 requires-python = ">=3.10"
 classifiers = [
