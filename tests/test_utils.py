@@ -392,6 +392,12 @@ class GetLiteralsTests(TestCase):
         self.assertEqual(literal_f("triangle"), "triangle")
         self.assertEqual(literal_f("circle"), "circle")
 
+    def test_get_literals_empty_rejects_values(self) -> None:
+        literal_f, _ = get_literals(Literal, "hi")
+        with self.assertRaises(ArgumentTypeError):
+            literal_f("anything")
+
+
     def test_get_literals_primitives(self) -> None:
         literals = [True, "one", 2, 3.14]
         literal_f, prims = get_literals(Literal[True, "one", 2, 3.14], "number")
