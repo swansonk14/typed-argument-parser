@@ -15,10 +15,10 @@ python demo_data_model.py \
     -arg 3.14
 """
 
-from typing import List, Literal, Optional, Union
+from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
-from tap import tapify, to_tap_class, Tap
+from tap import to_tap_class
 
 
 class Model(BaseModel):

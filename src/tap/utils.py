@@ -4,8 +4,6 @@ import os
 import pickle
 import re
 import subprocess
-import collections.abc
-import sys
 import typing
 import textwrap
 import tokenize
@@ -14,7 +12,7 @@ from argparse import ArgumentParser, ArgumentTypeError
 from base64 import b64decode, b64encode
 from io import StringIO
 from json import JSONEncoder
-from types import UnionType, GenericAlias
+from types import GenericAlias
 from typing import (
     Annotated,
     Any,
@@ -26,10 +24,8 @@ from typing import (
     Optional,
     TypeAlias,
     TypeVar,
-    Generic,
     _GenericAlias,
     _SpecialGenericAlias,
-    ClassVar,
 )
 
 

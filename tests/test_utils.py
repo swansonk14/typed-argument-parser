@@ -13,6 +13,7 @@ from tap.utils import (
     get_class_column,
     get_class_variables,
     GitInfo,
+    is_literal_type,
     tokenize_source,
     type_to_str,
     get_literals,
@@ -383,6 +384,51 @@ T
         class_variables = {"arg": {"comment": ""}}
         self.assertEqual(get_class_variables(DataclassColumn), class_variables)
 
+class IsLiteralTypeTests(TestCase):
+    def test_is_literal_type_bare_literal(self) -> None:
+        self.assertTrue(is_literal_type(Literal))
+
+    def test_is_literal_type_string_literal(self) -> None:
+        self.assertTrue(is_literal_type(Literal["a", "b", "c"]))
+
+    def test_is_literal_type_int_literal(self) -> None:
+        self.assertTrue(is_literal_type(Literal[1, 2, 3]))
+
+    def test_is_literal_type_mixed_literal(self) -> None:
+        self.assertTrue(is_literal_type(Literal[True, "one", 2, 3.14]))
+
+    def test_is_literal_type_single_value(self) -> None:
+        self.assertTrue(is_literal_type(Literal["only"]))
+
+    def test_is_literal_type_str(self) -> None:
+        self.assertFalse(is_literal_type(str))
+
+    def test_is_literal_type_int(self) -> None:
+        self.assertFalse(is_literal_type(int))
+
+    def test_is_literal_type_float(self) -> None:
+        self.assertFalse(is_literal_type(float))
+
+    def test_is_literal_type_bool(self) -> None:
+        self.assertFalse(is_literal_type(bool))
+
+    def test_is_literal_type_list(self) -> None:
+        self.assertFalse(is_literal_type(List[int]))
+
+    def test_is_literal_type_dict(self) -> None:
+        self.assertFalse(is_literal_type(Dict[str, int]))
+
+    def test_is_literal_type_union(self) -> None:
+        self.assertFalse(is_literal_type(Union[str, int]))
+
+    def test_is_literal_type_tuple(self) -> None:
+        self.assertFalse(is_literal_type(Tuple[str, int]))
+
+    def test_is_literal_type_none(self) -> None:
+        self.assertFalse(is_literal_type(None))
+
+    def test_is_literal_type_any(self) -> None:
+        self.assertFalse(is_literal_type(Any))
 
 class GetLiteralsTests(TestCase):
     def test_get_literals_string(self) -> None:
