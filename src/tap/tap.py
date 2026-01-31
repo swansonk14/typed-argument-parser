@@ -21,6 +21,7 @@ from typing import (
     TypeVar,
     Union,
     get_type_hints,
+    get_args,
 )
 
 from tap.utils import (
