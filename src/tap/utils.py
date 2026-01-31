@@ -4,7 +4,7 @@ import os
 import pickle
 import re
 import subprocess
-import sys
+import typing
 import textwrap
 import tokenize
 import warnings
@@ -12,7 +12,7 @@ from argparse import ArgumentParser, ArgumentTypeError
 from base64 import b64decode, b64encode
 from io import StringIO
 from json import JSONEncoder
-from types import UnionType
+from types import GenericAlias
 from typing import (
     Annotated,
     Any,
@@ -24,13 +24,12 @@ from typing import (
     Optional,
     TypeAlias,
     TypeVar,
-    get_origin as typing_get_origin,
-    get_args as typing_get_args,
+    _GenericAlias,
+    _SpecialGenericAlias,
 )
 
-from typing_inspect import get_args as typing_inspect_get_args
-from typing_inspect import get_origin as typing_inspect_get_origin
 
+TYPING_GENERIC_ALIAS = (_GenericAlias, _SpecialGenericAlias, GenericAlias)
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
 PRIMITIVES = (str, int, float, bool)
 PathLike = str | os.PathLike
@@ -387,7 +386,7 @@ def get_class_variables(cls: type) -> dict[str, dict[str, str]]:
 
 def get_literals(literal: Literal, variable: str) -> tuple[Callable[[str], Any], list[type]]:
     """Extracts the values from a Literal type and ensures that the values are all primitive types."""
-    literals = list(get_args(literal))
+    literals = list(typing.get_args(literal))
 
     if not all(isinstance(literal, PRIMITIVES) for literal in literals):
         raise ArgumentTypeError(
@@ -578,29 +577,21 @@ def enforce_reproducibility(
         raise ValueError(f"{no_reproducibility_message}: Uncommitted changes " f"in current args.")
 
 
-# TODO: remove this once typing_inspect.get_origin is fixed for 3.10
-# https://github.com/ilevkivskyi/typing_inspect/issues/64
-# https://github.com/ilevkivskyi/typing_inspect/issues/65
 def get_origin(tp: Any) -> Any:
-    """Same as typing_inspect.get_origin but fixes unparameterized generic types like Set."""
-    origin = typing_inspect_get_origin(tp)
-
-    if origin is None:
+    """Get the unsubscribed version of a type."""
+    if (origin := typing.get_origin(tp)) is None:
         origin = tp
-
-    if isinstance(origin, UnionType):
-        origin = UnionType
-
     return origin
 
 
-# TODO: remove this once typing_inspect.get_args is fixed for Python 3.10 union types
-def get_args(tp: Any) -> tuple[type, ...]:
-    """Same as typing_inspect.get_args but fixes Python 3.10 union types."""
-    if isinstance(tp, UnionType):
-        return tp.__args__
+def is_literal_type(tp: Any) -> bool:
+    if tp is Literal:
+        return True
 
-    return typing_inspect_get_args(tp)
+    if isinstance(tp, TYPING_GENERIC_ALIAS) and tp.__origin__ is Literal:
+        return True
+
+    return False
 
 
 _T = TypeVar("_T")
@@ -615,7 +606,7 @@ class _TapPositionalMarker:
 def _is_marked_annotation(var_type: type | Any, marker: type) -> bool:
     """Checks if the provided type is `Annotated` and contains the provided marker in the Annotation arguments."""
     # Note: typing_inspect.get_origin will return the inner type and args and not Annotated
-    return typing_get_origin(var_type) is Annotated and marker in typing_get_args(var_type)[1:]
+    return typing.get_origin(var_type) is Annotated and marker in typing.get_args(var_type)[1:]
 
 def _is_marked_tap_ignore(var_type: type | Any) -> bool:
     """Checks if the provided type is `Annotated` and contains the TapIgnore marker in the Annotation arguments."""

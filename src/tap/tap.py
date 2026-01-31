@@ -22,13 +22,12 @@ from typing import (
     Union,
     get_type_hints,
 )
-from typing_inspect import is_literal_type
 
 from tap.utils import (
     _is_marked_positional,
     _is_marked_tap_ignore,
     get_class_variables,
-    get_args,
+    is_literal_type,
     get_argument_name,
     get_dest,
     get_origin,
@@ -202,6 +201,7 @@ class Tap(ArgumentParser):
                         var_args = (str, type(None))
 
                     # Raise error if type function is not explicitly provided for Union types (not including Optionals)
+
                     if get_origin(var_type) in UNION_TYPES and not (len(var_args) == 2 and var_args[1] == type(None)):
                         raise ArgumentTypeError(
                             "For Union types, you must include an explicit type function in the configure method. "
