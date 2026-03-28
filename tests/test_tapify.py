@@ -1342,14 +1342,13 @@ class TapifyTests(TestCase):
         with self.assertRaises(SystemExit):
             tapify(greet, command_line_args=["--name", "Alice"])
 
-        def optional_greet(name: Positional[str] = "Anonymous"):
+        # a default value does not make the positional optional on the CLI (follows argparse)
+        def greet_with_default(name: Positional[str] = "Anonymous"):
             return f"Hello, {name}!"
-        output = tapify(optional_greet, command_line_args=["Bob"])
+        output = tapify(greet_with_default, command_line_args=["Bob"])
         self.assertEqual(output, "Hello, Bob!")
         with self.assertRaises(SystemExit):
-            tapify(optional_greet, command_line_args=["--name", "Bob"])
-        output = tapify(optional_greet, command_line_args=[])
-        self.assertEqual(output, "Hello, Anonymous!")
+            tapify(greet_with_default, command_line_args=[])
 
     @unittest.skipIf(_IS_PYDANTIC_V1 is None, reason="Pydantic not installed")
     def test_tapify_pydantic_with_positional_annotation(self):
@@ -1374,6 +1373,32 @@ class TapifyTests(TestCase):
             tapify(DataclassModel, command_line_args=[])
         with self.assertRaises(SystemExit):
             tapify(DataclassModel, command_line_args=["--foo", "42"])
+
+    def test_tapify_positional_mixed_with_optional(self):
+        """Multiple positional and non-positional arguments together."""
+        def greet(name: Positional[str], age: int):
+            return f"Hello, {name} ({age})!"
+
+        output = tapify(greet, command_line_args=["Alice", "--age", "30"])
+        self.assertEqual(output, "Hello, Alice (30)!")
+
+        # positional must be supplied via CLI, not as a flag
+        with self.assertRaises(SystemExit):
+            tapify(greet, command_line_args=["--name", "Alice", "--age", "30"])
+
+    def test_tapify_positional_supplied_via_func_kwargs(self):
+        """A func_kwarg does not make a positional optional on the CLI (follows argparse)."""
+        def greet(name: Positional[str], age: int):
+            return f"Hello, {name} ({age})!"
+
+        # positional must still come from the CLI even when a func_kwarg default is given
+        with self.assertRaises(SystemExit):
+            tapify(greet, command_line_args=["--age", "32"], name="Alice")
+
+        # providing the positional from the CLI works; it overrides the func_kwarg default
+        output = tapify(greet, command_line_args=["Bob", "--age", "32"], name="Alice")
+        self.assertEqual(output, "Hello, Bob (32)!")
+
 
 class TestTapifyExplicitBool(unittest.TestCase):
     def setUp(self) -> None:

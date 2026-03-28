@@ -189,15 +189,31 @@ Now we are going to highlight some of our favorite features and give examples of
 ### Arguments
 
 Arguments are specified as class variables defined in a subclass of `Tap`. Variables defined as `name: type` are required arguments while variables defined as `name: type = value` are not required and default to the provided value.
-Additionally, positional arguments can be specified using the `Positional` for annotation.
+Additionally, positional arguments can be specified using the `Positional` type annotation.
 
 ```python
+"""main.py"""
 from tap import Tap, Positional
 
 class MyTap(Tap):
     required_arg: str
     default_arg: str = 'default value'
     positional_arg: Positional[int]
+
+args = MyTap().parse_args()
+print(f"positional = {args.positional_arg}, required = {args.required_arg}, default = {args.default_arg}")
+```
+
+For example, running
+
+```bash
+>>> python main.py 42 --required_arg "I'm required"
+```
+
+would produce
+
+```
+positional = 42, required = I'm required, default = default value
 ```
 
 ### Tap help

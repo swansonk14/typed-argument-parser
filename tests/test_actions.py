@@ -233,62 +233,46 @@ class TestArgparseActions(TestCase):
         self.assertEqual(args.barg, 42)
 
     def test_positional_with_default(self):
-        class PositionalOptionalOrder1(Tap):
-            arg: Positional[str]
-            barg: Positional[int] = 1
+        """A default on a Positional follows argparse: the default appears in help but the
+        argument is still required on the command line."""
+        class PositionalWithDefault(Tap):
+            arg: Positional[int] = 1
+            barg: Positional[str]
 
-            def configure(self):
-                self.add_argument("arg", nargs="?", default="default")
+        help_regex = r".*positional arguments:\n\s*arg\s*\(int, default=1\)\n\s*barg\s*\(str, required\).*"
+        self.assertRegex(PositionalWithDefault().format_help(), help_regex)
 
-        class PositionalOptionalOrder2(Tap):
-            barg: Positional[int] = 1
+        # still required even though a default is set
+        with self.assertRaises(SystemExit):
+            PositionalWithDefault().parse_args([])
+        with self.assertRaises(SystemExit):
+            PositionalWithDefault().parse_args(["42"])  # barg missing
+
+        # providing all positionals works; "custom" maps to arg (int), so it fails
+        with self.assertRaises(SystemExit):
+            PositionalWithDefault().parse_args(["custom", "hello"])
+        args = PositionalWithDefault().parse_args(["42", "hello"])
+        self.assertEqual(args.arg, 42)
+        self.assertEqual(args.barg, "hello")
+
+    def test_positional_optional_via_nargs(self):
+        """Users can make a positional optional by setting nargs='?' explicitly in configure."""
+        class OptionalPositional(Tap):
             arg: Positional[str] = "default"
+            barg: Positional[int]
 
             def configure(self):
-                self.add_argument("arg")
+                self.add_argument("arg", nargs="?")
 
-        class PositionalOptionalOrder3(Tap):
-            """[barg] arg"""
-            barg: Positional[int] = 1
-            arg: Positional[str]
+        # omitting the optional positional falls back to the default
+        args = OptionalPositional().parse_args(["42"])
+        self.assertEqual(args.arg, "default")
+        self.assertEqual(args.barg, 42)
 
-        help_regex = r".*positional arguments:\n\s*arg\s*\(str, default=default\)\n\s*barg\s*\(int, default=1\).*"
-        help_regex2 = r".*positional arguments:\n\s*barg\s*\(int, default=1\)\n\s*arg\s*\(str, default=default\).*"
-        help_regex3 = r".*positional arguments:\n\s*barg\s*\(int, default=1\)\n\s*arg\s*\(str, required\).*"
-
-        for PositionalOptional in [PositionalOptionalOrder1, PositionalOptionalOrder2, PositionalOptionalOrder3]:
-            with self.subTest(cls=PositionalOptional.__name__):
-                tapped = PositionalOptional()
-                if PositionalOptional is PositionalOptionalOrder3:
-                    with self.assertRaises(SystemExit):
-                        tapped.parse_args([])
-                else:
-                    args = tapped.parse_args([])
-                    self.assertEqual(args.arg, "default")
-                    self.assertEqual(args.barg, 1)
-
-                tapped2 = PositionalOptional()
-                if PositionalOptional is not PositionalOptionalOrder2:
-                    args2 = tapped2.parse_args(["custom"])
-                    self.assertEqual(args2.arg, "custom")
-                    self.assertEqual(args2.barg, 1)
-                elif PositionalOptional:
-                    args2 = tapped2.parse_args(["84"])
-                    self.assertEqual(args2.barg, 84)
-                    self.assertEqual(args2.arg, "default")
-
-                tapped3 = PositionalOptional()
-                args3 = tapped3.parse_args(["custom", "84"] if PositionalOptional is PositionalOptionalOrder1 else ["84", "custom"])
-                self.assertEqual(args3.arg, "custom")
-                self.assertEqual(args3.barg, 84)
-
-                help_text = tapped.format_help()
-                if PositionalOptional is PositionalOptionalOrder1:
-                    self.assertRegex(help_text, help_regex)
-                elif PositionalOptional is PositionalOptionalOrder2:
-                    self.assertRegex(help_text, help_regex2)
-                else:
-                    self.assertRegex(help_text, help_regex3)
+        # providing both works
+        args = OptionalPositional().parse_args(["hello", "42"])
+        self.assertEqual(args.arg, "hello")
+        self.assertEqual(args.barg, 42)
 
     def test_variadic_positional(self):
         class VariadicPositionalTap(Tap):
@@ -301,6 +285,8 @@ class TestArgparseActions(TestCase):
         self.assertListEqual(args.list1, [3, 4, 5])
         self.assertTupleEqual(args.tuple2, ("a", "b"))
 
+        # argparse nargs="*" distributes args to satisfy required positionals first;
+        # with only 2 args, tuple2 (nargs=2) consumes them and list1 falls back to its default
         parser = VariadicPositionalTap()
         args = parser.parse_args(["3", "b"])
         self.assertListEqual(args.list1, [1, 2])  # default

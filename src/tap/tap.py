@@ -282,8 +282,6 @@ class Tap(ArgumentParser):
                     # Handle the cases of List[bool], Set[bool], Tuple[bool]
                     if var_type == bool:
                         var_type = boolean_type
-                if "nargs" not in kwargs and self._is_argument_annotated_positional(variable) and default_value is not _NO_DEFAULT:
-                    kwargs["nargs"] = "?"
 
                 # If bool then set action, otherwise set type
                 if var_type == bool:
