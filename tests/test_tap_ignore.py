@@ -19,7 +19,7 @@ class DevNull:
         pass
 
 
-#sys.stderr = DevNull()
+sys.stderr = DevNull()
 
 
 class TapIgnoreTests(unittest.TestCase):
