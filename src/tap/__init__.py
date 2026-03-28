@@ -2,7 +2,7 @@
 Typed Argument Parser
 """
 
-__version__ = "1.11.0"
+__version__ = "1.12.0"
 
 from argparse import ArgumentError, ArgumentTypeError
 
