@@ -8,11 +8,12 @@ from argparse import ArgumentError, ArgumentTypeError
 
 from tap.tap import Tap
 from tap.tapify import tapify, to_tap_class
-from tap.utils import TapIgnore
+from tap.utils import TapIgnore, Positional
 
 __all__ = [
     "ArgumentError",
     "ArgumentTypeError",
+    "Positional",
     "Tap",
     "TapIgnore",
     "tapify",
