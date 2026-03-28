@@ -14,6 +14,8 @@ from typing import Any, Callable, Optional, Sequence, TypeVar, _AnnotatedAlias, 
 
 from docstring_parser import Docstring, parse
 
+from tap.utils import _is_marked_tap_ignore, _TapIgnoreMarker
+
 try:
     import pydantic
 except ModuleNotFoundError:
@@ -64,6 +66,9 @@ class _ArgData:
 
     pydantic_metadata: Optional[tuple[Any]] = None
     "Additional metadata from Annotated fields in Pydantic models"""
+
+    ignored: bool = False
+    "Whether or not this argument is marked as TapIgnore"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -126,6 +131,7 @@ def _tap_data_from_data_model(
             is_required(field),
             field.default,
             description,
+            ignored=_is_marked_tap_ignore(field.type),
         )
 
     def arg_data_from_pydantic(name: str, field: _PydanticField, annotation: Optional[type] = None) -> _ArgData:
@@ -133,7 +139,15 @@ def _tap_data_from_data_model(
         # Prefer the description from param_to_description (from the data model / class docstring) over the
         # field.description b/c a docstring can be modified on the fly w/o causing real issues
         description = param_to_description.get(name, field.description)
-        return _ArgData(name, annotation, field.is_required(), field.default, description, pydantic_metadata=tuple(field.metadata))
+        return _ArgData(
+            name,
+            annotation,
+            field.is_required(),
+            field.default,
+            description,
+            pydantic_metadata=tuple(field.metadata),
+            ignored=any(annot == _TapIgnoreMarker for annot in field.metadata),
+        )
 
     # Determine what type of data model it is and extract fields accordingly
     if dataclasses.is_dataclass(data_model):
@@ -175,7 +189,8 @@ def _tap_data_from_data_model(
         if name in func_kwargs:
             arg_data.default = func_kwargs[name]
             arg_data.is_required = False
-            del func_kwargs[name]
+            if not arg_data.ignored:
+                del func_kwargs[name]
         args_data.append(arg_data)
     return _TapData(args_data, has_kwargs, known_only)
 
@@ -222,10 +237,12 @@ def _tap_data_from_class_or_function(
         else:
             annotation = Any
 
+        is_ignored = _is_marked_tap_ignore(annotation)
         if param.name in func_kwargs:
             is_required = False
             default = func_kwargs[param.name]
-            del func_kwargs[param.name]
+            if not is_ignored:
+                del func_kwargs[param.name]
         elif param.default != inspect.Parameter.empty:
             is_required = False
             default = param.default
@@ -240,6 +257,7 @@ def _tap_data_from_class_or_function(
             default=default,
             description=param_to_description.get(param.name),
             is_positional_only=param.kind == inspect.Parameter.POSITIONAL_ONLY,
+            ignored=is_ignored,
         )
         args_data.append(arg_data)
     return _TapData(args_data, has_kwargs, known_only)
@@ -304,7 +322,7 @@ def _tap_class(args_data: Sequence[_ArgData]) -> type[Tap]:
                             annotation.__metadata__ = (*annotation.__metadata__, *arg_data.pydantic_metadata)
                     self._annotations_with_extras[variable] = annotation
                     self._annotations[variable] = _remove_extras_from_annotation(annotation)
-                    if self._is_ignored_argument(variable):
+                    if arg_data.ignored or self._is_ignored_argument(variable):
                         continue
                     self.class_variables[variable] = {"comment": arg_data.description or ""}
                     if arg_data.is_required:
@@ -371,9 +389,9 @@ def tapify(
         description = "\n".join(filter(None, (docstring.short_description, docstring.long_description)))
     tap = tap_class(description=description, explicit_bool=explicit_bool, underscores_to_dashes=underscores_to_dashes)
 
-    # If any func_kwargs remain, they are not used in the function, so raise an error
+    # If any non ignored func_kwargs remain, they are not used in the function, so raise an error
     known_only = known_only or tap_data.known_only
-    if func_kwargs and not known_only:
+    if func_kwargs.keys() - {arg_data.name for arg_data in tap_data.args_data if arg_data.ignored} and not known_only:
         raise ValueError(f"Unknown keyword arguments: {func_kwargs}")
 
     # Parse command line arguments
@@ -384,7 +402,10 @@ def tapify(
     class_or_function_kwargs: dict[str, Any] = {}
     command_line_args_dict = parsed_command_line_args.as_dict()
     for arg_data in tap_data.args_data:
-        if tap._is_ignored_argument(arg_data.name):
+        if (arg_data.ignored or tap._is_ignored_argument(arg_data.name)):
+            if arg_data.name in func_kwargs:
+                # Pass through ignored arguments from func_kwargs
+                class_or_function_kwargs[arg_data.name] = func_kwargs[arg_data.name]
             continue
         arg_value = command_line_args_dict[arg_data.name]
         if arg_data.is_positional_only:
