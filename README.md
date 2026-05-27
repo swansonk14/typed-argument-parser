@@ -53,7 +53,7 @@ pip install typed-argument-parser
 ```shell
 git clone https://github.com/swansonk14/typed-argument-parser.git
 cd typed-argument-parser
-pip install -e .
+uv sync
 ```
 
 </details>
@@ -62,15 +62,20 @@ pip install -e .
 <summary>To develop this package, install development requirements (in a virtual environment):</summary>
 
 ```shell
-python -m pip install -e ".[dev]"
+uv sync --group dev
 ```
 
-Use [`flake8`](https://github.com/PyCQA/flake8) linting.
+To lint and format, run:
+
+```shell
+uv run ruff check
+uv run ruff format
+```
 
 To run tests, run:
 
 ```shell
-pytest
+uv run pytest
 ```
 
 </details>

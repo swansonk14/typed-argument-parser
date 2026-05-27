@@ -6,20 +6,18 @@ build-backend = "setuptools.build_meta"
 name = "typed-argument-parser"
 dynamic = ["version"]
 authors = [
-    {name = "Jesse Michel", email = "jessem.michel@gmail.com" },
-    {name = "Kyle Swanson", email = "swansonk.14@gmail.com" },
+    { name = "Jesse Michel", email = "jessem.michel@gmail.com" },
+    { name = "Kyle Swanson", email = "swansonk.14@gmail.com" },
 ]
 maintainers = [
-    {name = "Jesse Michel", email = "jessem.michel@gmail.com" },
-    {name = "Kyle Swanson", email = "swansonk.14@gmail.com" },
+    { name = "Jesse Michel", email = "jessem.michel@gmail.com" },
+    { name = "Kyle Swanson", email = "swansonk.14@gmail.com" },
 ]
 description = "Typed Argument Parser"
 readme = "README.md"
 license = "MIT"
-license-files = [ "LICENSE.txt" ]
-dependencies = [
-    "docstring-parser >= 0.15",
-]
+license-files = ["LICENSE.txt"]
+dependencies = ["docstring-parser >= 0.15"]
 requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -31,39 +29,39 @@ classifiers = [
     "Operating System :: OS Independent",
     "Typing :: Typed",
 ]
-keywords = [
-    "typing",
-    "argument parser",
-    "python",
-]
+keywords = ["typing", "argument parser", "python"]
 
-[project.optional-dependencies]
-dev-no-pydantic = [
-    "black",
-    "pytest",
-    "pytest-cov",
-    "flake8",
-]
-dev = [
-    "typed-argument-parser[dev-no-pydantic]",
-    "pydantic >= 2.5.0",
-]
+[dependency-groups]
+dev-no-pydantic = ["pytest", "pytest-cov", "ruff"]
+dev = [{ include-group = "dev-no-pydantic" }, "pydantic >= 2.5.0"]
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.dynamic]
-version = {attr = "tap.__version__"}
+version = { attr = "tap.__version__" }
 
 [tool.setuptools.package-data]
 tap = ["py.typed"]
 
-[tool.black]
-line-length = 121
-
 [project.urls]
 Homepage = "https://github.com/swansonk14/typed-argument-parser"
 Issues = "https://github.com/swansonk14/typed-argument-parser/issues"
+
+[tool.uv]
+exclude-newer = "7 days"
+
+[tool.ruff]
+line-length = 121
+target-version = "py310"
+
+[tool.ruff.format]
+indent-style = "space"
+quote-style = "double"
+
+[tool.ruff.lint]
+ignore = ["E501", "E721", "E731"]
+select = ["E", "F", "I", "W"]

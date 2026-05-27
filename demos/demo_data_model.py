@@ -18,6 +18,7 @@ python demo_data_model.py \
 from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
+
 from tap import to_tap_class
 
 

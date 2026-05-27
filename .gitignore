@@ -1,5 +1,4 @@
 .idea
-.vscode
 __pycache__
 .DS_Store
 *.json
@@ -8,3 +7,6 @@ build
 .eggs
 .coverage
 dist
+.venv
+.pytest_cache
+.ruff_cache

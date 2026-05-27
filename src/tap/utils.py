@@ -4,9 +4,9 @@ import os
 import pickle
 import re
 import subprocess
-import typing
 import textwrap
 import tokenize
+import typing
 import warnings
 from argparse import ArgumentParser, ArgumentTypeError
 from base64 import b64decode, b64encode
@@ -27,7 +27,6 @@ from typing import (
     _GenericAlias,
     _SpecialGenericAlias,
 )
-
 
 TYPING_GENERIC_ALIAS = (_GenericAlias, _SpecialGenericAlias, GenericAlias)
 NO_CHANGES_STATUS = """nothing to commit, working tree clean"""
@@ -368,7 +367,6 @@ def get_class_variables(cls: type) -> dict[str, dict[str, str]]:
                 and len(tokens) > i
                 and tokens[i + 1]["token"] in ["=", ":"]
             ):
-
                 class_variable = token["token"]
                 variable_to_comment[class_variable] = {"comment": ""}
 
@@ -554,27 +552,25 @@ def enforce_reproducibility(
 
     if saved_reproducibility_data is None:
         raise ValueError(
-            f"{no_reproducibility_message}: Could not find reproducibility "
-            f'information in args loaded from "{path}".'
+            f'{no_reproducibility_message}: Could not find reproducibility information in args loaded from "{path}".'
         )
 
     if "git_url" not in saved_reproducibility_data:
-        raise ValueError(f"{no_reproducibility_message}: Could not find " f'git url in args loaded from "{path}".')
+        raise ValueError(f'{no_reproducibility_message}: Could not find git url in args loaded from "{path}".')
 
     if "git_url" not in current_reproducibility_data:
-        raise ValueError(f"{no_reproducibility_message}: Could not find " f"git url in current args.")
+        raise ValueError(f"{no_reproducibility_message}: Could not find git url in current args.")
 
     if saved_reproducibility_data["git_url"] != current_reproducibility_data["git_url"]:
         raise ValueError(
-            f"{no_reproducibility_message}: Differing git url/hash "
-            f'between current args and args loaded from "{path}".'
+            f'{no_reproducibility_message}: Differing git url/hash between current args and args loaded from "{path}".'
         )
 
     if saved_reproducibility_data["git_has_uncommitted_changes"]:
-        raise ValueError(f"{no_reproducibility_message}: Uncommitted changes " f'in args loaded from "{path}".')
+        raise ValueError(f'{no_reproducibility_message}: Uncommitted changes in args loaded from "{path}".')
 
     if current_reproducibility_data["git_has_uncommitted_changes"]:
-        raise ValueError(f"{no_reproducibility_message}: Uncommitted changes " f"in current args.")
+        raise ValueError(f"{no_reproducibility_message}: Uncommitted changes in current args.")
 
 
 def get_origin(tp: Any) -> Any:
@@ -600,21 +596,26 @@ _T = TypeVar("_T")
 class _TapIgnoreMarker:
     """Internal marker that if present in a type annotation indicates that the argument should be ignored."""
 
+
 class _TapPositionalMarker:
     """Internal marker that if present in a type annotation indicates that the argument is positional-only."""
+
 
 def _is_marked_annotation(var_type: type | Any, marker: type) -> bool:
     """Checks if the provided type is `Annotated` and contains the provided marker in the Annotation arguments."""
     # Note: typing_inspect.get_origin will return the inner type and args and not Annotated
     return typing.get_origin(var_type) is Annotated and marker in typing.get_args(var_type)[1:]
 
+
 def _is_marked_tap_ignore(var_type: type | Any) -> bool:
     """Checks if the provided type is `Annotated` and contains the TapIgnore marker in the Annotation arguments."""
     return _is_marked_annotation(var_type, _TapIgnoreMarker)
 
+
 def _is_marked_positional(var_type: type | Any) -> bool:
     """Checks if the provided type is `Annotated` and contains the TapPositional marker in the Annotation arguments."""
     return _is_marked_annotation(var_type, _TapPositionalMarker)
+
 
 # TODO: Python 3.12 turn this into a TypeAliasType for better IDE tooltips
 TapIgnore: TypeAlias = Annotated[_T, _TapIgnoreMarker]

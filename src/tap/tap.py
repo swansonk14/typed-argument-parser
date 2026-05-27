@@ -9,7 +9,6 @@ from pprint import pformat
 from shlex import quote, split
 from types import MethodType, UnionType
 from typing import (
-    Annotated,
     Any,
     Callable,
     Iterable,
@@ -20,31 +19,30 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    get_type_hints,
     get_args,
+    get_type_hints,
 )
 
 from tap.utils import (
+    GitInfo,
+    PathLike,
+    TupleTypeEnforcer,
     _is_marked_positional,
     _is_marked_tap_ignore,
-    get_class_variables,
-    is_literal_type,
+    as_python_object,
+    boolean_type,
+    define_python_object_encoder,
+    enforce_reproducibility,
     get_argument_name,
+    get_class_variables,
     get_dest,
+    get_literals,
     get_origin,
-    GitInfo,
+    is_literal_type,
     is_option_arg,
     is_positional_arg,
     type_to_str,
-    get_literals,
-    boolean_type,
-    TupleTypeEnforcer,
-    define_python_object_encoder,
-    as_python_object,
-    enforce_reproducibility,
-    PathLike,
 )
-
 
 # Constants
 EMPTY_TYPE = get_args(List)[0] if len(get_args(List)) > 0 else tuple()
@@ -178,7 +176,7 @@ class Tap(ArgumentParser):
             if kwargs.get("required", False) or default_value is _NO_DEFAULT:
                 kwargs["help"] += "required"
             else:
-                kwargs["help"] += f'default={kwargs.get("default", None)}'
+                kwargs["help"] += f"default={kwargs.get('default', None)}"
 
             kwargs["help"] += ")"
 
@@ -446,7 +444,7 @@ class Tap(ArgumentParser):
             repo_path = (Path.cwd() / Path(sys.argv[0]).parent).resolve()
 
         reproducibility = {
-            "command_line": f'python {" ".join(quote(arg) for arg in sys.argv)}',
+            "command_line": f"python {' '.join(quote(arg) for arg in sys.argv)}",
             "time": time.strftime("%c"),
         }
 
@@ -605,9 +603,7 @@ class Tap(ArgumentParser):
             class_variables = self._get_from_self_and_super(extract_func=get_class_variables)
 
             # Handle edge-case of source code modification while code is running
-            variables_to_add = (
-                variable for variable in class_variable_names if variable not in class_variables
-            )
+            variables_to_add = (variable for variable in class_variable_names if variable not in class_variables)
             variables_to_remove = (
                 variable for variable in class_variables.keys() if variable not in class_variable_names
             )

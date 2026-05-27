@@ -1,5 +1,5 @@
-from typing import List, Literal
 import unittest
+from typing import List, Literal
 from unittest import TestCase
 
 from tap import Tap
@@ -235,6 +235,7 @@ class TestArgparseActions(TestCase):
     def test_positional_with_default(self):
         """A default on a Positional follows argparse: the default appears in help but the
         argument is still required on the command line."""
+
         class PositionalWithDefault(Tap):
             arg: Positional[int] = 1
             barg: Positional[str]
@@ -257,6 +258,7 @@ class TestArgparseActions(TestCase):
 
     def test_positional_optional_via_nargs(self):
         """Users can make a positional optional by setting nargs='?' explicitly in configure."""
+
         class OptionalPositional(Tap):
             arg: Positional[str] = "default"
             barg: Positional[int]

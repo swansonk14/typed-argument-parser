@@ -2,18 +2,17 @@
 Tests `tap.to_tap_class`.
 """
 
-from contextlib import redirect_stdout, redirect_stderr
 import dataclasses
 import io
 import re
 import sys
+from contextlib import redirect_stderr, redirect_stdout
 from typing import Annotated, Any, Callable, List, Literal, Optional, Type, Union
 
 import pytest
 
-from tap import to_tap_class, Tap
+from tap import Tap, to_tap_class
 from tap.utils import type_to_str
-
 
 try:
     import pydantic
@@ -300,7 +299,7 @@ def _test_subclasser_message(
 
     def normalize_prog_name(string: str) -> str:
         """Normalize the program name in usage line to handle platform differences.
-        
+
         On Windows with Python 3.14, sys.argv[0] may include the full path like:
         'python.exe C:\\path\\to\\pytest' instead of just 'pytest'
         """
@@ -309,7 +308,7 @@ def _test_subclasser_message(
             usage_start = string.index("usage: ")
             pytest_start = string.index("pytest", usage_start)
             # Reconstruct: everything before "usage: " + "usage: pytest" + everything after "pytest"
-            return string[:usage_start] + "usage: pytest" + string[pytest_start + len("pytest"):]
+            return string[:usage_start] + "usage: pytest" + string[pytest_start + len("pytest") :]
         return string
 
     TapSubclass = subclasser(class_or_function)
@@ -563,6 +562,7 @@ def test_subclasser_subparser_help_message(
         subclasser_subparser, class_or_function_, expected_message, description=description, args_string=args_string
     )
 
+
 class TestMethodResolutionOrder:
     @staticmethod
     def _assert_all_two(class_or_function: Any) -> None:
@@ -572,8 +572,7 @@ class TestMethodResolutionOrder:
         assert ParserClass.a == ParserClass().a == ParserClass().parse_args([]).a == 2
 
     def test_function(self):
-        def foo(a: int = 0):
-            ...
+        def foo(a: int = 0): ...
 
         self._assert_all_two(foo)
 
@@ -599,8 +598,7 @@ class TestMethodResolutionOrder:
         self._assert_all_two(Foo)
 
     def test_configure_in_leaf(self):
-        def foo(a: int = 0):
-            ...
+        def foo(a: int = 0): ...
 
         class Leaf(to_tap_class(foo)):
             a: int = 2
@@ -687,6 +685,7 @@ class TestMethodResolutionOrder:
         args = ["--d", "4"]
         with pytest.raises(SystemExit):
             TapGrandchild().parse_args(args)
+
 
 def test_extras_removal():
     class Parent:
