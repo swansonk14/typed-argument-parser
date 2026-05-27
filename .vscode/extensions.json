@@ -1,11 +1,9 @@
 {
     "recommendations": [
-        "tamasfe.even-better-toml",
         "ms-python.python",
-        "dnut.rewrap-revived",
         "ms-python.vscode-pylance",
         "charliermarsh.ruff",
-        "github.vscode-github-actions",
-        "ms-python.debugpy",
-    ],
+        "tamasfe.even-better-toml",
+        "github.vscode-github-actions"
+    ]
 }
