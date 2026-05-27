@@ -1,7 +1,6 @@
 {
     "recommendations": [
         "tamasfe.even-better-toml",
-        "usernamehw.errorlens",
         "ms-python.python",
         "dnut.rewrap-revived",
         "ms-python.vscode-pylance",
