@@ -1,0 +1,17 @@
+{
+    "recommendations": [
+        "tamasfe.even-better-toml",
+        "usernamehw.errorlens",
+        "ms-python.python",
+        "dnut.rewrap-revived",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "ziyasal.vscode-open-in-github",
+        "github.vscode-github-actions",
+        "ms-python.debugpy",
+        "njpwerner.autodocstring"
+    ],
+    "unwantedRecommendations": [
+        "ms-python.mypy-type-checker"
+    ]
+}

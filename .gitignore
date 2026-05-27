@@ -2,6 +2,8 @@
 __pycache__
 .DS_Store
 *.json
+!.vscode/extensions.json
+!.vscode/settings.json
 *.egg-info
 build
 .eggs

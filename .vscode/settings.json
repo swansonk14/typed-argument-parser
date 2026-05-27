@@ -1,0 +1,64 @@
+{
+    "editor.formatOnSave": true,
+    "editor.rulers": [
+        121
+    ],
+    "editor.tabSize": 4,
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "files.trimTrailingWhitespace": true,
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.diagnosticMode": "openFilesOnly",
+    "python.analysis.typeCheckingMode": "off",
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "[python]": {
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": false,
+        "editor.tabSize": 4,
+        "editor.formatOnType": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports.ruff": "explicit",
+            "source.fixAll.ruff": "explicit"
+        },
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    },
+    "[toml]": {
+        "editor.defaultFormatter": "tamasfe.even-better-toml",
+        "editor.rulers": [
+            80
+        ]
+    },
+    "evenBetterToml.formatter.indentString": "    ",
+    "evenBetterToml.formatter.columnWidth": 80,
+    "evenBetterToml.formatter.arrayAutoExpand": true,
+    "evenBetterToml.formatter.arrayTrailingComma": true,
+    "evenBetterToml.formatter.alignEntries": true,
+    "evenBetterToml.formatter.indentEntries": false,
+    "evenBetterToml.formatter.reorderArrays": false,
+    "evenBetterToml.formatter.reorderInlineTables": false,
+    "evenBetterToml.formatter.reorderKeys": false,
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/.pytest_cache/": true,
+        "**/.ruff_cache/": true,
+        "**/.venv/": true,
+        "**/__pycache__/": true,
+        "**/*.egg-info/": true,
+        "**/build/": true,
+        "**/dist/": true
+    },
+    "search.exclude": {
+        "**/.pytest_cache/**": true,
+        "**/.ruff_cache/**": true,
+        "**/.venv/**": true,
+        "**/__pycache__/**": true,
+        "**/*.egg-info/**": true,
+        "uv.lock": true
+    }
+}
