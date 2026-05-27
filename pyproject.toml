@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 61.0.0"]
+requires      = ["setuptools >= 61.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -33,7 +33,7 @@ keywords = ["typing", "argument parser", "python"]
 
 [dependency-groups]
 dev-no-pydantic = ["pytest", "pytest-cov", "ruff"]
-dev = [{ include-group = "dev-no-pydantic" }, "pydantic >= 2.5.0"]
+dev             = [{ include-group = "dev-no-pydantic" }, "pydantic >= 2.5.0"]
 
 [tool.setuptools]
 package-dir = { "" = "src" }
@@ -47,21 +47,21 @@ version = { attr = "tap.__version__" }
 [tool.setuptools.package-data]
 tap = ["py.typed"]
 
-[project.urls]
-Homepage = "https://github.com/swansonk14/typed-argument-parser"
-Issues = "https://github.com/swansonk14/typed-argument-parser/issues"
-
 [tool.uv]
 exclude-newer = "7 days"
 
 [tool.ruff]
-line-length = 121
+line-length    = 121
 target-version = "py310"
 
 [tool.ruff.format]
 indent-style = "space"
-quote-style = "double"
+quote-style  = "double"
 
 [tool.ruff.lint]
 ignore = ["E501", "E721", "E731"]
 select = ["E", "F", "I", "W"]
+
+[project.urls]
+Homepage = "https://github.com/swansonk14/typed-argument-parser"
+Issues   = "https://github.com/swansonk14/typed-argument-parser/issues"
