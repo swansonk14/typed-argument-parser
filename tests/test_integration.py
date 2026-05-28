@@ -1060,14 +1060,7 @@ class DashedArgumentsTests(TestCase):
             arg_you_mean_: int = 10
 
         args = DashedArgumentTap(underscores_to_dashes=True).parse_args(
-            [
-                "--arg",
-                "11",
-                "--arg-u-ment",
-                "12",
-                "--arg-you-mean-",
-                "13",
-            ]
+            ["--arg", "11", "--arg-u-ment", "12", "--arg-you-mean-", "13"]
         )
         self.assertEqual(args.arg, 11)
         self.assertEqual(args.arg_u_ment, 12)
