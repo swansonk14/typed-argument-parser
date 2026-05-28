@@ -298,7 +298,11 @@ class TapIgnoreTests(unittest.TestCase):
             return f"{a} {b} {c}"
 
         # With known_only=True, --b should be ignored (not cause an error)
-        output = tapify(my_func, command_line_args=["--a", "1", "--b", "99", "--c", "world"], known_only=True)
+        output = tapify(
+            my_func,
+            command_line_args=["--a", "1", "--b", "99", "--c", "world"],
+            known_only=True,
+        )
         # b should still be 2 (the default), not 99
         self.assertEqual(output, "1 2 world")
 
