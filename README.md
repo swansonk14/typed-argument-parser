@@ -53,7 +53,7 @@ pip install typed-argument-parser
 ```shell
 git clone https://github.com/swansonk14/typed-argument-parser.git
 cd typed-argument-parser
-uv sync
+uv sync --no-dev
 ```
 
 </details>
