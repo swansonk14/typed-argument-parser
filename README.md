@@ -62,7 +62,7 @@ uv sync
 <summary>To develop this package, install development requirements (in a virtual environment):</summary>
 
 ```shell
-uv sync --group dev
+uv sync
 ```
 
 To lint and format, run:
