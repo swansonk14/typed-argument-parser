@@ -335,10 +335,7 @@ T
     def test_multiline_argument(self):
         class MultilineArgument:
             # fmt: off
-            bar: str = (
-                "This is a multiline argument"
-                " that should not be included in the docstring"
-            )
+            bar: str = "This is a multiline argument" " that should not be included in the docstring"
             """biz baz"""
             # fmt: on
 
