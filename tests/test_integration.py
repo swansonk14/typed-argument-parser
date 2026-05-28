@@ -896,12 +896,7 @@ class AddArgumentTests(TestCase):
 
         arg_person_required = Person("hello, it's me")
 
-        args = AddArgumentComplexTypeTap().parse_args(
-            [
-                "--arg_person_required",
-                arg_person_required.name,
-            ]
-        )
+        args = AddArgumentComplexTypeTap().parse_args(["--arg_person_required", arg_person_required.name])
         self.assertEqual(args.arg_person, Person("tap"))
         self.assertEqual(args.arg_person_required, arg_person_required)
         self.assertEqual(args.arg_person_untyped, Person("tap untyped"))
