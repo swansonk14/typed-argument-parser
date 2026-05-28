@@ -348,14 +348,8 @@ T
     def test_multiline_argument_with_final_hashtag_comment(self):
         class MultilineArgumentWithHashTagComment:
             # fmt: off
-            bar: str = (
-                "This is a multiline argument"
-                " that should not be included in the docstring"
-            )  # biz baz
-            barr: str = (
-                "This is a multiline argument"
-                " that should not be included in the docstring"
-            )  # bar baz
+            bar: str = "This is a multiline argument" " that should not be included in the docstring"  # biz baz
+            barr: str = "This is a multiline argument" " that should not be included in the docstring"  # bar baz
             # fmt: on
             barrr: str = (  # meow
                 "This is a multiline argument"  # blah
