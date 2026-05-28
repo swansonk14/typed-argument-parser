@@ -134,7 +134,7 @@ def _tap_data_from_data_model(
             ignored=_is_marked_tap_ignore(field.type),
         )
 
-    def arg_data_from_pydantic(name: str, field: _PydanticField, annotation: Optional[type] = None) -> _ArgData:
+    def arg_data_from_pydantic(name: str, field: _PydanticField, annotation: Optional[type] = None) -> _ArgData:  # pyright: ignore[reportInvalidTypeForm]
         annotation = field.annotation if annotation is None else annotation
         # Prefer the description from param_to_description (from the data model / class docstring) over the
         # field.description b/c a docstring can be modified on the fly w/o causing real issues

@@ -382,7 +382,7 @@ def get_class_variables(cls: type) -> dict[str, dict[str, str]]:
     return variable_to_comment
 
 
-def get_literals(literal: Literal, variable: str) -> tuple[Callable[[str], Any], list[type]]:
+def get_literals(literal: Literal, variable: str) -> tuple[Callable[[str], Any], list[type]]:  # pyright: ignore[reportInvalidTypeForm]
     """Extracts the values from a Literal type and ensures that the values are all primitive types."""
     literals = list(typing.get_args(literal))
 
@@ -470,7 +470,7 @@ def _nested_replace_type(obj: Any, find_type: type, replace_type: type) -> Any:
     return obj
 
 
-def define_python_object_encoder(skip_unpicklable: bool = False) -> "PythonObjectEncoder":  # noqa F821
+def define_python_object_encoder(skip_unpicklable: bool = False) -> "PythonObjectEncoder":  # pyright: ignore[reportUndefinedVariable] # noqa: F821
     class PythonObjectEncoder(JSONEncoder):
         """Stores parameters that are not JSON serializable as pickle dumps.
 
