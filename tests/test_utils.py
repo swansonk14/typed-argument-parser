@@ -334,16 +334,29 @@ T
 
     def test_multiline_argument(self):
         class MultilineArgument:
-            bar: str = "This is a multiline argument that should not be included in the docstring"
+            # fmt: off
+            bar: str = (
+                "This is a multiline argument"
+                " that should not be included in the docstring"
+            )
             """biz baz"""
+            # fmt: on
 
         class_variables = {"bar": {"comment": "biz baz"}}
         self.assertEqual(get_class_variables(MultilineArgument), class_variables)
 
     def test_multiline_argument_with_final_hashtag_comment(self):
         class MultilineArgumentWithHashTagComment:
-            bar: str = "This is a multiline argument that should not be included in the docstring"  # biz baz
-            barr: str = "This is a multiline argument that should not be included in the docstring"  # bar baz
+            # fmt: off
+            bar: str = (
+                "This is a multiline argument"
+                " that should not be included in the docstring"
+            )  # biz baz
+            barr: str = (
+                "This is a multiline argument"
+                " that should not be included in the docstring"
+            )  # bar baz
+            # fmt: on
             barrr: str = (  # meow
                 "This is a multiline argument"  # blah
                 " that should not be included in the docstring"  # grrrr
