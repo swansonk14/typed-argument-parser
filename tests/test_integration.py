@@ -1323,12 +1323,7 @@ class TupleTests(TestCase):
 
         arg_str = ("hi there", "hello hi bye")
 
-        args = EmptyTupleTap().parse_args(
-            [
-                "--tup_str",
-                *arg_str,
-            ]
-        )
+        args = EmptyTupleTap().parse_args(["--tup_str", *arg_str])
 
         self.assertEqual(args.tup_str, arg_str)
 
