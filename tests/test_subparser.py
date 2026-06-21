@@ -1,7 +1,7 @@
-from argparse import ArgumentError
 import sys
-from typing import Literal, Union
 import unittest
+from argparse import ArgumentError
+from typing import Literal, Union
 from unittest import TestCase
 
 from tap import Tap
@@ -214,9 +214,7 @@ class TestSubparser(TestCase):
             def configure(self) -> None:
                 self.add_subparsers(dest="subparser_name")
 
-                self.add_subparser(
-                    "add-proposal", AddProposal, help="Add a new proposal",
-                )
+                self.add_subparser("add-proposal", AddProposal, help="Add a new proposal")
 
         args_underscores: Union[Arguments, AddProposal] = Arguments(underscores_to_dashes=False).parse_args(
             "add-proposal --proposal_id 1".split()

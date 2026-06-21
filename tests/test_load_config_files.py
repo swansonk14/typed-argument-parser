@@ -1,7 +1,7 @@
 import os
 import sys
-from tempfile import TemporaryDirectory
 import unittest
+from tempfile import TemporaryDirectory
 from unittest import TestCase
 
 from tap import Tap

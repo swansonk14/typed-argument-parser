@@ -1,9 +1,9 @@
 import sys
 import unittest
-from typing import Annotated
-from tap import Tap, TapIgnore, tapify
 from dataclasses import dataclass
+from typing import Annotated
 
+from tap import Tap, TapIgnore, tapify
 
 try:
     import pydantic
@@ -131,6 +131,7 @@ class TapIgnoreTests(unittest.TestCase):
 
     def test_tap_ignore_all_arguments(self):
         """All arguments are in TapIgnore, so no CLI arguments exist."""
+
         class Args(Tap):
             a: TapIgnore[int] = 1
             b: TapIgnore[str] = "ignored"
@@ -154,6 +155,7 @@ class TapIgnoreTests(unittest.TestCase):
 
     def test_tap_ignore_generic_types(self):
         """TapIgnore wraps generic/boxed types like list[int], dict[str, int]."""
+
         class Args(Tap):
             a: int
             b: TapIgnore[list[int]] = [1, 2, 3]
@@ -182,6 +184,7 @@ class TapIgnoreTests(unittest.TestCase):
 
     def test_tap_ignore_as_dict(self):
         """Test that as_dict includes TapIgnore fields with their default values."""
+
         class Args(Tap):
             a: int
             b: TapIgnore[int] = 2
@@ -205,6 +208,7 @@ class TapIgnoreTests(unittest.TestCase):
 
     def test_tap_ignore_as_dict_then_from_dict(self):
         """Test round-trip: parse_args -> as_dict -> from_dict on a new instance."""
+
         class Args(Tap):
             a: int
             b: TapIgnore[int] = 2
@@ -235,6 +239,7 @@ class TapIgnoreTests(unittest.TestCase):
         If you explicitly call add_argument in configure() for a TapIgnore field,
         a ValueError is raised to alert the user of the conflicting configuration.
         """
+
         class Args(Tap):
             a: int
             b: TapIgnore[int] = 2  # Marked as ignored
@@ -255,6 +260,7 @@ class TapIgnoreTests(unittest.TestCase):
         If a field is declared as a regular int, but someone tries to use TapIgnore[int]
         as the type in add_argument, a ValueError should be raised.
         """
+
         class Args(Tap):
             a: int
             b: int = 2  # Regular int, NOT ignored
@@ -295,7 +301,7 @@ class TapIgnoreTests(unittest.TestCase):
         output = tapify(
             my_func,
             command_line_args=["--a", "1", "--b", "99", "--c", "world"],
-            known_only=True
+            known_only=True,
         )
         # b should still be 2 (the default), not 99
         self.assertEqual(output, "1 2 world")
@@ -341,7 +347,7 @@ class TapIgnoreTests(unittest.TestCase):
             tapify(PydanticModel, command_line_args=["--x", "10", "--y", "should_fail"])
 
     def test_tapify_function_with_tap_ignore_func_kwargs_pass_through(self):
-        """Test tapify with TapIgnore and set ignored variable via func_kwargs. """
+        """Test tapify with TapIgnore and set ignored variable via func_kwargs."""
 
         def my_func(a: int, b: TapIgnore[int] = 2, c: str = "hello") -> str:
             return f"{a} {b} {c}"
@@ -355,7 +361,8 @@ class TapIgnoreTests(unittest.TestCase):
         self.assertEqual(output, "1 3 world")
 
     def test_tapify_dataclass_with_tap_ignore_func_kwargs_pass_through(self):
-        """Test tapify with TapIgnore dataclass and set ignored variable via func_kwargs. """
+        """Test tapify with TapIgnore dataclass and set ignored variable via func_kwargs."""
+
         @dataclass
         class DataclassConfig:
             x: int
@@ -371,7 +378,7 @@ class TapIgnoreTests(unittest.TestCase):
 
     @unittest.skipIf(_IS_PYDANTIC_V1 is None, reason="Pydantic not installed")
     def test_tapify_pydantic_model_with_tap_ignore_func_kwargs_pass_through(self):
-        """Test tapify with TapIgnore pydantic model and set ignored variable via func_kwargs. """
+        """Test tapify with TapIgnore pydantic model and set ignored variable via func_kwargs."""
 
         class PydanticModel(pydantic.BaseModel):
             x: int
@@ -384,6 +391,7 @@ class TapIgnoreTests(unittest.TestCase):
         )
         self.assertEqual(model.x, 20)
         self.assertEqual(model.y, "set_via_func_kwargs")
+
 
 if __name__ == "__main__":
     unittest.main()

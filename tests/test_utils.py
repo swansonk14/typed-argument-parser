@@ -1,28 +1,28 @@
-from argparse import ArgumentTypeError
 import inspect
 import json
 import os
 import subprocess
 import sys
-from tempfile import TemporaryDirectory
-from typing import Any, Callable, List, Literal, Dict, Set, Tuple, Union
 import unittest
+from argparse import ArgumentTypeError
+from tempfile import TemporaryDirectory
+from typing import Any, Callable, Dict, List, Literal, Set, Tuple, Union
 from unittest import TestCase
 
 from tap.utils import (
+    GitInfo,
+    TupleTypeEnforcer,
+    UnpicklableObject,
+    _nested_replace_type,
+    as_python_object,
+    define_python_object_encoder,
+    enforce_reproducibility,
     get_class_column,
     get_class_variables,
-    GitInfo,
+    get_literals,
     is_literal_type,
     tokenize_source,
     type_to_str,
-    get_literals,
-    TupleTypeEnforcer,
-    _nested_replace_type,
-    define_python_object_encoder,
-    UnpicklableObject,
-    as_python_object,
-    enforce_reproducibility,
 )
 
 
@@ -182,7 +182,6 @@ class ClassColumnTests(TestCase):
 
     def test_column_space(self):
         class SpaceColumn:
-
             arg = 2
 
         tokens = tokenize_source(inspect.getsource(SpaceColumn))
@@ -335,16 +334,20 @@ T
 
     def test_multiline_argument(self):
         class MultilineArgument:
+            # fmt: off
             bar: str = "This is a multiline argument" " that should not be included in the docstring"
             """biz baz"""
+            # fmt: on
 
         class_variables = {"bar": {"comment": "biz baz"}}
         self.assertEqual(get_class_variables(MultilineArgument), class_variables)
 
     def test_multiline_argument_with_final_hashtag_comment(self):
         class MultilineArgumentWithHashTagComment:
+            # fmt: off
             bar: str = "This is a multiline argument" " that should not be included in the docstring"  # biz baz
             barr: str = "This is a multiline argument" " that should not be included in the docstring"  # bar baz
+            # fmt: on
             barrr: str = (  # meow
                 "This is a multiline argument"  # blah
                 " that should not be included in the docstring"  # grrrr
@@ -383,6 +386,7 @@ T
 
         class_variables = {"arg": {"comment": ""}}
         self.assertEqual(get_class_variables(DataclassColumn), class_variables)
+
 
 class IsLiteralTypeTests(TestCase):
     def test_is_literal_type_bare_literal(self) -> None:
@@ -430,6 +434,7 @@ class IsLiteralTypeTests(TestCase):
     def test_is_literal_type_any(self) -> None:
         self.assertFalse(is_literal_type(Any))
 
+
 class GetLiteralsTests(TestCase):
     def test_get_literals_string(self) -> None:
         literal_f, shapes = get_literals(Literal["square", "triangle", "circle"], "shape")
@@ -442,7 +447,6 @@ class GetLiteralsTests(TestCase):
         literal_f, _ = get_literals(Literal, "hi")
         with self.assertRaises(ArgumentTypeError):
             literal_f("anything")
-
 
     def test_get_literals_primitives(self) -> None:
         literals = [True, "one", 2, 3.14]

@@ -65,7 +65,7 @@ class _ArgData:
     "Whether or not the argument must be provided positionally"
 
     pydantic_metadata: Optional[tuple[Any]] = None
-    "Additional metadata from Annotated fields in Pydantic models"""
+    "Additional metadata from Annotated fields in Pydantic models"
 
     ignored: bool = False
     "Whether or not this argument is marked as TapIgnore"
@@ -134,7 +134,7 @@ def _tap_data_from_data_model(
             ignored=_is_marked_tap_ignore(field.type),
         )
 
-    def arg_data_from_pydantic(name: str, field: _PydanticField, annotation: Optional[type] = None) -> _ArgData:
+    def arg_data_from_pydantic(name: str, field: _PydanticField, annotation: Optional[type] = None) -> _ArgData:  # pyright: ignore[reportInvalidTypeForm]
         annotation = field.annotation if annotation is None else annotation
         # Prefer the description from param_to_description (from the data model / class docstring) over the
         # field.description b/c a docstring can be modified on the fly w/o causing real issues
@@ -293,9 +293,11 @@ def _tap_data(class_or_function: _ClassOrFunction, param_to_description: dict[st
         # TODO: allow passing func_kwargs to a Pydantic BaseModel
     return _tap_data_from_class_or_function(class_or_function, func_kwargs, param_to_description)
 
+
 def _remove_extras_from_annotation(annotation):
     """Removes extras from annotation types, e.g., Annotated, etc."""
-    return get_type_hints(SimpleNamespace(__annotations__ = {"dummy": annotation}))["dummy"]
+    return get_type_hints(SimpleNamespace(__annotations__={"dummy": annotation}))["dummy"]
+
 
 def _tap_class(args_data: Sequence[_ArgData]) -> type[Tap]:
     """
@@ -311,7 +313,6 @@ def _tap_class(args_data: Sequence[_ArgData]) -> type[Tap]:
                 if variable not in self.class_variables:
                     annotation = str if arg_data.annotation is Any else arg_data.annotation
                     if arg_data.pydantic_metadata:
-
                         # Pydantic does clean Annotated metadata, so we need to add it here
                         # Make sure we have an _AnnotatedAlias and add the fields metadata to it
                         # TODO: 3.11 use star expression:
@@ -328,7 +329,7 @@ def _tap_class(args_data: Sequence[_ArgData]) -> type[Tap]:
                     if arg_data.is_required:
                         kwargs = {}
                     else:
-                        kwargs = dict(required=False, default = arg_data.default)
+                        kwargs = dict(required=False, default=arg_data.default)
                     if self._is_argument_annotated_positional(variable):
                         kwargs.pop("required", None)  # required is for optional args only
                         self.add_argument(variable, **kwargs)
@@ -402,7 +403,7 @@ def tapify(
     class_or_function_kwargs: dict[str, Any] = {}
     command_line_args_dict = parsed_command_line_args.as_dict()
     for arg_data in tap_data.args_data:
-        if (arg_data.ignored or tap._is_ignored_argument(arg_data.name)):
+        if arg_data.ignored or tap._is_ignored_argument(arg_data.name):
             if arg_data.name in func_kwargs:
                 # Pass through ignored arguments from func_kwargs
                 class_or_function_kwargs[arg_data.name] = func_kwargs[arg_data.name]

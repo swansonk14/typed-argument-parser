@@ -3,15 +3,14 @@ Tests `tap.tapify`. Currently requires Pydantic v2.
 """
 
 import contextlib
-from dataclasses import dataclass
 import io
 import sys
-from typing import List, Optional, Tuple, Any
 import unittest
+from dataclasses import dataclass
+from typing import Any, List, Optional, Tuple
 from unittest import TestCase
 
-from tap import tapify, Positional
-
+from tap import Positional, tapify
 
 try:
     import pydantic
@@ -236,10 +235,10 @@ class TapifyTests(TestCase):
 
     def test_tapify_complex_types(self):
         def concat(complexity: list[str], requires: tuple[int, int], intelligence: Person) -> str:
-            return f'{" ".join(complexity)} {requires[0]} {requires[1]} {intelligence}'
+            return f"{' '.join(complexity)} {requires[0]} {requires[1]} {intelligence}"
 
         def concat_with_positionals(complexity: list[str], /, requires: tuple[int, int], intelligence: Person) -> str:
-            return f'{" ".join(complexity)} {requires[0]} {requires[1]} {intelligence}'
+            return f"{' '.join(complexity)} {requires[0]} {requires[1]} {intelligence}"
 
         class Concat:
             def __init__(self, complexity: list[str], requires: tuple[int, int], intelligence: Person):
@@ -321,10 +320,10 @@ class TapifyTests(TestCase):
 
     def test_tapify_complex_types_parameterized_standard(self):
         def concat(complexity: list[int], requires: tuple[int, int], intelligence: Person) -> str:
-            return f'{" ".join(map(str, complexity))} {requires[0]} {requires[1]} {intelligence}'
+            return f"{' '.join(map(str, complexity))} {requires[0]} {requires[1]} {intelligence}"
 
         def concat_with_positionals(complexity: list[int], requires: tuple[int, int], /, intelligence: Person) -> str:
-            return f'{" ".join(map(str, complexity))} {requires[0]} {requires[1]} {intelligence}'
+            return f"{' '.join(map(str, complexity))} {requires[0]} {requires[1]} {intelligence}"
 
         class Concat:
             def __init__(self, complexity: list[int], requires: tuple[int, int], intelligence: Person):
@@ -412,7 +411,7 @@ class TapifyTests(TestCase):
             maybe: Optional[str] = None,
             possibly: Optional[str] = None,
         ) -> str:
-            return f'{" ".join(complexity)} {requires[0]} {requires[1]} {intelligence} {maybe} {possibly}'
+            return f"{' '.join(complexity)} {requires[0]} {requires[1]} {intelligence} {maybe} {possibly}"
 
         def concat_with_positionals(
             complexity: List[str],
@@ -422,7 +421,7 @@ class TapifyTests(TestCase):
             possibly: Optional[str] = None,
             /,
         ) -> str:
-            return f'{" ".join(complexity)} {requires[0]} {requires[1]} {intelligence} {maybe} {possibly}'
+            return f"{' '.join(complexity)} {requires[0]} {requires[1]} {intelligence} {maybe} {possibly}"
 
         class Concat:
             def __init__(
@@ -1335,6 +1334,7 @@ class TapifyTests(TestCase):
     def test_tapify_with_positional_annotation(self):
         def greet(name: Positional[str]):
             return f"Hello, {name}!"
+
         output = tapify(greet, command_line_args=["Alice"])
         self.assertEqual(output, "Hello, Alice!")
         with self.assertRaises(SystemExit):
@@ -1345,6 +1345,7 @@ class TapifyTests(TestCase):
         # a default value does not make the positional optional on the CLI (follows argparse)
         def greet_with_default(name: Positional[str] = "Anonymous"):
             return f"Hello, {name}!"
+
         output = tapify(greet_with_default, command_line_args=["Bob"])
         self.assertEqual(output, "Hello, Bob!")
         with self.assertRaises(SystemExit):
@@ -1376,6 +1377,7 @@ class TapifyTests(TestCase):
 
     def test_tapify_positional_mixed_with_optional(self):
         """Multiple positional and non-positional arguments together."""
+
         def greet(name: Positional[str], age: int):
             return f"Hello, {name} ({age})!"
 
@@ -1388,6 +1390,7 @@ class TapifyTests(TestCase):
 
     def test_tapify_positional_supplied_via_func_kwargs(self):
         """A func_kwarg does not make a positional optional on the CLI (follows argparse)."""
+
         def greet(name: Positional[str], age: int):
             return f"Hello, {name} ({age})!"
 
@@ -1482,7 +1485,7 @@ class TestTapifyKwargs(unittest.TestCase):
             :param a: The first number.
             :param b: The second number.
             """
-            return f'{a}_{b}_{"-".join(f"{k}={v}" for k, v in kwargs.items())}'
+            return f"{a}_{b}_{'-'.join(f'{k}={v}' for k, v in kwargs.items())}"
 
         def concat_with_positionals(a: int, b: int = 2, /, **kwargs) -> str:
             """Concatenate three numbers.
@@ -1490,7 +1493,7 @@ class TestTapifyKwargs(unittest.TestCase):
             :param a: The first number.
             :param b: The second number.
             """
-            return f'{a}_{b}_{"-".join(f"{k}={v}" for k, v in kwargs.items())}'
+            return f"{a}_{b}_{'-'.join(f'{k}={v}' for k, v in kwargs.items())}"
 
         if _IS_PYDANTIC_V1 is not None:
 

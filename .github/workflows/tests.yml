@@ -24,6 +24,11 @@ jobs:
       uses: actions/setup-python@main
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Install latest version of uv
+      uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+      with:
+        enable-cache: true
+        python-version: ${{ matrix.python-version }}
     - name: Set temp directories on Windows
       if: matrix.os == 'windows-latest'
       run: |
@@ -34,26 +39,21 @@ jobs:
       run: |
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
-        python -m pip install --upgrade pip
-        python -m pip install -e ".[dev-no-pydantic]"
-    - name: Lint with flake8
+        uv sync --frozen --group dev-no-pydantic
+    - name: Lint and format with ruff
       run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        uv run --frozen --group dev-no-pydantic ruff check
+        uv run --frozen --group dev-no-pydantic ruff format --check
     - name: Test without pydantic
       run: |
-        pytest --cov=tap
+        uv run --frozen --group dev-no-pydantic pytest --cov=tap
     - name: Test with pydantic v1
       if: matrix.python-version == '3.10' || matrix.python-version == '3.11' || matrix.python-version == '3.12' || matrix.python-version == '3.13'
       run: |
-        python -m pip install "pydantic < 2"
-        pytest --cov=tap --cov-append
+        uv run --frozen --group dev-no-pydantic --with "pydantic < 2" pytest --cov=tap --cov-append
     - name: Test with pydantic v2
       run: |
-        python -m pip install "pydantic >= 2"
-        pytest --cov=tap --cov-append
+        uv run --frozen --group dev-no-pydantic --with "pydantic >= 2" pytest --cov=tap --cov-append
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4

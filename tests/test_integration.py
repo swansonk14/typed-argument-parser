@@ -1,12 +1,12 @@
-from argparse import ArgumentTypeError
-from copy import deepcopy
 import os
-from pathlib import Path
 import pickle
 import sys
+import unittest
+from argparse import ArgumentTypeError
+from copy import deepcopy
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Iterable, List, Literal, Optional, Set, Tuple, Union
-import unittest
 from unittest import TestCase
 
 from tap import Tap
@@ -103,18 +103,14 @@ class RequiredClassVariableTests(TestCase):
 
     def test_arg_str_required(self):
         with self.assertRaises(SystemExit):
-            self.tap.parse_args(
-                ["--arg_str_required", "tappy",]
-            )
+            self.tap.parse_args(["--arg_str_required", "tappy"])
 
     def test_arg_list_str_required(self):
         with self.assertRaises(SystemExit):
-            self.tap.parse_args(
-                ["--arg_list_str_required", "hi", "there",]
-            )
+            self.tap.parse_args(["--arg_list_str_required", "hi", "there"])
 
     def test_both_assigned_okay(self):
-        args = self.tap.parse_args(["--arg_str_required", "tappy", "--arg_list_str_required", "hi", "there",])
+        args = self.tap.parse_args(["--arg_str_required", "tappy", "--arg_list_str_required", "hi", "there"])
         self.assertEqual(args.arg_str_required, "tappy")
         self.assertEqual(args.arg_list_str_required, ["hi", "there"])
 
@@ -321,21 +317,21 @@ class IntegrationDefaultTap(Tap):
     # arg_bool_untyped_false = False
     arg_bool_true: bool = True
     arg_bool_false: bool = False
-    arg_literal: Literal["english", "A", True, 88.9, 100] = "A"
+    arg_literal: Literal["english", "A", True, 88.9, 100] = "A"  # pyright: ignore[reportInvalidTypeForm]
 
-    arg_optional: Optional = None
+    arg_optional: Optional = None  # pyright: ignore[reportInvalidTypeForm]
     arg_optional_str: Optional[str] = None
     arg_optional_int: Optional[int] = None
     arg_optional_float: Optional[float] = None
     arg_optional_bool: Optional[bool] = None
-    arg_optional_literal: Optional[Literal["english", "A", True, 88.9, 100]] = None
+    arg_optional_literal: Optional[Literal["english", "A", True, 88.9, 100]] = None  # type: ignore
 
     arg_list: List = ["these", "are", "strings"]
     arg_list_str: List[str] = ["hello", "how are you"]
     arg_list_int: List[int] = [10, -11]
     arg_list_float: List[float] = [3.14, 6.28]
     arg_list_bool: List[bool] = [True, False]
-    arg_list_literal: List[Literal["H", 1, 1.00784, False]] = ["H", False]
+    arg_list_literal: List[Literal["H", 1, 1.00784, False]] = ["H", False]  # pyright: ignore[reportInvalidTypeForm]
     arg_list_str_empty: List[str] = []
 
     arg_set: Set = {"these", "are", "strings"}
@@ -343,7 +339,7 @@ class IntegrationDefaultTap(Tap):
     arg_set_int: Set[int] = {10, -11}
     arg_set_float: Set[float] = {3.14, 6.28}
     arg_set_bool: Set[bool] = {True, False}
-    arg_set_literal: Set[Literal["H", 1, 1.00784, False]] = {"H", False}
+    arg_set_literal: Set[Literal["H", 1, 1.00784, False]] = {"H", False}  # pyright: ignore[reportInvalidTypeForm]
     arg_set_str_empty: Set[str] = set()
 
     arg_tuple: Tuple = ("these", "are", "strings")
@@ -645,8 +641,8 @@ def convert_many_types(input_str: str) -> Union[int, float, Person, str]:
 
 # TODO: test crash if not specifying type function
 class UnionTypeTap(Tap):
-    union_zero_required_arg: Union
-    union_zero_default_arg: Union = "hi"
+    union_zero_required_arg: Union  # pyright: ignore[reportInvalidTypeForm]
+    union_zero_default_arg: Union = "hi"  # pyright: ignore[reportInvalidTypeForm]
     union_one_required_arg: Union[str]
     union_one_default_arg: Union[str] = "there"
     union_two_required_arg: Union[str, int]
@@ -900,7 +896,7 @@ class AddArgumentTests(TestCase):
 
         arg_person_required = Person("hello, it's me")
 
-        args = AddArgumentComplexTypeTap().parse_args(["--arg_person_required", arg_person_required.name,])
+        args = AddArgumentComplexTypeTap().parse_args(["--arg_person_required", arg_person_required.name])
         self.assertEqual(args.arg_person, Person("tap"))
         self.assertEqual(args.arg_person_required, arg_person_required)
         self.assertEqual(args.arg_person_untyped, Person("tap untyped"))
@@ -1059,7 +1055,7 @@ class DashedArgumentsTests(TestCase):
             arg_you_mean_: int = 10
 
         args = DashedArgumentTap(underscores_to_dashes=True).parse_args(
-            ["--arg", "11", "--arg-u-ment", "12", "--arg-you-mean-", "13",]
+            ["--arg", "11", "--arg-u-ment", "12", "--arg-you-mean-", "13"]
         )
         self.assertEqual(args.arg, 11)
         self.assertEqual(args.arg_u_ment, 12)
@@ -1315,7 +1311,7 @@ class TupleTests(TestCase):
 
         arg_str = ("hi there", "hello hi bye")
 
-        args = EmptyTupleTap().parse_args(["--tup_str", *arg_str,])
+        args = EmptyTupleTap().parse_args(["--tup_str", *arg_str])
 
         self.assertEqual(args.tup_str, arg_str)
 
