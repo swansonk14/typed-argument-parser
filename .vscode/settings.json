@@ -1,5 +1,4 @@
 {
-    "editor.formatOnSave": true,
     "editor.rulers": [
         121
     ],
@@ -7,10 +6,7 @@
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,
     "files.trimTrailingWhitespace": true,
-    "python.analysis.autoImportCompletions": true,
-    "python.analysis.diagnosticMode": "openFilesOnly",
-    "python.analysis.typeCheckingMode": "off",
-    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv",
     "python.testing.pytestArgs": [
         "tests"
     ],
@@ -20,7 +16,6 @@
         "editor.insertSpaces": true,
         "editor.detectIndentation": false,
         "editor.tabSize": 4,
-        "editor.formatOnType": true,
         "editor.codeActionsOnSave": {
             "source.organizeImports.ruff": "explicit",
             "source.fixAll.ruff": "explicit"
