@@ -182,7 +182,8 @@ class Tap(ArgumentParser):
 
             # Description
             if variable in self.class_variables and (comment := self.class_variables[variable]["comment"]):
-                kwargs["help"] += " " + comment
+                # Escape "%" so a literal percent in a comment doesn't crash argparse's "%"-formatting of the help string.
+                kwargs["help"] += " " + comment.replace("%", "%%")
 
         # Set other kwargs where not provided
         if variable in self._annotations:
