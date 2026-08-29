@@ -92,6 +92,16 @@ class EdgeCaseTests(TestCase):
         with self.assertRaises(ValueError):
             ParseTwiceTap().parse_args(["--a", "6"]).parse_args(["--a", "7"])
 
+    def test_comment_with_percent(self) -> None:
+        # A '%' in a class-variable comment must not crash argparse's '%' formatting of the help string (#183).
+        class PercentCommentTap(Tap):
+            percent: int = 100  # The % chance this will break
+
+        # On Python <3.14 the crash surfaces when argparse %-formats the help; on 3.14 it
+        # surfaces eagerly during construction. Either way this must not raise.
+        help_text = PercentCommentTap().format_help()
+        self.assertIn("chance this will break", help_text)
+
 
 class RequiredClassVariableTests(TestCase):
     def setUp(self) -> None:
