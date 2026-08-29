@@ -100,7 +100,8 @@ class EdgeCaseTests(TestCase):
         # On Python <3.14 the crash surfaces when argparse %-formats the help; on 3.14 it
         # surfaces eagerly during construction. Either way this must not raise.
         help_text = PercentCommentTap().format_help()
-        self.assertIn("chance this will break", help_text)
+        percent_help = next(line.strip() for line in help_text.splitlines() if line.strip().startswith("--percent "))
+        self.assertEqual(percent_help, "--percent PERCENT  (int, default=100) The % chance this will break")
 
 
 class RequiredClassVariableTests(TestCase):
