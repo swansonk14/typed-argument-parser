@@ -1,7 +1,7 @@
 import json
 import sys
 import time
-from argparse import ArgumentParser, ArgumentTypeError
+from argparse import REMAINDER, Action, ArgumentParser, ArgumentTypeError
 from copy import deepcopy
 from functools import partial
 from pathlib import Path
@@ -54,6 +54,23 @@ BOXED_TYPES = BOXED_COLLECTION_TYPES | OPTIONAL_TYPES
 _NO_DEFAULT = object()
 
 TapType = TypeVar("TapType", bound="Tap")
+
+
+def _positional_min_tokens(action: Action) -> int | None:
+    """Returns the minimum number of command line tokens a positional action must consume.
+
+    Returns None when the action is not a plain positional whose token count can be reasoned about
+    (e.g., the subparsers action).
+    """
+    if action.nargs is None:
+        return 1
+    if action.nargs in ("?", "*", REMAINDER):
+        return 0
+    if action.nargs == "+":
+        return 1
+    if isinstance(action.nargs, int):
+        return action.nargs
+    return None
 
 
 class Tap(ArgumentParser):
@@ -360,7 +377,12 @@ class Tap(ArgumentParser):
                 name_or_flags, kwargs = self.argument_buffer[variable]
                 self._add_argument(*name_or_flags, **kwargs)
             elif self._is_argument_annotated_positional(variable):
-                self._add_argument(variable)
+                # A positional with a default value is optional on the command line, mirroring a Python
+                # function default. Collections and tuples set their own nargs, so "?" must not be injected.
+                if hasattr(self, variable) and not self._annotation_determines_nargs(self._annotations.get(variable)):
+                    self._add_argument(variable, nargs="?")
+                else:
+                    self._add_argument(variable)
             else:
                 self._add_argument(f"--{variable}")
 
@@ -370,6 +392,44 @@ class Tap(ArgumentParser):
                 if self._is_ignored_argument(variable):
                     continue
                 self._add_argument(*name_or_flags, **kwargs)
+
+        self._validate_positional_order()
+
+    def _annotation_determines_nargs(self, var_type: Any) -> bool:
+        """Whether the annotation itself determines nargs (collections and tuples), in which case
+        injecting nargs="?" for a default value would break the argument."""
+        if var_type is None:
+            return False
+        if get_origin(var_type) in OPTIONAL_TYPES:
+            # Unbox Optional to inspect the underlying type
+            var_args = [arg for arg in get_args(var_type) if arg is not type(None)]
+            if len(var_args) == 1:
+                return self._annotation_determines_nargs(var_args[0])
+            return False
+        return get_origin(var_type) in BOXED_COLLECTION_TYPES
+
+    def _validate_positional_order(self) -> None:
+        """Ensures positionals that can consume zero tokens come after all positionals requiring at least one.
+
+        argparse silently feeds required positionals first when tokens are scarce, so an optional
+        positional declared before a required one binds surprisingly (e.g., `prog X` assigns X to the
+        required argument). Rejecting this at construction time keeps the command line intuitive.
+        """
+        optional_positional: str | None = None
+        for action in self._actions:
+            if action.option_strings:
+                continue  # option arguments are keyed by flag, so their position never matters
+            min_tokens = _positional_min_tokens(action)
+            if min_tokens is None:
+                continue
+            if min_tokens == 0:
+                optional_positional = action.dest
+            elif optional_positional is not None:
+                raise ValueError(
+                    f"Positional argument '{optional_positional}' can be omitted, so it must come after all "
+                    f"required positional arguments, but '{action.dest}' follows it. "
+                    "Either move the optional positional to the end or remove its default value."
+                )
 
     def process_args(self) -> None:
         """Perform additional argument processing and/or validation."""

@@ -233,69 +233,120 @@ class TestArgparseActions(TestCase):
         self.assertEqual(args.barg, 42)
 
     def test_positional_with_default(self):
-        """A default on a Positional follows argparse: the default appears in help but the
-        argument is still required on the command line."""
+        """A default on a Positional makes it optional on the command line, like a Python function default,
+        so it must be declared after all required positionals."""
 
         class PositionalWithDefault(Tap):
+            arg: Positional[str]
+            barg: Positional[int] = 1
+
+        help_regex = r".*positional arguments:\n\s*arg\s*\(str, required\)\n\s*barg\s*\(int, default=1\).*"
+        self.assertRegex(PositionalWithDefault().format_help(), help_regex)
+
+        # omitting the optional positional falls back to the default
+        args = PositionalWithDefault().parse_args(["hello"])
+        self.assertEqual(args.arg, "hello")
+        self.assertEqual(args.barg, 1)
+
+        # providing all positionals works
+        args = PositionalWithDefault().parse_args(["hello", "42"])
+        self.assertEqual(args.arg, "hello")
+        self.assertEqual(args.barg, 42)
+
+        # required positional is still required
+        with self.assertRaises(SystemExit):
+            PositionalWithDefault().parse_args([])
+
+        # "custom" maps to barg (int), so it fails
+        with self.assertRaises(SystemExit):
+            PositionalWithDefault().parse_args(["hello", "custom"])
+
+    def test_positional_annotated_optional(self):
+        """Positional[str | None] = None is optional without a configure override."""
+
+        class AnnotatedOptional(Tap):
+            arg: Positional[str]
+            tag: Positional[str | None] = None
+
+        # omitting the optional positional falls back to None
+        args = AnnotatedOptional().parse_args(["hello"])
+        self.assertEqual(args.arg, "hello")
+        self.assertIsNone(args.tag)
+
+        # providing both works
+        args = AnnotatedOptional().parse_args(["hello", "beta"])
+        self.assertEqual(args.arg, "hello")
+        self.assertEqual(args.tag, "beta")
+
+    def test_positional_optional_before_required(self):
+        """An optional positional followed by a required one is ambiguous, so it is rejected."""
+
+        class DefaultPositionalNotLast(Tap):
             arg: Positional[int] = 1
             barg: Positional[str]
 
-        help_regex = r".*positional arguments:\n\s*arg\s*\(int, default=1\)\n\s*barg\s*\(str, required\).*"
-        self.assertRegex(PositionalWithDefault().format_help(), help_regex)
+        with self.assertRaises(ValueError):
+            DefaultPositionalNotLast()
 
-        # still required even though a default is set
-        with self.assertRaises(SystemExit):
-            PositionalWithDefault().parse_args([])
-        with self.assertRaises(SystemExit):
-            PositionalWithDefault().parse_args(["42"])  # barg missing
-
-        # providing all positionals works; "custom" maps to arg (int), so it fails
-        with self.assertRaises(SystemExit):
-            PositionalWithDefault().parse_args(["custom", "hello"])
-        args = PositionalWithDefault().parse_args(["42", "hello"])
-        self.assertEqual(args.arg, 42)
-        self.assertEqual(args.barg, "hello")
-
-    def test_positional_optional_via_nargs(self):
-        """Users can make a positional optional by setting nargs='?' explicitly in configure."""
-
-        class OptionalPositional(Tap):
-            arg: Positional[str] = "default"
+        class NargsPositionalNotLast(Tap):
+            arg: Positional[str]
             barg: Positional[int]
 
             def configure(self):
                 self.add_argument("arg", nargs="?")
 
-        # omitting the optional positional falls back to the default
+        with self.assertRaises(ValueError):
+            NargsPositionalNotLast()
+
+    def test_positional_optional_via_nargs(self):
+        """Users can make a positional optional by setting nargs='?' explicitly in configure."""
+
+        class OptionalPositional(Tap):
+            arg: Positional[int]
+            barg: Positional[str]
+
+            def configure(self):
+                self.add_argument("barg", nargs="?")
+
+        # omitting the optional positional gives None
         args = OptionalPositional().parse_args(["42"])
-        self.assertEqual(args.arg, "default")
-        self.assertEqual(args.barg, 42)
+        self.assertEqual(args.arg, 42)
+        self.assertIsNone(args.barg)
 
         # providing both works
-        args = OptionalPositional().parse_args(["hello", "42"])
-        self.assertEqual(args.arg, "hello")
-        self.assertEqual(args.barg, 42)
+        args = OptionalPositional().parse_args(["42", "hello"])
+        self.assertEqual(args.arg, 42)
+        self.assertEqual(args.barg, "hello")
 
     def test_variadic_positional(self):
         class VariadicPositionalTap(Tap):
-            list1: Positional[list[int]] = [1, 2]
             # Note, fixed nargs are not compatible with defaults in argparse
-            tuple2: Positional[tuple[str, str]]
+            tuple1: Positional[tuple[str, str]]
+            list2: Positional[list[int]] = [1, 2]
 
         parser = VariadicPositionalTap()
-        args = parser.parse_args(["3", "4", "5", "a", "b"])
-        self.assertListEqual(args.list1, [3, 4, 5])
-        self.assertTupleEqual(args.tuple2, ("a", "b"))
+        args = parser.parse_args(["a", "b", "3", "4", "5"])
+        self.assertListEqual(args.list2, [3, 4, 5])
+        self.assertTupleEqual(args.tuple1, ("a", "b"))
 
-        # argparse nargs="*" distributes args to satisfy required positionals first;
-        # with only 2 args, tuple2 (nargs=2) consumes them and list1 falls back to its default
+        # with only the required tokens, the variadic falls back to its default
         parser = VariadicPositionalTap()
-        args = parser.parse_args(["3", "b"])
-        self.assertListEqual(args.list1, [1, 2])  # default
-        self.assertTupleEqual(args.tuple2, ("3", "b"))
+        args = parser.parse_args(["a", "b"])
+        self.assertListEqual(args.list2, [1, 2])  # default
+        self.assertTupleEqual(args.tuple1, ("a", "b"))
 
         with self.assertRaises(SystemExit):
             VariadicPositionalTap().parse_args(["a"])
+
+    def test_variadic_positional_not_last(self):
+        """A variadic positional can consume zero tokens, so a required positional after it is rejected."""
+
+        class VariadicNotLast(Tap):
+            list2: Positional[list[int]] = [1, 2]
+            tuple1: Positional[tuple[str, str]]
+
+        with self.assertRaises(ValueError):
+            VariadicNotLast()
 
 
 if __name__ == "__main__":
