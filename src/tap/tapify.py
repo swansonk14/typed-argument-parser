@@ -5,8 +5,11 @@
 handling
 """
 
+import __future__
+
 import dataclasses
 import inspect
+from functools import partial
 from types import SimpleNamespace
 
 # TODO: 3.11 use only Annotated to combine pydantic metadata
@@ -211,6 +214,26 @@ def _tap_data_from_class_or_function(
 
     sig = inspect.signature(class_or_function)
 
+    annotation_source = class_or_function.__init__ if inspect.isclass(class_or_function) else class_or_function
+    while isinstance(annotation_source, partial):
+        annotation_source = annotation_source.func
+    annotation_source = inspect.unwrap(annotation_source)
+    code = getattr(annotation_source, "__code__", None)
+    type_hints = {}
+    if code is not None and code.co_flags & __future__.annotations.compiler_flag:
+        # Resolve only CLI parameters: return types and **kwargs do not define arguments.
+        annotations = {
+            name: param.annotation
+            for name, param in sig.parameters.items()
+            if isinstance(param.annotation, str) and param.kind != inspect.Parameter.VAR_KEYWORD
+        }
+        type_hints = get_type_hints(
+            SimpleNamespace(__annotations__=annotations),
+            globalns=annotation_source.__globals__,
+            localns=vars(class_or_function) if inspect.isclass(class_or_function) else None,
+            include_extras=True,
+        )
+
     is_pydantic_v1_dataclass_class = (
         _IS_PYDANTIC_V1 and _is_pydantic_dataclass(class_or_function) and inspect.isclass(class_or_function)
     )
@@ -233,7 +256,7 @@ def _tap_data_from_class_or_function(
             continue
 
         if param.annotation != inspect.Parameter.empty:
-            annotation = param.annotation
+            annotation = type_hints.get(param_name, param.annotation)
         else:
             annotation = Any
 
